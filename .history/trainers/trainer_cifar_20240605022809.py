@@ -2,7 +2,7 @@ import torch.nn as nn
 from torch.optim import Adam
 from torch.utils.data import DataLoader
 
-from data.equations import CifarDataset
+from data.cifar_dataset import CifarDataset
 from metrics.classification import AccuracyMetrics
 from models.cifar import CifarModel
 from trainers.trainer import Trainer
