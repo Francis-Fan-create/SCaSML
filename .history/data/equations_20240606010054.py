@@ -84,4 +84,3 @@ class Explict_Solution_Example(Equation):
         timedomain = dde.geometry.TimeDomain(0, 0.5) 
         geom = dde.geometry.GeometryXTime(spacedomain, timedomain) #combine both domains
         return geom
-    

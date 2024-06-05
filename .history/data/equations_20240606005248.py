@@ -31,18 +31,20 @@ class Equation(object):
         raise NotImplementedError
 
     def exact_solution(self, x_t):
-        #exact solution of the PDE, which will not be used in the training, but for testing
+        #exact solution of the PDE
         raise NotImplementedError
     def Data_Loss(self, x_t):
         #data loss in PDE
-        raise NotImplementedError
+        if self.have_exact_solution:
+            return torch.mean((self.net(x_t) - self.exact_solution(x_t)) ** 2)
+        else:
+            raise NotImplementedError
     
     def geometry(self):
         #geometry of the domain
         raise NotImplementedError
     
 class Explict_Solution_Example(Equation):
-    '''Expamlpe of high dim PDE with exact solution'''
     def __init__(self, n_input, n_output, n_hidden, n_hidden_layers,have_exact_solution=True):
         super(Explict_Solution_Example, self).__init__(n_input, n_output, n_hidden, n_hidden_layers,have_exact_solution)
 
@@ -70,18 +72,16 @@ class Explict_Solution_Example(Equation):
         return 0.25
     
     def exact_solution(self, x_t):
-        #exact solution of the example
+        #explicit solution of the example
+        # print(x_t)
         s = x_t[:, -1]
+        # print(s.shape)
         x = x_t[:, :-1]
         sum_x = np.sum(x, axis=1)
+        # print(sum_x)
         exp_term = np.exp(s + sum_x)
+        # print(exp_term)
         result=1-1/(1+exp_term)
+        # print(result.shape)
+        # print(result)
         return result
-    
-    def geometry(self):
-        #geometry of the domain, which is a hypercube
-        spacedomain = dde.geometry.Hypercube([-0.5]*(self.n_input-1), [0.5]*(self.n_input-1)) 
-        timedomain = dde.geometry.TimeDomain(0, 0.5) 
-        geom = dde.geometry.GeometryXTime(spacedomain, timedomain) #combine both domains
-        return geom
-    

@@ -83,5 +83,4 @@ class Explict_Solution_Example(Equation):
         spacedomain = dde.geometry.Hypercube([-0.5]*(self.n_input-1), [0.5]*(self.n_input-1)) 
         timedomain = dde.geometry.TimeDomain(0, 0.5) 
         geom = dde.geometry.GeometryXTime(spacedomain, timedomain) #combine both domains
-        return geom
-    
+        return geomtime

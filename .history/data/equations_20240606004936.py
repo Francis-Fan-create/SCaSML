@@ -12,7 +12,6 @@ class Equation(object):
         self.n_output = n_output #dimension of the output
         self.have_exact_solution = have_exact_solution #whether the exact solution is known
         self.net = net #PINN network
-
     def PDE_Loss(self, x_t,u):
         #PINN loss in the PDE, can be a list as in gPINN
         raise NotImplementedError
@@ -31,21 +30,26 @@ class Equation(object):
         raise NotImplementedError
 
     def exact_solution(self, x_t):
-        #exact solution of the PDE, which will not be used in the training, but for testing
+        #exact solution of the PDE
         raise NotImplementedError
     def Data_Loss(self, x_t):
         #data loss in PDE
-        raise NotImplementedError
+        if self.have_exact_solution:
+            return torch.mean((self.net(x_t) - self.exact_solution(x_t)) ** 2)
+        else:
+            raise NotImplementedError
     
     def geometry(self):
         #geometry of the domain
         raise NotImplementedError
     
 class Explict_Solution_Example(Equation):
-    '''Expamlpe of high dim PDE with exact solution'''
     def __init__(self, n_input, n_output, n_hidden, n_hidden_layers,have_exact_solution=True):
         super(Explict_Solution_Example, self).__init__(n_input, n_output, n_hidden, n_hidden_layers,have_exact_solution)
-
+    def mu(self, x_t=0):
+        return 0
+    def sigma(self, x_t=0):
+        return 0.25
     def PDE_Loss(self, x_t,u):
         #use gPINN loss in this example
         du_t = dde.grad.jacobian(u,x_t,i=0,j=self.n_input-1)
@@ -60,28 +64,4 @@ class Explict_Solution_Example(Equation):
             g_loss.append(0.01*dde.grad.jacobian(pde_loss,x_t,i=0,j=k))
         g_loss.append(pde_loss)
         return g_loss
-    def Initial_Loss(self, x_t):
-        result=np.exp(0.5 + np.sum(x_t,axis=1)) / (1 + np.exp(0.5 + np.sum(x_t,axis=1)))
-        return result
-
-    def mu(self, x_t=0):
-        return 0
-    def sigma(self, x_t=0):
-        return 0.25
-    
-    def exact_solution(self, x_t):
-        #exact solution of the example
-        s = x_t[:, -1]
-        x = x_t[:, :-1]
-        sum_x = np.sum(x, axis=1)
-        exp_term = np.exp(s + sum_x)
-        result=1-1/(1+exp_term)
-        return result
-    
-    def geometry(self):
-        #geometry of the domain, which is a hypercube
-        spacedomain = dde.geometry.Hypercube([-0.5]*(self.n_input-1), [0.5]*(self.n_input-1)) 
-        timedomain = dde.geometry.TimeDomain(0, 0.5) 
-        geom = dde.geometry.GeometryXTime(spacedomain, timedomain) #combine both domains
-        return geom
     

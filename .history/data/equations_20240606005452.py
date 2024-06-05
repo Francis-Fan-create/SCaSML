@@ -42,7 +42,6 @@ class Equation(object):
         raise NotImplementedError
     
 class Explict_Solution_Example(Equation):
-    '''Expamlpe of high dim PDE with exact solution'''
     def __init__(self, n_input, n_output, n_hidden, n_hidden_layers,have_exact_solution=True):
         super(Explict_Solution_Example, self).__init__(n_input, n_output, n_hidden, n_hidden_layers,have_exact_solution)
 
@@ -78,10 +77,4 @@ class Explict_Solution_Example(Equation):
         result=1-1/(1+exp_term)
         return result
     
-    def geometry(self):
-        #geometry of the domain, which is a hypercube
-        spacedomain = dde.geometry.Hypercube([-0.5]*(self.n_input-1), [0.5]*(self.n_input-1)) 
-        timedomain = dde.geometry.TimeDomain(0, 0.5) 
-        geom = dde.geometry.GeometryXTime(spacedomain, timedomain) #combine both domains
-        return geom
-    
+    def g
