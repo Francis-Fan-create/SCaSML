@@ -109,11 +109,11 @@ class Explict_Solution_Example(Equation):
         data = dde.data.TimePDE( #time dependent PDE
                                 self.geometry(), #geometry of the boundary condition and initial condition
                                 self.PDE_Loss, #g_pde residual
-                                [self.initial_condition], #initial condition
+                                [ic], #initial condition
                                 num_domain=num_domain, #sample how many points in the domain
                                 num_boundary=0, #sample how many points on the boundary
                                 num_initial=num_initial,  #sample how many points for the initial time
-                                solution=self.exact_solution,   #incorporate authentic solution to evaluate error metrics
+                                solution=self.exact_solution,   #incorporate authentic solution to evaluate L2 distance
                                 num_test=num_test #sample how many points for testing. If None, then the training point will be used.
                             )
         return data

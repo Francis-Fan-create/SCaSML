@@ -48,14 +48,7 @@ class Equation(object):
             return ic
         else:
             raise NotImplementedError
-    def boundary_condition(self):
-        #boundary condition of the PDE
-        if hasattr(self, 'boundary_loss') and hasattr(self, 'geometry'):
-            bc=dde.icbc.DirichletBC(self.geometry(),self.boundary_loss, lambda _, on_boundary: on_boundary)
-            self.boundary_condition=bc
-            return bc
-        else:
-            raise NotImplementedError
+    
     
     def generate_data(self):
         #generate data for training
@@ -74,7 +67,7 @@ class Explict_Solution_Example(Equation):
         for k in range(self.n_input-1): #here, we use a slower accumulating method to avoid computing more autograd, which is a tradeoff
             laplacian +=dde.grad.hessian(u, x_t, i=k, j=k) #lazy
             div += dde.grad.jacobian(u, x_t, i=0, j=k) #lazy
-        pde_loss=du_t + (self.sigma()**2 * u - 1/self.n_input - self.sigma()**2/2) * div + self.sigma()**2/2 * laplacian
+        pde_loss=du_t + (self.sigma**2 * u - 1/self.n_input - self.sigma**2/2) * div + self.sigma**2/2 * laplacian
         g_loss=[]
         for k in range(self.n_input):
             g_loss.append(0.01*dde.grad.jacobian(pde_loss,x_t,i=0,j=k))
@@ -105,15 +98,15 @@ class Explict_Solution_Example(Equation):
         geom = dde.geometry.GeometryXTime(spacedomain, timedomain) #combine both domains
         return geom
     
-    def generate_data(self, num_domain=7000, num_initial=40,num_test=10):
+    def generate_data(self):
         data = dde.data.TimePDE( #time dependent PDE
                                 self.geometry(), #geometry of the boundary condition and initial condition
                                 self.PDE_Loss, #g_pde residual
-                                [self.initial_condition], #initial condition
-                                num_domain=num_domain, #sample how many points in the domain
+                                [ic], #initial condition
+                                num_domain=7000, #sample how many points in the domain
                                 num_boundary=0, #sample how many points on the boundary
-                                num_initial=num_initial,  #sample how many points for the initial time
-                                solution=self.exact_solution,   #incorporate authentic solution to evaluate error metrics
-                                num_test=num_test #sample how many points for testing. If None, then the training point will be used.
+                                num_initial=40,  #sample how many points for the initial time
+                                anchors=points, #sample points for point set constraint 
+                                solution=u_true,   #incorporate authentic solution to evaluate L2 distance
+                                num_test=None #sample how many points for testing. If None, then the training point will be used.
                             )
-        return data
