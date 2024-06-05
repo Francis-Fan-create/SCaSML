@@ -29,7 +29,6 @@ class Adam_LBFGS(object):
 
     def train(self,loss_weights,cycle=40,adam_every=500,lbfgs_every=10,metrics=["l2 relative error","mse"]):
         #interleaved training of adam and lbfgs
-        wandb.config.update({"cycle": cycle, "adam_every": adam_every, "lbfgs_every": lbfgs_every}) # record hyperparameters
         for i in range(cycle):
             self.model.compile(optimizer=self.Adam(),metrics=metrics,loss_weights=loss_weights)
             self.model.train(epochs=adam_every, display_every=10, metrics=metrics)
@@ -37,6 +36,6 @@ class Adam_LBFGS(object):
 
             self.model.compile(optimizer=self.LBFGS(),metrics=metrics,loss_weights=loss_weights)
             self.model.train(epochs=lbfgs_every, display_every=1, metrics=metrics)
-            wandb.log({"LBFGS loss": self.model.loss, "LBFGS metrics": self.model.metrics})  # record loss and metrics
+            wandb.log({"LBFGS loss": self.model.loss, "LBFGS metrics": self.model.metrics})  # 
 
         return self.model
