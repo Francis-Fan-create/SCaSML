@@ -1,8 +1,0 @@
-/.idea
-*.ipynb
-
-*.pyc
-*.pyo
-
-# CIFAR10 dataset and experiments
-/cifar10
