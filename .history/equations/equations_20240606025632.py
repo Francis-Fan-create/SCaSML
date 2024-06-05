@@ -1,6 +1,7 @@
 import deepxde as dde
 import numpy as np
 import torch
+import wandb
 
 
 class Equation(object):

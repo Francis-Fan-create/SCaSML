@@ -1,11 +1,12 @@
 import deepxde as dde
 import numpy as np
 import torch
+import wandb
 
 
 class Equation(object):
     '''Equation class for PDEs based on deepxde framework'''
-    def __init__(self, n_input, n_output,have_exact_solution):
+    def __init__(self, n_input, n_output,wandb_project_name,have_exact_solution):
         #initialize the equation parameters
         self.n_input = n_input #dimension of the input, including time
         self.n_output = n_output #dimension of the output

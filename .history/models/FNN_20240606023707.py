@@ -11,8 +11,8 @@ class FNN(nn.Module):
         self.net=dde.maps.pytorch.FNN(layers)
         self.regulerizer=None
         wandb.init(project=wandb_project_name) #initialize wandb
-        wandb.config.update({"layers": layers}) # record hyperparameters
-        wandb.watch(self.net) #watch the FNN on wandb
+        wandb.config.update({"layers": layers})
+        wandb.watch(self.net)
     def forward(self,x_t):
         #forward pass of the FNN
         return self.net(x_t)

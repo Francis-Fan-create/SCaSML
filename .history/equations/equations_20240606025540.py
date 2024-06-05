@@ -1,15 +1,17 @@
 import deepxde as dde
 import numpy as np
 import torch
+import wandb
 
 
 class Equation(object):
     '''Equation class for PDEs based on deepxde framework'''
-    def __init__(self, n_input, n_output,have_exact_solution):
+    def __init__(self, n_input, n_output,wandb_project_name,have_exact_solution):
         #initialize the equation parameters
         self.n_input = n_input #dimension of the input, including time
         self.n_output = n_output #dimension of the output
         self.have_exact_solution = have_exact_solution #whether the exact solution is known
+        wandb.init(project=wandb_project_name) #initialize wandb
     def PDE_Loss(self, x_t,u):
         #PINN loss in the PDE, can be a list as in gPINN
         raise NotImplementedError
@@ -60,8 +62,8 @@ class Equation(object):
     
 class Explict_Solution_Example(Equation):
     '''Expamlpe of high dim PDE with exact solution'''
-    def __init__(self, n_input, n_output,have_exact_solution=True):
-        super(Explict_Solution_Example, self).__init__(n_input, n_output,have_exact_solution)
+    def __init__(self, n_input, n_output, wandb_project_name,have_exact_solution=True):
+        super(Explict_Solution_Example, self).__init__(n_input, n_output,wandb_project_name,have_exact_solution)
 
     def PDE_Loss(self, x_t,u):
         #use gPINN loss in this example
@@ -76,6 +78,7 @@ class Explict_Solution_Example(Equation):
         for k in range(self.n_input-1):
             g_loss.append(0.01*dde.grad.jacobian(pde_loss,x_t,i=0,j=k))
         g_loss.append(pde_loss)
+        
         return g_loss
     def initial_loss(self, x_t):
         result=np.exp(0.5 + np.sum(x_t,axis=1)) / (1 + np.exp(0.5 + np.sum(x_t,axis=1)))

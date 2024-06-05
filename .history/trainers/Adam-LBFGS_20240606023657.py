@@ -12,7 +12,7 @@ class Adam_LBFGS(object):
         self.n_input=n_input
         self.n_output=n_output
         self.model=dde.Model(data,net)
-        wandb.init(project=wandb_project_name)
+        wandb.init(project=wandb_project_name) #
 
     def Adam(self, lr=1e-2,weight_decay=1e-4,gamma=0.9):
         #Adam optimizer
