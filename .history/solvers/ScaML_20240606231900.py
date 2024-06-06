@@ -140,7 +140,7 @@ class ScaML(object):
                     u_breve -= wloc[:,k, q-1] * np.mean(y, axis=1) 
                     z_breve -= wloc[:,k, q-1] * np.sum(np.repeat(y[:,:,0], dim, axis=-1) * W, axis=1) / (MC * (cloc[:,k, q-1]-t)[:,np.newaxis])
         return np.concatenate((u_breve, z_breve),axis=-1)
-    def u_solve(self,n, rho, x_t): 
+    def uz_solve(self,n, rho, x_t): 
         #approximate the solution of the PDE, return the value of u(x_t) and z(x_t), batchwisely
         #n: backward Euler samples needed
         #rho: current level

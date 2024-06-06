@@ -140,15 +140,11 @@ class ScaML(object):
                     u_breve -= wloc[:,k, q-1] * np.mean(y, axis=1) 
                     z_breve -= wloc[:,k, q-1] * np.sum(np.repeat(y[:,:,0], dim, axis=-1) * W, axis=1) / (MC * (cloc[:,k, q-1]-t)[:,np.newaxis])
         return np.concatenate((u_breve, z_breve),axis=-1)
-    def u_solve(self,n, rho, x_t): 
-        #approximate the solution of the PDE, return the value of u(x_t) and z(x_t), batchwisely
+    def uz_solve(self,n, rho, x_t): 
+        #approximate the solution of the PDE, return the value of u(x_t) and z_breve(x_t), batchwisely
         #n: backward Euler samples needed
         #rho: current level
         #x_t: a batch of spatial-temporal coordinates, ndarray
         u_breve_z=self.u_breve_z_breve_solve(n, rho, x_t)
-        u_breve,z_breve=u_breve_z[:,0],u_breve_z[:,1:]
-        eq=self.equation
-        tensor_x_t=torch.tensor(x_t,requires_grad=True).float()
-        u_hat=self.net(tensor_x_t).detach().numpy()
-        u=u_breve+u_hat
-        return u
+        u_breve,z
+        return 
