@@ -59,5 +59,5 @@ class NormalShperes(object):
         plt.xlabel("distance from origin")
         plt.ylabel("time")
         plt.savefig(f"{save_path}/ScaML_error.png")
-        wandb.log({"PINN error": wandb.Image(f"{save_path}/PINN_error.png"), "MLP error": wandb.Image(f"{save_path}/MLP_error.png"), "ScaML error": wandb.Image(f"{save_path}/ScaML_error.png")})
+        wandb
 
