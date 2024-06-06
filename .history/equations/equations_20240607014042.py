@@ -76,14 +76,13 @@ class Explict_Solution_Example(Equation):
     def __init__(self, n_input, n_output=1):
         super(Explict_Solution_Example, self).__init__(n_input, n_output)
     def PDE_loss(self, x_t,u,z):
-        du_t = dde.grad.jacobian(u,x_t,i=0,j=self.n_input-1)
-        laplacian=0
-        div=0
-        for k in range(self.n_input-1): #here, we use a slower accumulating method to avoid computing more autograd, which is a tradeoff
-            laplacian +=dde.grad.jacobian(z, x_t, i=k, j=k) #use grad info to compute laplacian
-            div += dde.grad.jacobian(u, x_t, i=0, j=k)
-        residual=du_t + (self.sigma()**2 * u - 1/self.n_input - self.sigma()**2/2) * div + self.sigma()**2/2 * laplacian
-        return residual 
+        batch_size = x_t.shape[0]
+        hessian = torch.zeros(batch_size, self.n_input, self.n_input, device=x_t.device, dtype=x_t.dtype)
+        for i in range(self.n_input-1):
+            grad_i = z[:, i]
+            grad_grad_i = torch.autograd.grad(grad_i, x_t, grad_outputs=torch.ones\(), create_graph=True)[0]
+            hessian[:, i, :] = grad_grad_i
+        return residual
     def gPDE_loss(self, x_t,u):
         #use gPINN loss in this example
         du_t = dde.grad.jacobian(u,x_t,i=0,j=self.n_input-1)

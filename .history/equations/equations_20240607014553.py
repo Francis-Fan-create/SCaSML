@@ -83,7 +83,8 @@ class Explict_Solution_Example(Equation):
             laplacian +=dde.grad.jacobian(z, x_t, i=k, j=k) #use grad info to compute laplacian
             div += dde.grad.jacobian(u, x_t, i=0, j=k)
         residual=du_t + (self.sigma()**2 * u - 1/self.n_input - self.sigma()**2/2) * div + self.sigma()**2/2 * laplacian
-        return residual 
+        return residual
+        
     def gPDE_loss(self, x_t,u):
         #use gPINN loss in this example
         du_t = dde.grad.jacobian(u,x_t,i=0,j=self.n_input-1)

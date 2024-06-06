@@ -7,7 +7,7 @@ from scipy.special import lambertw
 class ScaML(object):
     '''Multilevel Picard Iteration calibrated PINN for high dimensional semilinear PDE'''
     #all the vectors uses rows as index and columns as dimensions
-    def __init__(self, equation,net):
+    def __init__(self, equation,net,approx_PDE_loss):
         #initialize the ScaML parameters
         self.equation=equation
         self.sigma=equation.sigma
@@ -18,15 +18,21 @@ class ScaML(object):
         self.n_output=equation.n_output
         net.eval()
         self.net=net
-        # TO DO: define a function of x_t,u_hat,grad_u_hat_x,dt,using disretization instead of autodiff to accelerate the inferrence
-     
+        sel
+
+
+    def approx_PDE_loss(self,x_t,u_hat,grad_u_hat_x,dt):
+        # PDE loss by plug in, using disretization instead of autodiff to accelerate the inferrence
+        # must choose a defualt value for dt
+        raise NotImplementedError
+    
     def f(self,x_t,u_breve,z_breve):
         # generator of ScaML
         eq=self.equation
         tensor_x_t=torch.tensor(x_t,requires_grad=True).float()
         u_hat=self.net(tensor_x_t).detach().numpy()
         grad_u_hat_x=torch.autograd.grad(u_hat,tensor_x_t,grad_outputs=torch.ones_like(u_hat),create_graph=True)[0][:, :-1].detach().numpy()
-        epsilon=eq.PDE_loss(x_t,u_hat,grad_u_hat_x)
+        epsilon=self.approx_PDE_loss(x_t,u_hat,grad_u_hat_x)
         val1=eq.f(x_t,u_breve+u_hat,z_breve+eq.sigma(x_t)*grad_u_hat_x)  
         val2=eq.f(x_t,u_hat,eq.sigma(x_t)*grad_u_hat_x)
         return val1-val2-epsilon

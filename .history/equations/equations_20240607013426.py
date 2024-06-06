@@ -12,10 +12,10 @@ class Equation(object):
         self.n_input = n_input #dimension of the input, including time
         self.n_output = n_output #dimension of the output
     def PDE_loss(self, x_t,u,z):
-        #PINN loss in the PDE, used in ScaML to calculate epsilon
+        #PINN loss in the PDE, used in 
         raise NotImplementedError
     def gPDE_loss(self,x_t,u):
-        #gPINN loss in the PDE, used for training
+        #gPINN loss in the PDE
         raise NotImplementedError
     def terminal_constraint(self, x_t):
         #terminal constraint in the PDE
@@ -75,15 +75,7 @@ class Explict_Solution_Example(Equation):
     '''Expamlpe of high dim PDE with exact solution'''
     def __init__(self, n_input, n_output=1):
         super(Explict_Solution_Example, self).__init__(n_input, n_output)
-    def PDE_loss(self, x_t,u,z):
-        du_t = dde.grad.jacobian(u,x_t,i=0,j=self.n_input-1)
-        laplacian=0
-        div=0
-        for k in range(self.n_input-1): #here, we use a slower accumulating method to avoid computing more autograd, which is a tradeoff
-            laplacian +=dde.grad.jacobian(z, x_t, i=k, j=k) #use grad info to compute laplacian
-            div += dde.grad.jacobian(u, x_t, i=0, j=k)
-        residual=du_t + (self.sigma()**2 * u - 1/self.n_input - self.sigma()**2/2) * div + self.sigma()**2/2 * laplacian
-        return residual 
+
     def gPDE_loss(self, x_t,u):
         #use gPINN loss in this example
         du_t = dde.grad.jacobian(u,x_t,i=0,j=self.n_input-1)

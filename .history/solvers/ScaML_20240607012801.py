@@ -18,15 +18,16 @@ class ScaML(object):
         self.n_output=equation.n_output
         net.eval()
         self.net=net
-        # TO DO: define a function of x_t,u_hat,grad_u_hat_x,dt,using disretization instead of autodiff to accelerate the inferrence
-     
+        self.approx_PDE_loss=approx_PDE_loss # a function of x_t,u_hat,grad_u_hat_x,dt,using disretization instead of autodiff to accelerate the inferrence
+
+
     def f(self,x_t,u_breve,z_breve):
         # generator of ScaML
         eq=self.equation
         tensor_x_t=torch.tensor(x_t,requires_grad=True).float()
         u_hat=self.net(tensor_x_t).detach().numpy()
         grad_u_hat_x=torch.autograd.grad(u_hat,tensor_x_t,grad_outputs=torch.ones_like(u_hat),create_graph=True)[0][:, :-1].detach().numpy()
-        epsilon=eq.PDE_loss(x_t,u_hat,grad_u_hat_x)
+        epsilon=self.approx_PDE_loss(x_t,u_hat,grad_u_hat_x)
         val1=eq.f(x_t,u_breve+u_hat,z_breve+eq.sigma(x_t)*grad_u_hat_x)  
         val2=eq.f(x_t,u_hat,eq.sigma(x_t)*grad_u_hat_x)
         return val1-val2-epsilon

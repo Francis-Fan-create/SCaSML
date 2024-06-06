@@ -18,15 +18,20 @@ class ScaML(object):
         self.n_output=equation.n_output
         net.eval()
         self.net=net
-        # TO DO: define a function of x_t,u_hat,grad_u_hat_x,dt,using disretization instead of autodiff to accelerate the inferrence
-     
+
+
+    def approx_PDE_loss(self,x_t,u_hat,grad_u_hat_x,dt):
+        # PDE loss by plug in, using disretization instead of autodiff to accelerate the inferrence
+        # must choose a defualt value for dt
+        raise NotImplementedError
+    
     def f(self,x_t,u_breve,z_breve):
         # generator of ScaML
         eq=self.equation
         tensor_x_t=torch.tensor(x_t,requires_grad=True).float()
         u_hat=self.net(tensor_x_t).detach().numpy()
         grad_u_hat_x=torch.autograd.grad(u_hat,tensor_x_t,grad_outputs=torch.ones_like(u_hat),create_graph=True)[0][:, :-1].detach().numpy()
-        epsilon=eq.PDE_loss(x_t,u_hat,grad_u_hat_x)
+        epsilon=self.approx_PDE_loss(x_t,u_hat,grad_u_hat_x)
         val1=eq.f(x_t,u_breve+u_hat,z_breve+eq.sigma(x_t)*grad_u_hat_x)  
         val2=eq.f(x_t,u_hat,eq.sigma(x_t)*grad_u_hat_x)
         return val1-val2-epsilon
@@ -69,32 +74,32 @@ class ScaML(object):
         w = (b-a) / ((1-y*y) * Lp * Lp) * N2 * N2 / (N1 * N1) # compute weights
         return x[0], w[0]
 
-    def approx_parameters(self, rhomax):
-        # approximate parameters for the MLP
-        levels = np.arange(1, rhomax+1)  # level list
-        Q = np.zeros((rhomax, rhomax))  # number of quadrature points
-        Mf = np.zeros((rhomax, rhomax))  # number of forward Euler steps
-        Mg = np.zeros((rhomax, rhomax+1))  # number of backward Euler steps
+def approx_parameters(self, rhomax):
+    # approximate parameters for the MLP
+    levels = np.arange(1, rhomax+1)  # level list
+    Q = np.zeros((rhomax, rhomax))  # number of quadrature points
+    Mf = np.zeros((rhomax, rhomax))  # number of forward Euler steps
+    Mg = np.zeros((rhomax, rhomax+1))  # number of backward Euler steps
 
-        rho_values = np.arange(1, rhomax+1).reshape(-1, 1)
-        k_values = np.arange(1, rhomax+1)
+    rho_values = np.arange(1, rhomax+1).reshape(-1, 1)
+    k_values = np.arange(1, rhomax+1)
 
-        Q = np.round(self.inverse_gamma(rho_values ** (k_values / 2)))
-        Mf = np.round(rho_values ** (k_values / 2))
-        Mg[:, :-1] = np.round(rho_values ** (k_values - 1))
-        Mg[:, -1] = rho_values.flatten() ** rho_values.flatten()
+    Q = np.round(self.inverse_gamma(rho_values ** (k_values / 2)))
+    Mf = np.round(rho_values ** (k_values / 2))
+    Mg[:, :-1] = np.round(rho_values ** (k_values - 1))
+    Mg[:, -1] = rho_values.flatten() ** rho_values.flatten()
 
-        qmax = int(np.max(Q))  # maximum number of quadrature points
-        c = np.zeros((qmax, qmax))  # quadrature points
-        w = np.zeros((qmax, qmax))  # quadrature weights
+    qmax = int(np.max(Q))  # maximum number of quadrature points
+    c = np.zeros((qmax, qmax))  # quadrature points
+    w = np.zeros((qmax, qmax))  # quadrature weights
 
-        k_values = np.arange(1, qmax+1)
-        ctemp, wtemp = self.lgwt(k_values, 0, self.T)  # Legendre-Gauss nodes and weights
-        c = np.concatenate([ctemp[::-1], np.zeros((qmax, qmax - len(k_values)))], axis=0)  # quadrature points
-        w = np.concatenate([wtemp[::-1], np.zeros((qmax, qmax - len(k_values)))], axis=0)  # quadrature weights
+    k_values = np.arange(1, qmax+1)
+    ctemp, wtemp = self.lgwt(k_values, 0, self.T)  # Legendre-Gauss nodes and weights
+    c = np.concatenate([ctemp[::-1], np.zeros((qmax, qmax - len(k_values)))], axis=0)  # quadrature points
+    w = np.concatenate([wtemp[::-1], np.zeros((qmax, qmax - len(k_values)))], axis=0)  # quadrature weights
 
-        return Mf, Mg, Q, c, w
-        
+    return Mf, Mg, Q, c, w
+    
     def u_breve_z_breve_solve(self,n, rho, x_t): 
         #approximate the solution of the PDE, return the value of u_breve(x_t) and z_breve(x_t), batchwisely
         #n: backward Euler samples needed
