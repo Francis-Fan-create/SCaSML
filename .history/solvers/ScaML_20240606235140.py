@@ -16,7 +16,7 @@ class ScaML(object):
         self.t0=equation.t0
         self.n_input=equation.n_input
         self.n_output=equation.n_output
-        net.eval()
+        net.eval
         self.net=net
 
 

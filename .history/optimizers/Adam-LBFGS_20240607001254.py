@@ -39,5 +39,5 @@ class Adam_LBFGS(object):
             self.model.compile(optimizer=self.LBFGS(),metrics=metrics,loss_weights=loss_weights)
             self.model.train(epochs=lbfgs_every, display_every=1, metrics=metrics)
             wandb.log({"LBFGS loss": self.model.loss, "LBFGS metrics": self.model.metrics})  # record loss and metrics
-        self.model.save(save_path)
+        
         return self.model

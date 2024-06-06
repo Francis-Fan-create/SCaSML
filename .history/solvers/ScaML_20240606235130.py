@@ -16,9 +16,8 @@ class ScaML(object):
         self.t0=equation.t0
         self.n_input=equation.n_input
         self.n_output=equation.n_output
-        net.eval()
         self.net=net
-
+        
 
     def approx_PDE_loss(self,x_t,u_hat,grad_u_hat_x,dt):
         # PDE loss by plug in, using disretization instead of autodiff to accelerate the inferrence

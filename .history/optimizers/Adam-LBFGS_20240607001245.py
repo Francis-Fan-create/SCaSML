@@ -27,7 +27,7 @@ class Adam_LBFGS(object):
         wandb.config.update({"LBFGS lr": lr, "LBFGS max_iter": max_iter, "LBFGS tolerance_change": tolerance_change, "LBFGS tolerance_grad": tolerance_grad})  # record hyperparameters
         return lbfgs
 
-    def train(self,loss_weights,save_path,cycle=40,adam_every=500,lbfgs_every=10,metrics=["l2 relative error","mse"]):
+    def train(self,loss_weights,save,cycle=40,adam_every=500,lbfgs_every=10,metrics=["l2 relative error","mse"]):
         #interleaved training of adam and lbfgs
         wandb.config.update({"loss_weights": loss_weights}) # record hyperparameters
         wandb.config.update({"cycle": cycle, "adam_every": adam_every, "lbfgs_every": lbfgs_every}) # record hyperparameters
@@ -39,5 +39,5 @@ class Adam_LBFGS(object):
             self.model.compile(optimizer=self.LBFGS(),metrics=metrics,loss_weights=loss_weights)
             self.model.train(epochs=lbfgs_every, display_every=1, metrics=metrics)
             wandb.log({"LBFGS loss": self.model.loss, "LBFGS metrics": self.model.metrics})  # record loss and metrics
-        self.model.save(save_path)
+
         return self.model
