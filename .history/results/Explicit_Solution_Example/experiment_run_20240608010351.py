@@ -9,7 +9,7 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..'))
 from equations.equations import Explict_Solution_Example
 from models.FNN import FNN
 from optimizers.Adam_LBFGS import Adam_LBFGS
-from tests.NormalSphere import NormalSphere
+from tests.NormalSphere import NormalShpere
 from solvers.MLP import MLP
 from solvers.ScaML import ScaML
 import numpy as np
@@ -56,7 +56,7 @@ solver3=ScaML(equation=equation,net=solver1) #ScaML object
 profiler = cProfile.Profile()
 profiler.enable()
 #run the test
-test=NormalSphere(equation,solver1,solver2,solver3)
+test=NormalShpere(equation,solver1,solver2,solver3)
 test.test("results/Explicit_Solution_Example")
 #stop the profiler
 profiler.disable()

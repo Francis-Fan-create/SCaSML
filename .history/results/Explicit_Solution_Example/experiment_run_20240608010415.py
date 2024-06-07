@@ -56,7 +56,7 @@ solver3=ScaML(equation=equation,net=solver1) #ScaML object
 profiler = cProfile.Profile()
 profiler.enable()
 #run the test
-test=NormalSphere(equation,solver1,solver2,solver3)
+test=NormalShpere(equation,solver1,solver2,solver3)
 test.test("results/Explicit_Solution_Example")
 #stop the profiler
 profiler.disable()

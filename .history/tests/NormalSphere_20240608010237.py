@@ -1,7 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import wandb
-class NormalSphere(object):
+class NormalShpere(object):
     '''Normal sphere test in high dimensions'''
     def __init__(self, equation, solver1,solver2,solver3):
         #initialize the normal spheres

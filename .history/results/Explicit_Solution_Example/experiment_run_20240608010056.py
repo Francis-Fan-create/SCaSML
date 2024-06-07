@@ -1,11 +1,3 @@
-# We will use this file to run the experiment for the Explicit_Solution_Example equation. We will train the model and then test it on the NormalSphere test. We will also profile the test to see the time taken by each solver to solve the equation. We will save the profiler results and upload them to wandb.
-import sys
-import os
-#add the parent directory to the path
-sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..'))
-
-
-# import the required libraries
 from equations.equations import Explict_Solution_Example
 from models.FNN import FNN
 from optimizers.Adam_LBFGS import Adam_LBFGS
@@ -17,7 +9,9 @@ import torch
 import wandb
 import cProfile
 import deepxde as dde
+import sys
 
+sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..'))
 #fix random seed for dde
 dde.config.set_random_seed(1234)
 #use pytorch backend
