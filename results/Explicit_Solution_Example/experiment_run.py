@@ -53,7 +53,8 @@ else:
     #initialize the optimizer
     optimizer=Adam_LBFGS(101,1,net,data)
     #train the model
-    trained_net=optimizer.train("results/Explicit_Solution_Example/model.pth",cycle=40,adam_every=500,lbfgs_every=10,metrics=["l2 relative error","mse"]).net
+    trained_model=optimizer.train("results/Explicit_Solution_Example/model.pth",cycle=40,adam_every=50,lbfgs_every=10,metrics=["l2 relative error","mse"])
+    trained_net=trained_model.net
 
 
 #initialize the normal sphere test

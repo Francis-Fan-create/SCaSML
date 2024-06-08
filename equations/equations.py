@@ -57,10 +57,10 @@ class Equation(object):
         if hasattr(self, 'terminal_constraint') and hasattr(self, 'geometry'):
             #use PointSetBC to enforce soft temrinal condition
             #  generate terminal point
-            x=self.geomx.uniform_points(1000)
-            t=self.T*np.ones((1000,1))
-            x_t=np.concatenate((x,t),axis=1)
-            tc=dde.PointSetBC(x_t,self.terminal_constraint(x_t),self.terminal_constraint) #need to be enforced on generate_data method
+            x=self.geomx.random_points(70) #do not use uniform !!!
+            t=self.T*np.ones((70,1))
+            my_data=np.concatenate((x,t),axis=1)
+            tc=dde.icbc.PointSetBC(my_data,self.terminal_constraint(my_data),0) #need to be enforced on generate_data method
             self.tc=tc
             return tc
         else:
@@ -82,9 +82,6 @@ class Explict_Solution_Example(Equation):
     '''Expamlpe of high dim PDE with exact solution'''
     def __init__(self, n_input, n_output=1):
         super().__init__(n_input, n_output)
-        self.geometry() #initialize the geometry
-        self.terminal_condition() #initialize the terminal condition
-        self.boundary_condition() #initialize the boundary condition
     def PDE_loss(self, x_t,u,z):
         du_t = dde.grad.jacobian(u,x_t,i=0,j=self.n_input-1)
         laplacian=0
@@ -109,8 +106,8 @@ class Explict_Solution_Example(Equation):
         g_loss.append(residual)
         return g_loss
     def terminal_constraint(self, x_t):
-        result=1- 1 / (1 + np.exp(x_t[:,-1] + np.sum(x_t[:,:self.n_input],axis=1)))
-        return result
+        result= np.exp(x_t[:,-1] + np.sum(x_t[:,:self.n_input],axis=1) / (1 + np.exp(x_t[:,-1] + np.sum(x_t[:,:self.n_input],axis=1))))
+        return result 
 
     def mu(self, x_t=0):
         return 0
@@ -137,15 +134,17 @@ class Explict_Solution_Example(Equation):
         self.T=T
         spacedomain = dde.geometry.Hypercube([-0.5]*(self.n_input-1), [0.5]*(self.n_input-1)) 
         timedomain = dde.geometry.TimeDomain(t0, T) 
+        geom = dde.geometry.GeometryXTime(spacedomain, timedomain) #combine both domains
         self.geomx=spacedomain
         self.geomt=timedomain
-        geom = dde.geometry.GeometryXTime(spacedomain, timedomain) #combine both domains
-        self.geom=geom
         return geom
     
-    def generate_data(self, num_domain=1000):
+    def generate_data(self, num_domain=100):
+        geom=self.geometry()
+        self.terminal_condition() #generate terminal condition
+        self.boundary_condition()  #generate boundary condition
         data = dde.data.TimePDE( #time dependent PDE
-                                self.geometry(), #geometry of the boundary condition and terminal condition
+                                geom, #geometry of the boundary condition and terminal condition
                                 self.gPDE_loss, #g_pde residual
                                 [self.tc], #additional conditions other than PDE loss
                                 num_domain=num_domain, #sample how many points in the domain
