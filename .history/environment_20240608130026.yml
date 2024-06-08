@@ -1,0 +1,9 @@
+name: ScaML-Experiment
+dependencies:
+- python=3.8.15
+- pytorch
+- torchvision
+- tensorboard
+- tqdm
+- gitpython
+- pyyaml

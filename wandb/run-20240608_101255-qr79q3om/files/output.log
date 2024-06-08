@@ -1,0 +1,6 @@
+Traceback (most recent call last):
+  File "c:\Users\86189\ScaML-Experiment\results\Explicit_Solution_Example\experiment_run.py", line 45, in <module>
+    net=FNN(layers,equation)
+  File "c:\Users\86189\ScaML-Experiment\results\Explicit_Solution_Example\..\..\models\FNN.py", line 11, in __init__
+    self.net=dde.maps.pytorch.FNN(layers)
+TypeError: FNN.__init__() missing 2 required positional arguments: 'activation' and 'kernel_initializer'
