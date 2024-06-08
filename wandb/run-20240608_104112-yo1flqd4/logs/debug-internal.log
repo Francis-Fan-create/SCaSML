@@ -1,0 +1,193 @@
+2024-06-08 10:41:12,169 INFO    StreamThr :9732 [internal.py:wandb_internal():86] W&B internal server running at pid: 9732, started at: 2024-06-08 10:41:12.169024
+2024-06-08 10:41:12,169 DEBUG   HandlerThread:9732 [handler.py:handle_request():146] handle_request: status
+2024-06-08 10:41:12,172 INFO    WriterThread:9732 [datastore.py:open_for_write():87] open: C:\Users\86189\ScaML-Experiment\wandb\run-20240608_104112-yo1flqd4\run-yo1flqd4.wandb
+2024-06-08 10:41:12,174 DEBUG   SenderThread:9732 [sender.py:send():379] send: header
+2024-06-08 10:41:12,211 DEBUG   SenderThread:9732 [sender.py:send():379] send: run
+2024-06-08 10:41:12,996 INFO    SenderThread:9732 [dir_watcher.py:__init__():211] watching files in: C:\Users\86189\ScaML-Experiment\wandb\run-20240608_104112-yo1flqd4\files
+2024-06-08 10:41:12,996 INFO    SenderThread:9732 [sender.py:_start_run_threads():1124] run started: yo1flqd4 with start time 1717814472.169024
+2024-06-08 10:41:12,996 DEBUG   HandlerThread:9732 [handler.py:handle_request():146] handle_request: check_version
+2024-06-08 10:41:12,996 DEBUG   SenderThread:9732 [sender.py:send_request():406] send_request: check_version
+2024-06-08 10:41:13,202 DEBUG   HandlerThread:9732 [handler.py:handle_request():146] handle_request: run_start
+2024-06-08 10:41:13,211 DEBUG   HandlerThread:9732 [system_info.py:__init__():26] System info init
+2024-06-08 10:41:13,211 DEBUG   HandlerThread:9732 [system_info.py:__init__():41] System info init done
+2024-06-08 10:41:13,211 INFO    HandlerThread:9732 [system_monitor.py:start():194] Starting system monitor
+2024-06-08 10:41:13,211 INFO    SystemMonitor:9732 [system_monitor.py:_start():158] Starting system asset monitoring threads
+2024-06-08 10:41:13,211 INFO    HandlerThread:9732 [system_monitor.py:probe():214] Collecting system info
+2024-06-08 10:41:13,220 DEBUG   HandlerThread:9732 [system_info.py:probe():150] Probing system
+2024-06-08 10:41:13,220 INFO    SystemMonitor:9732 [interfaces.py:start():190] Started cpu monitoring
+2024-06-08 10:41:13,220 INFO    SystemMonitor:9732 [interfaces.py:start():190] Started disk monitoring
+2024-06-08 10:41:13,235 INFO    SystemMonitor:9732 [interfaces.py:start():190] Started memory monitoring
+2024-06-08 10:41:13,235 DEBUG   HandlerThread:9732 [system_info.py:_probe_git():135] Probing git
+2024-06-08 10:41:13,235 INFO    SystemMonitor:9732 [interfaces.py:start():190] Started network monitoring
+2024-06-08 10:41:13,298 DEBUG   HandlerThread:9732 [system_info.py:_probe_git():143] Probing git done
+2024-06-08 10:41:13,298 DEBUG   HandlerThread:9732 [system_info.py:probe():198] Probing system done
+2024-06-08 10:41:13,298 DEBUG   HandlerThread:9732 [system_monitor.py:probe():223] {'os': 'Windows-10-10.0.22631-SP0', 'python': '3.10.8', 'heartbeatAt': '2024-06-08T02:41:13.220556', 'startedAt': '2024-06-08T02:41:12.154456', 'docker': None, 'cuda': None, 'args': (), 'state': 'running', 'program': 'c:\\Users\\86189\\ScaML-Experiment\\results\\Explicit_Solution_Example\\experiment_run.py', 'codePathLocal': 'results\\Explicit_Solution_Example\\experiment_run.py', 'codePath': 'results\\Explicit_Solution_Example\\experiment_run.py', 'git': {'remote': 'https://github.com/Francis-Fan-create/ScaML-Experiment.git', 'commit': '9602386b1099a2ead49a2112529ed5f69116b2ca'}, 'email': '145922867+Francis-Fan-create@users.noreply.github.com', 'root': 'C:/Users/86189/ScaML-Experiment', 'host': 'Frank_Lin', 'username': '86189', 'executable': 'C:\\Users\\86189\\Anaconda3\\python.exe', 'cpu_count': 12, 'cpu_count_logical': 16, 'cpu_freq': {'current': 2500.0, 'min': 0.0, 'max': 2500.0}, 'cpu_freq_per_core': [{'current': 2500.0, 'min': 0.0, 'max': 2500.0}], 'disk': {'/': {'total': 475.81151962280273, 'used': 219.52863693237305}}, 'memory': {'total': 15.717826843261719}}
+2024-06-08 10:41:13,298 INFO    HandlerThread:9732 [system_monitor.py:probe():224] Finished collecting system info
+2024-06-08 10:41:13,298 INFO    HandlerThread:9732 [system_monitor.py:probe():227] Publishing system info
+2024-06-08 10:41:13,298 DEBUG   HandlerThread:9732 [system_info.py:_save_conda():207] Saving list of conda packages installed into the current environment
+2024-06-08 10:41:14,003 INFO    Thread-16 :9732 [dir_watcher.py:_on_file_created():271] file/dir created: C:\Users\86189\ScaML-Experiment\wandb\run-20240608_104112-yo1flqd4\files\conda-environment.yaml
+2024-06-08 10:41:27,113 INFO    Thread-16 :9732 [dir_watcher.py:_on_file_modified():288] file/dir modified: C:\Users\86189\ScaML-Experiment\wandb\run-20240608_104112-yo1flqd4\files\conda-environment.yaml
+2024-06-08 10:41:27,161 DEBUG   HandlerThread:9732 [system_info.py:_save_conda():222] Saving conda packages done
+2024-06-08 10:41:27,161 INFO    HandlerThread:9732 [system_monitor.py:probe():229] Finished publishing system info
+2024-06-08 10:41:27,176 DEBUG   HandlerThread:9732 [handler.py:handle_request():146] handle_request: status_report
+2024-06-08 10:41:27,176 DEBUG   HandlerThread:9732 [handler.py:handle_request():146] handle_request: keepalive
+2024-06-08 10:41:27,176 DEBUG   HandlerThread:9732 [handler.py:handle_request():146] handle_request: status_report
+2024-06-08 10:41:27,176 DEBUG   HandlerThread:9732 [handler.py:handle_request():146] handle_request: keepalive
+2024-06-08 10:41:27,176 DEBUG   SenderThread:9732 [sender.py:send():379] send: files
+2024-06-08 10:41:27,176 INFO    SenderThread:9732 [sender.py:_save_file():1390] saving file wandb-metadata.json with policy now
+2024-06-08 10:41:27,577 DEBUG   HandlerThread:9732 [handler.py:handle_request():146] handle_request: python_packages
+2024-06-08 10:41:27,578 DEBUG   HandlerThread:9732 [handler.py:handle_request():146] handle_request: stop_status
+2024-06-08 10:41:27,578 DEBUG   HandlerThread:9732 [handler.py:handle_request():146] handle_request: internal_messages
+2024-06-08 10:41:27,578 DEBUG   SenderThread:9732 [sender.py:send_request():406] send_request: python_packages
+2024-06-08 10:41:27,578 DEBUG   SenderThread:9732 [sender.py:send_request():406] send_request: stop_status
+2024-06-08 10:41:27,578 DEBUG   HandlerThread:9732 [handler.py:handle_request():146] handle_request: status_report
+2024-06-08 10:41:28,123 INFO    Thread-16 :9732 [dir_watcher.py:_on_file_created():271] file/dir created: C:\Users\86189\ScaML-Experiment\wandb\run-20240608_104112-yo1flqd4\files\wandb-metadata.json
+2024-06-08 10:41:28,123 INFO    Thread-16 :9732 [dir_watcher.py:_on_file_created():271] file/dir created: C:\Users\86189\ScaML-Experiment\wandb\run-20240608_104112-yo1flqd4\files\requirements.txt
+2024-06-08 10:41:28,130 DEBUG   SenderThread:9732 [sender.py:send():379] send: telemetry
+2024-06-08 10:41:28,130 DEBUG   SenderThread:9732 [sender.py:send():379] send: config
+2024-06-08 10:41:28,130 DEBUG   SenderThread:9732 [sender.py:send():379] send: exit
+2024-06-08 10:41:28,130 INFO    SenderThread:9732 [sender.py:send_exit():586] handling exit code: 1
+2024-06-08 10:41:28,130 INFO    SenderThread:9732 [sender.py:send_exit():588] handling runtime: 14
+2024-06-08 10:41:28,130 INFO    SenderThread:9732 [sender.py:_save_file():1390] saving file wandb-summary.json with policy end
+2024-06-08 10:41:28,130 INFO    SenderThread:9732 [sender.py:send_exit():594] send defer
+2024-06-08 10:41:28,130 DEBUG   HandlerThread:9732 [handler.py:handle_request():146] handle_request: defer
+2024-06-08 10:41:28,130 INFO    HandlerThread:9732 [handler.py:handle_request_defer():172] handle defer: 0
+2024-06-08 10:41:28,135 DEBUG   SenderThread:9732 [sender.py:send_request():406] send_request: defer
+2024-06-08 10:41:28,136 INFO    SenderThread:9732 [sender.py:send_request_defer():610] handle sender defer: 0
+2024-06-08 10:41:28,136 INFO    SenderThread:9732 [sender.py:transition_state():614] send defer: 1
+2024-06-08 10:41:28,136 DEBUG   HandlerThread:9732 [handler.py:handle_request():146] handle_request: defer
+2024-06-08 10:41:28,136 INFO    HandlerThread:9732 [handler.py:handle_request_defer():172] handle defer: 1
+2024-06-08 10:41:28,136 DEBUG   SenderThread:9732 [sender.py:send_request():406] send_request: defer
+2024-06-08 10:41:28,136 INFO    SenderThread:9732 [sender.py:send_request_defer():610] handle sender defer: 1
+2024-06-08 10:41:28,136 INFO    SenderThread:9732 [sender.py:transition_state():614] send defer: 2
+2024-06-08 10:41:28,136 DEBUG   HandlerThread:9732 [handler.py:handle_request():146] handle_request: defer
+2024-06-08 10:41:28,136 INFO    HandlerThread:9732 [handler.py:handle_request_defer():172] handle defer: 2
+2024-06-08 10:41:28,136 INFO    HandlerThread:9732 [system_monitor.py:finish():203] Stopping system monitor
+2024-06-08 10:41:28,137 INFO    HandlerThread:9732 [interfaces.py:finish():202] Joined cpu monitor
+2024-06-08 10:41:28,137 INFO    HandlerThread:9732 [interfaces.py:finish():202] Joined disk monitor
+2024-06-08 10:41:28,137 INFO    HandlerThread:9732 [interfaces.py:finish():202] Joined memory monitor
+2024-06-08 10:41:28,137 DEBUG   SystemMonitor:9732 [system_monitor.py:_start():172] Starting system metrics aggregation loop
+2024-06-08 10:41:28,137 DEBUG   SystemMonitor:9732 [system_monitor.py:_start():179] Finished system metrics aggregation loop
+2024-06-08 10:41:28,137 DEBUG   SystemMonitor:9732 [system_monitor.py:_start():183] Publishing last batch of metrics
+2024-06-08 10:41:28,137 INFO    HandlerThread:9732 [interfaces.py:finish():202] Joined network monitor
+2024-06-08 10:41:28,137 DEBUG   SenderThread:9732 [sender.py:send_request():406] send_request: defer
+2024-06-08 10:41:28,139 INFO    SenderThread:9732 [sender.py:send_request_defer():610] handle sender defer: 2
+2024-06-08 10:41:28,139 INFO    SenderThread:9732 [sender.py:transition_state():614] send defer: 3
+2024-06-08 10:41:28,139 DEBUG   SenderThread:9732 [sender.py:send():379] send: stats
+2024-06-08 10:41:28,139 DEBUG   HandlerThread:9732 [handler.py:handle_request():146] handle_request: defer
+2024-06-08 10:41:28,139 INFO    HandlerThread:9732 [handler.py:handle_request_defer():172] handle defer: 3
+2024-06-08 10:41:28,139 DEBUG   SenderThread:9732 [sender.py:send_request():406] send_request: defer
+2024-06-08 10:41:28,139 INFO    SenderThread:9732 [sender.py:send_request_defer():610] handle sender defer: 3
+2024-06-08 10:41:28,139 INFO    SenderThread:9732 [sender.py:transition_state():614] send defer: 4
+2024-06-08 10:41:28,139 DEBUG   HandlerThread:9732 [handler.py:handle_request():146] handle_request: defer
+2024-06-08 10:41:28,139 INFO    HandlerThread:9732 [handler.py:handle_request_defer():172] handle defer: 4
+2024-06-08 10:41:28,140 DEBUG   SenderThread:9732 [sender.py:send_request():406] send_request: defer
+2024-06-08 10:41:28,140 INFO    SenderThread:9732 [sender.py:send_request_defer():610] handle sender defer: 4
+2024-06-08 10:41:28,140 INFO    SenderThread:9732 [sender.py:transition_state():614] send defer: 5
+2024-06-08 10:41:28,140 DEBUG   HandlerThread:9732 [handler.py:handle_request():146] handle_request: defer
+2024-06-08 10:41:28,140 INFO    HandlerThread:9732 [handler.py:handle_request_defer():172] handle defer: 5
+2024-06-08 10:41:28,140 DEBUG   SenderThread:9732 [sender.py:send():379] send: summary
+2024-06-08 10:41:28,140 INFO    SenderThread:9732 [sender.py:_save_file():1390] saving file wandb-summary.json with policy end
+2024-06-08 10:41:28,140 DEBUG   SenderThread:9732 [sender.py:send_request():406] send_request: defer
+2024-06-08 10:41:28,140 INFO    SenderThread:9732 [sender.py:send_request_defer():610] handle sender defer: 5
+2024-06-08 10:41:28,140 INFO    SenderThread:9732 [sender.py:transition_state():614] send defer: 6
+2024-06-08 10:41:28,140 DEBUG   HandlerThread:9732 [handler.py:handle_request():146] handle_request: defer
+2024-06-08 10:41:28,140 INFO    HandlerThread:9732 [handler.py:handle_request_defer():172] handle defer: 6
+2024-06-08 10:41:28,140 DEBUG   SenderThread:9732 [sender.py:send_request():406] send_request: defer
+2024-06-08 10:41:28,140 INFO    SenderThread:9732 [sender.py:send_request_defer():610] handle sender defer: 6
+2024-06-08 10:41:28,140 DEBUG   HandlerThread:9732 [handler.py:handle_request():146] handle_request: status_report
+2024-06-08 10:41:28,380 INFO    SenderThread:9732 [sender.py:transition_state():614] send defer: 7
+2024-06-08 10:41:28,380 DEBUG   HandlerThread:9732 [handler.py:handle_request():146] handle_request: defer
+2024-06-08 10:41:28,380 INFO    HandlerThread:9732 [handler.py:handle_request_defer():172] handle defer: 7
+2024-06-08 10:41:28,380 DEBUG   SenderThread:9732 [sender.py:send_request():406] send_request: defer
+2024-06-08 10:41:28,380 INFO    SenderThread:9732 [sender.py:send_request_defer():610] handle sender defer: 7
+2024-06-08 10:41:28,615 INFO    wandb-upload_0:9732 [upload_job.py:push():131] Uploaded file C:\Users\86189\AppData\Local\Temp\tmp5na3q1oiwandb\q6jvaehk-wandb-metadata.json
+2024-06-08 10:41:28,933 DEBUG   HandlerThread:9732 [handler.py:handle_request():146] handle_request: poll_exit
+2024-06-08 10:41:29,128 INFO    Thread-16 :9732 [dir_watcher.py:_on_file_modified():288] file/dir modified: C:\Users\86189\ScaML-Experiment\wandb\run-20240608_104112-yo1flqd4\files\config.yaml
+2024-06-08 10:41:29,128 INFO    Thread-16 :9732 [dir_watcher.py:_on_file_created():271] file/dir created: C:\Users\86189\ScaML-Experiment\wandb\run-20240608_104112-yo1flqd4\files\output.log
+2024-06-08 10:41:29,128 INFO    Thread-16 :9732 [dir_watcher.py:_on_file_created():271] file/dir created: C:\Users\86189\ScaML-Experiment\wandb\run-20240608_104112-yo1flqd4\files\wandb-summary.json
+2024-06-08 10:41:30,143 INFO    SenderThread:9732 [sender.py:transition_state():614] send defer: 8
+2024-06-08 10:41:30,144 DEBUG   SenderThread:9732 [sender.py:send_request():406] send_request: poll_exit
+2024-06-08 10:41:30,144 DEBUG   HandlerThread:9732 [handler.py:handle_request():146] handle_request: defer
+2024-06-08 10:41:30,144 INFO    HandlerThread:9732 [handler.py:handle_request_defer():172] handle defer: 8
+2024-06-08 10:41:30,144 DEBUG   SenderThread:9732 [sender.py:send_request():406] send_request: defer
+2024-06-08 10:41:30,144 INFO    SenderThread:9732 [sender.py:send_request_defer():610] handle sender defer: 8
+2024-06-08 10:41:30,144 INFO    SenderThread:9732 [job_builder.py:build():318] Attempting to build job artifact
+2024-06-08 10:41:30,145 INFO    SenderThread:9732 [job_builder.py:_get_source_type():455] is repo sourced job
+2024-06-08 10:41:30,146 INFO    Thread-16 :9732 [dir_watcher.py:_on_file_modified():288] file/dir modified: C:\Users\86189\ScaML-Experiment\wandb\run-20240608_104112-yo1flqd4\files\output.log
+2024-06-08 10:41:30,178 INFO    SenderThread:9732 [job_builder.py:build():431] adding wandb-job metadata file
+2024-06-08 10:41:30,194 INFO    SenderThread:9732 [sender.py:transition_state():614] send defer: 9
+2024-06-08 10:41:30,194 DEBUG   HandlerThread:9732 [handler.py:handle_request():146] handle_request: defer
+2024-06-08 10:41:30,194 INFO    HandlerThread:9732 [handler.py:handle_request_defer():172] handle defer: 9
+2024-06-08 10:41:30,194 DEBUG   SenderThread:9732 [sender.py:send():379] send: artifact
+2024-06-08 10:41:30,939 DEBUG   HandlerThread:9732 [handler.py:handle_request():146] handle_request: poll_exit
+2024-06-08 10:41:31,335 INFO    SenderThread:9732 [sender.py:send_artifact():1468] sent artifact job-https___github.com_Francis-Fan-create_ScaML-Experiment.git_results_Explicit_Solution_Example_experiment_run.py - {'id': 'QXJ0aWZhY3Q6ODY0MzM2Mjg0', 'state': 'COMMITTED', 'artifactSequence': {'id': 'QXJ0aWZhY3RDb2xsZWN0aW9uOjE4MzUwOTI4MA==', 'latestArtifact': {'id': 'QXJ0aWZhY3Q6ODY0MzYwMTU2', 'versionIndex': 4}}}
+2024-06-08 10:41:31,335 DEBUG   SenderThread:9732 [sender.py:send_request():406] send_request: defer
+2024-06-08 10:41:31,335 INFO    SenderThread:9732 [sender.py:send_request_defer():610] handle sender defer: 9
+2024-06-08 10:41:31,335 INFO    SenderThread:9732 [dir_watcher.py:finish():358] shutting down directory watcher
+2024-06-08 10:41:32,161 INFO    SenderThread:9732 [dir_watcher.py:finish():388] scan: C:\Users\86189\ScaML-Experiment\wandb\run-20240608_104112-yo1flqd4\files
+2024-06-08 10:41:32,161 INFO    SenderThread:9732 [dir_watcher.py:finish():402] scan save: C:\Users\86189\ScaML-Experiment\wandb\run-20240608_104112-yo1flqd4\files\conda-environment.yaml conda-environment.yaml
+2024-06-08 10:41:32,161 INFO    SenderThread:9732 [dir_watcher.py:finish():402] scan save: C:\Users\86189\ScaML-Experiment\wandb\run-20240608_104112-yo1flqd4\files\config.yaml config.yaml
+2024-06-08 10:41:32,161 INFO    SenderThread:9732 [dir_watcher.py:finish():402] scan save: C:\Users\86189\ScaML-Experiment\wandb\run-20240608_104112-yo1flqd4\files\output.log output.log
+2024-06-08 10:41:32,161 INFO    SenderThread:9732 [dir_watcher.py:finish():402] scan save: C:\Users\86189\ScaML-Experiment\wandb\run-20240608_104112-yo1flqd4\files\requirements.txt requirements.txt
+2024-06-08 10:41:32,164 INFO    SenderThread:9732 [dir_watcher.py:finish():402] scan save: C:\Users\86189\ScaML-Experiment\wandb\run-20240608_104112-yo1flqd4\files\wandb-metadata.json wandb-metadata.json
+2024-06-08 10:41:32,164 INFO    SenderThread:9732 [dir_watcher.py:finish():402] scan save: C:\Users\86189\ScaML-Experiment\wandb\run-20240608_104112-yo1flqd4\files\wandb-summary.json wandb-summary.json
+2024-06-08 10:41:32,167 INFO    SenderThread:9732 [sender.py:transition_state():614] send defer: 10
+2024-06-08 10:41:32,167 DEBUG   SenderThread:9732 [sender.py:send_request():406] send_request: poll_exit
+2024-06-08 10:41:32,167 DEBUG   HandlerThread:9732 [handler.py:handle_request():146] handle_request: defer
+2024-06-08 10:41:32,167 INFO    HandlerThread:9732 [handler.py:handle_request_defer():172] handle defer: 10
+2024-06-08 10:41:32,167 DEBUG   SenderThread:9732 [sender.py:send_request():406] send_request: defer
+2024-06-08 10:41:32,167 INFO    SenderThread:9732 [sender.py:send_request_defer():610] handle sender defer: 10
+2024-06-08 10:41:32,167 INFO    SenderThread:9732 [file_pusher.py:finish():172] shutting down file pusher
+2024-06-08 10:41:32,787 INFO    wandb-upload_1:9732 [upload_job.py:push():131] Uploaded file C:\Users\86189\ScaML-Experiment\wandb\run-20240608_104112-yo1flqd4\files\config.yaml
+2024-06-08 10:41:32,956 DEBUG   HandlerThread:9732 [handler.py:handle_request():146] handle_request: poll_exit
+2024-06-08 10:41:32,957 DEBUG   SenderThread:9732 [sender.py:send_request():406] send_request: poll_exit
+2024-06-08 10:41:33,579 INFO    wandb-upload_0:9732 [upload_job.py:push():131] Uploaded file C:\Users\86189\ScaML-Experiment\wandb\run-20240608_104112-yo1flqd4\files\conda-environment.yaml
+2024-06-08 10:41:33,680 INFO    wandb-upload_2:9732 [upload_job.py:push():131] Uploaded file C:\Users\86189\ScaML-Experiment\wandb\run-20240608_104112-yo1flqd4\files\output.log
+2024-06-08 10:41:33,692 INFO    wandb-upload_3:9732 [upload_job.py:push():131] Uploaded file C:\Users\86189\ScaML-Experiment\wandb\run-20240608_104112-yo1flqd4\files\requirements.txt
+2024-06-08 10:41:33,736 INFO    wandb-upload_4:9732 [upload_job.py:push():131] Uploaded file C:\Users\86189\ScaML-Experiment\wandb\run-20240608_104112-yo1flqd4\files\wandb-summary.json
+2024-06-08 10:41:33,944 INFO    Thread-15 (_thread_body):9732 [sender.py:transition_state():614] send defer: 11
+2024-06-08 10:41:33,945 DEBUG   HandlerThread:9732 [handler.py:handle_request():146] handle_request: defer
+2024-06-08 10:41:33,945 INFO    HandlerThread:9732 [handler.py:handle_request_defer():172] handle defer: 11
+2024-06-08 10:41:33,946 DEBUG   SenderThread:9732 [sender.py:send_request():406] send_request: defer
+2024-06-08 10:41:33,946 INFO    SenderThread:9732 [sender.py:send_request_defer():610] handle sender defer: 11
+2024-06-08 10:41:33,946 INFO    SenderThread:9732 [file_pusher.py:join():178] waiting for file pusher
+2024-06-08 10:41:33,946 INFO    SenderThread:9732 [sender.py:transition_state():614] send defer: 12
+2024-06-08 10:41:33,946 DEBUG   HandlerThread:9732 [handler.py:handle_request():146] handle_request: defer
+2024-06-08 10:41:33,946 INFO    HandlerThread:9732 [handler.py:handle_request_defer():172] handle defer: 12
+2024-06-08 10:41:33,946 DEBUG   SenderThread:9732 [sender.py:send_request():406] send_request: defer
+2024-06-08 10:41:33,946 INFO    SenderThread:9732 [sender.py:send_request_defer():610] handle sender defer: 12
+2024-06-08 10:41:33,946 INFO    SenderThread:9732 [file_stream.py:finish():614] file stream finish called
+2024-06-08 10:41:33,964 DEBUG   HandlerThread:9732 [handler.py:handle_request():146] handle_request: poll_exit
+2024-06-08 10:41:34,161 INFO    SenderThread:9732 [file_stream.py:finish():618] file stream finish is done
+2024-06-08 10:41:34,161 INFO    SenderThread:9732 [sender.py:transition_state():614] send defer: 13
+2024-06-08 10:41:34,161 DEBUG   SenderThread:9732 [sender.py:send_request():406] send_request: poll_exit
+2024-06-08 10:41:34,161 DEBUG   HandlerThread:9732 [handler.py:handle_request():146] handle_request: defer
+2024-06-08 10:41:34,161 INFO    HandlerThread:9732 [handler.py:handle_request_defer():172] handle defer: 13
+2024-06-08 10:41:34,161 DEBUG   SenderThread:9732 [sender.py:send_request():406] send_request: defer
+2024-06-08 10:41:34,161 INFO    SenderThread:9732 [sender.py:send_request_defer():610] handle sender defer: 13
+2024-06-08 10:41:34,161 INFO    SenderThread:9732 [sender.py:transition_state():614] send defer: 14
+2024-06-08 10:41:34,161 DEBUG   HandlerThread:9732 [handler.py:handle_request():146] handle_request: defer
+2024-06-08 10:41:34,161 INFO    HandlerThread:9732 [handler.py:handle_request_defer():172] handle defer: 14
+2024-06-08 10:41:34,161 DEBUG   SenderThread:9732 [sender.py:send():379] send: final
+2024-06-08 10:41:34,161 DEBUG   SenderThread:9732 [sender.py:send():379] send: footer
+2024-06-08 10:41:34,161 DEBUG   SenderThread:9732 [sender.py:send_request():406] send_request: defer
+2024-06-08 10:41:34,161 INFO    SenderThread:9732 [sender.py:send_request_defer():610] handle sender defer: 14
+2024-06-08 10:41:34,161 DEBUG   HandlerThread:9732 [handler.py:handle_request():146] handle_request: poll_exit
+2024-06-08 10:41:34,161 DEBUG   SenderThread:9732 [sender.py:send_request():406] send_request: poll_exit
+2024-06-08 10:41:34,161 DEBUG   HandlerThread:9732 [handler.py:handle_request():146] handle_request: poll_exit
+2024-06-08 10:41:34,161 DEBUG   HandlerThread:9732 [handler.py:handle_request():146] handle_request: server_info
+2024-06-08 10:41:34,161 DEBUG   HandlerThread:9732 [handler.py:handle_request():146] handle_request: get_summary
+2024-06-08 10:41:34,161 DEBUG   HandlerThread:9732 [handler.py:handle_request():146] handle_request: sampled_history
+2024-06-08 10:41:34,161 DEBUG   HandlerThread:9732 [handler.py:handle_request():146] handle_request: internal_messages
+2024-06-08 10:41:34,168 DEBUG   SenderThread:9732 [sender.py:send_request():406] send_request: poll_exit
+2024-06-08 10:41:34,168 DEBUG   SenderThread:9732 [sender.py:send_request():406] send_request: server_info
+2024-06-08 10:41:34,374 INFO    MainThread:9732 [wandb_run.py:_footer_history_summary_info():3920] rendering history
+2024-06-08 10:41:34,374 INFO    MainThread:9732 [wandb_run.py:_footer_history_summary_info():3952] rendering summary
+2024-06-08 10:41:34,374 INFO    MainThread:9732 [wandb_run.py:_footer_sync_info():3879] logging synced files
+2024-06-08 10:41:34,374 DEBUG   HandlerThread:9732 [handler.py:handle_request():146] handle_request: shutdown
+2024-06-08 10:41:34,374 INFO    HandlerThread:9732 [handler.py:finish():866] shutting down handler
+2024-06-08 10:41:35,174 INFO    WriterThread:9732 [datastore.py:close():296] close: C:\Users\86189\ScaML-Experiment\wandb\run-20240608_104112-yo1flqd4\run-yo1flqd4.wandb
+2024-06-08 10:41:35,385 INFO    SenderThread:9732 [sender.py:finish():1546] shutting down sender
+2024-06-08 10:41:35,386 INFO    SenderThread:9732 [file_pusher.py:finish():172] shutting down file pusher
+2024-06-08 10:41:35,387 INFO    SenderThread:9732 [file_pusher.py:join():178] waiting for file pusher

@@ -1,0 +1,6 @@
+Traceback (most recent call last):
+  File "c:\Users\86189\ScaML-Experiment\results\Explicit_Solution_Example\experiment_run.py", line 56, in <module>
+    trained_net=optimizer.train("results/Explicit_Solution_Example/model.pth",cycle=40,adam_every=500,lbfgs_every=10,metrics=["l2 relative error","mse"]).net
+  File "c:\Users\86189\ScaML-Experiment\results\Explicit_Solution_Example\..\..\optimizers\Adam_LBFGS.py", line 33, in train
+    loss_weights=[1e-3]*range(self.n_input)+[1]+[1e-2]
+TypeError: can't multiply sequence by non-int of type 'range'

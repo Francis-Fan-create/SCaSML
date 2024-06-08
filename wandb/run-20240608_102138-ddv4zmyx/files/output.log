@@ -1,0 +1,6 @@
+Traceback (most recent call last):
+  File "c:\Users\86189\ScaML-Experiment\results\Explicit_Solution_Example\experiment_run.py", line 49, in <module>
+    trained_model=optimizer.train("results/Explicit_Solution_Example/model.pth",cycle=40,adam_every=500,lbfgs_every=10,metrics=["l2 relative error","mse"])
+  File "c:\Users\86189\ScaML-Experiment\results\Explicit_Solution_Example\..\..\optimizers\Adam_LBFGS.py", line 35, in train
+    loss_weights=torch.softmax(torch.tensor(self.model.train_state.loss_train)).detach().tolist()                           #use self adaptive loss weights
+RuntimeError: Could not infer dtype of NoneType

@@ -1,0 +1,51 @@
+Compiling model...
+'compile' took 0.000697 s
+Training model...
+Step      Train loss                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      Test loss                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       Test metric
+0         [2.64e-11, 2.82e-11, 5.45e-11, 5.45e-11, 7.17e-11, 2.50e-10, 4.91e-11, 3.71e-11, 7.32e-11, 4.34e-11, 2.97e-11, 8.17e-11, 4.52e-11, 2.12e-10, 5.69e-11, 3.03e-11, 1.40e-10, 2.94e-11, 2.40e-11, 4.74e-11, 1.42e-10, 5.92e-11, 6.35e-11, 2.57e-10, 6.36e-11, 3.76e-11, 2.93e-11, 3.52e-11, 1.23e-10, 1.46e-10, 6.98e-11, 9.37e-11, 8.05e-11, 1.44e-10, 1.04e-10, 1.54e-10, 2.43e-11, 5.79e-11, 6.40e-11, 1.05e-10, 2.02e-10, 8.03e-11, 1.00e-11, 1.39e-10, 3.69e-11, 2.79e-11, 3.65e-11, 8.59e-11, 4.48e-11, 5.64e-11, 5.22e-11, 1.49e-10, 2.32e-11, 7.90e-11, 1.58e-10, 1.69e-10, 2.85e-11, 8.84e-11, 9.76e-11, 1.24e-10, 2.01e-10, 2.76e-11, 2.83e-11, 2.80e-11, 7.58e-11, 9.66e-11, 1.11e-10, 3.73e-11, 8.16e-11, 1.52e-10, 4.99e-11, 3.21e-11, 4.61e-11, 3.39e-11, 1.52e-10, 2.39e-11, 5.03e-11, 8.26e-11, 6.42e-11, 2.71e-11, 5.25e-11, 5.72e-11, 4.79e-11, 1.15e-10, 2.84e-11, 5.80e-11, 1.46e-10, 6.82e-11, 3.68e-11, 8.30e-11, 3.94e-11, 5.56e-11, 6.27e-11, 4.08e-11, 9.30e-11, 2.24e-11, 8.75e-11, 1.60e-10, 1.00e-10, 4.39e-11, 7.03e-02, nan]         [2.64e-11, 2.82e-11, 5.45e-11, 5.45e-11, 7.17e-11, 2.50e-10, 4.91e-11, 3.71e-11, 7.32e-11, 4.34e-11, 2.97e-11, 8.17e-11, 4.52e-11, 2.12e-10, 5.69e-11, 3.03e-11, 1.40e-10, 2.94e-11, 2.40e-11, 4.74e-11, 1.42e-10, 5.92e-11, 6.35e-11, 2.57e-10, 6.36e-11, 3.76e-11, 2.93e-11, 3.52e-11, 1.23e-10, 1.46e-10, 6.98e-11, 9.37e-11, 8.05e-11, 1.44e-10, 1.04e-10, 1.54e-10, 2.43e-11, 5.79e-11, 6.40e-11, 1.05e-10, 2.02e-10, 8.03e-11, 1.00e-11, 1.39e-10, 3.69e-11, 2.79e-11, 3.65e-11, 8.59e-11, 4.48e-11, 5.64e-11, 5.22e-11, 1.49e-10, 2.32e-11, 7.90e-11, 1.58e-10, 1.69e-10, 2.85e-11, 8.84e-11, 9.76e-11, 1.24e-10, 2.01e-10, 2.76e-11, 2.83e-11, 2.80e-11, 7.58e-11, 9.66e-11, 1.11e-10, 3.73e-11, 8.16e-11, 1.52e-10, 4.99e-11, 3.21e-11, 4.61e-11, 3.39e-11, 1.52e-10, 2.39e-11, 5.03e-11, 8.26e-11, 6.42e-11, 2.71e-11, 5.25e-11, 5.72e-11, 4.79e-11, 1.15e-10, 2.84e-11, 5.80e-11, 1.46e-10, 6.82e-11, 3.68e-11, 8.30e-11, 3.94e-11, 5.56e-11, 6.27e-11, 4.08e-11, 9.30e-11, 2.24e-11, 8.75e-11, 1.60e-10, 1.00e-10, 4.39e-11, 7.03e-02, nan]         [4.65e+01, 5.69e-01]
+Best model at step 0:
+  train loss: inf
+  test loss: inf
+  test metric:
+'train' took 3.970284 s
+Traceback (most recent call last):
+  File "c:\Users\86189\ScaML-Experiment\results\Explicit_Solution_Example\experiment_run.py", line 56, in <module>
+    trained_net=optimizer.train("results/Explicit_Solution_Example/model.pth",cycle=40,adam_every=500,lbfgs_every=10,metrics=["l2 relative error","mse"]).net
+  File "c:\Users\86189\ScaML-Experiment\results\Explicit_Solution_Example\..\..\optimizers\Adam_LBFGS.py", line 38, in train
+    wandb.log({"Adam loss": self.model.train_state.loss_train, "Adam metrics": self.model.train_state.metrics_test})  # record loss and metrics
+  File "C:\Users\86189\Anaconda3\lib\site-packages\wandb\sdk\wandb_run.py", line 420, in wrapper
+    return func(self, *args, **kwargs)
+  File "C:\Users\86189\Anaconda3\lib\site-packages\wandb\sdk\wandb_run.py", line 371, in wrapper_fn
+    return func(self, *args, **kwargs)
+  File "C:\Users\86189\Anaconda3\lib\site-packages\wandb\sdk\wandb_run.py", line 361, in wrapper
+    return func(self, *args, **kwargs)
+  File "C:\Users\86189\Anaconda3\lib\site-packages\wandb\sdk\wandb_run.py", line 1838, in log
+    self._log(data=data, step=step, commit=commit)
+  File "C:\Users\86189\Anaconda3\lib\site-packages\wandb\sdk\wandb_run.py", line 1602, in _log
+    self._partial_history_callback(data, step, commit)
+  File "C:\Users\86189\Anaconda3\lib\site-packages\wandb\sdk\wandb_run.py", line 1474, in _partial_history_callback
+    self._backend.interface.publish_partial_history(
+  File "C:\Users\86189\Anaconda3\lib\site-packages\wandb\sdk\interface\interface.py", line 584, in publish_partial_history
+    item.value_json = json_dumps_safer_history(v)
+  File "C:\Users\86189\Anaconda3\lib\site-packages\wandb\util.py", line 842, in json_dumps_safer_history
+    return dumps(obj, cls=WandBHistoryJSONEncoder, **kwargs)
+  File "C:\Users\86189\Anaconda3\lib\json\__init__.py", line 238, in dumps
+    **kw).encode(obj)
+  File "C:\Users\86189\Anaconda3\lib\json\encoder.py", line 199, in encode
+    chunks = self.iterencode(o, _one_shot=True)
+  File "C:\Users\86189\Anaconda3\lib\json\encoder.py", line 257, in iterencode
+    return _iterencode(o, 0)
+  File "C:\Users\86189\Anaconda3\lib\site-packages\wandb\util.py", line 804, in default
+    obj, compressed = maybe_compress_history(obj)
+  File "C:\Users\86189\Anaconda3\lib\site-packages\wandb\util.py", line 705, in maybe_compress_history
+    return wandb.Histogram(obj, num_bins=32).to_json(), True
+  File "C:\Users\86189\Anaconda3\lib\site-packages\wandb\sdk\data_types\histogram.py", line 77, in __init__
+    self.histogram, self.bins = np.histogram(sequence, bins=num_bins)
+  File "<__array_function__ internals>", line 180, in histogram
+  File "C:\Users\86189\Anaconda3\lib\site-packages\numpy\lib\histograms.py", line 793, in histogram
+    bin_edges, uniform_bins = _get_bin_edges(a, bins, range, weights)
+  File "C:\Users\86189\Anaconda3\lib\site-packages\numpy\lib\histograms.py", line 426, in _get_bin_edges
+    first_edge, last_edge = _get_outer_edges(a, range)
+  File "C:\Users\86189\Anaconda3\lib\site-packages\numpy\lib\histograms.py", line 323, in _get_outer_edges
+    raise ValueError(
+ValueError: autodetected range of [nan, nan] is not finite
