@@ -1,0 +1,6 @@
+Traceback (most recent call last):
+  File "c:\Users\86189\ScaML-Experiment\results\Explicit_Solution_Example\experiment_run.py", line 41, in <module>
+    equation=Explict_Solution_Example(n_input=101,n_output=1)
+  File "c:\Users\86189\ScaML-Experiment\results\Explicit_Solution_Example\..\..\equations\equations.py", line 80, in __init__
+    self.terminal_condition() #initialize the terminal condition
+TypeError: Equation.terminal_condition() missing 1 required positional argument: 'x_t'
