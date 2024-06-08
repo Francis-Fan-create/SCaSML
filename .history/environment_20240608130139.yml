@@ -1,9 +1,8 @@
 name: ScaML-Experiment
 dependencies:
-- python=3.10
+- python=3.7
 - numpy
 - deepxde
 - matplotlib
 - scipy
-- pytorch
-- wandb
+- pyt
