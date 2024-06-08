@@ -88,5 +88,4 @@ class NormalSphere(object):
         plt.text(0.5,0.5,"positive count={:.2f}, negative count={:.2f}".format(np.sum(errors_23>0),np.sum(errors_23<0),horizontalalignment='center',verticalalignment='center',transform=plt.gca().transAxes))
         plt.savefig(f"{save_path}/MLP_ScaML_error.png")
         wandb.log({"PINN error": wandb.Image(f"{save_path}/PINN_error.png"), "MLP error": wandb.Image(f"{save_path}/MLP_error.png"), "ScaML error": wandb.Image(f"{save_path}/ScaML_error.png")})
-        wandb.log({"PINN-ScaML error": wandb.Image(f"{save_path}/PINN_ScaML_error.png"), "MLP-ScaML error": wandb.Image(f"{save_path}/MLP_ScaML_error.png")})
 

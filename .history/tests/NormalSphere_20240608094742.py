@@ -27,7 +27,6 @@ class NormalSphere(object):
         errors1=np.zeros_like(x_mesh)
         errors2=np.zeros_like(x_mesh)
         errors3=np.zeros_like(x_mesh)
-        #compute the errors
         for i in range(x_mesh.shape[0]):
             for j in range(x_mesh.shape[1]):
                 x_values=np.random.normal(0,1,(n_samples,self.dim))
@@ -39,54 +38,28 @@ class NormalSphere(object):
                 errors1[i,j]+=np.mean(np.linalg.norm(sol1-exact_sol,axis=1))
                 errors2[i,j]+=np.mean(np.linalg.norm(sol2-exact_sol,axis=1))
                 errors3[i,j]+=np.mean(np.linalg.norm(sol3-exact_sol,axis=1))
-        # compute |errors1|-|errors3|,|errrors2|-|errors3|
-        errors_13=np.abs(errors1)-np.abs(errors3)
-        errors_23=np.abs(errors2)-np.abs(errors3)
+        # compute the difference of the absolute values of any two errors
+        errors_12=np.abs(erros)
         plt.figure()
         plt.imshow(errors1,extent=[0,self.radius,self.t0,self.T],aspect='auto',cmap='RdBu_r')
         plt.colorbar()
         plt.title("PINN error")
         plt.xlabel("distance from origin")
         plt.ylabel("time")
-        #display the nanmean of the errors
-        plt.text(0.5,0.5,"nan sum={:.2f}".format(np.nanmean(errors1)),horizontalalignment='center',verticalalignment='center',transform=plt.gca().transAxes)
         plt.savefig(f"{save_path}/PINN_error.png")
         plt.figure()
         plt.imshow(errors2,extent=[0,self.radius,self.t0,self.T],aspect='auto',cmap='RdBu_r')
         plt.colorbar()
-        plt.title("MLP error, rho={:d}".format(rho))
+        plt.title("MLP error")
         plt.xlabel("distance from origin")
         plt.ylabel("time")
-        #display the nanmean of the errors
-        plt.text(0.5,0.5,"nan sum={:.2f}".format(np.nanmean(errors2)),horizontalalignment='center',verticalalignment='center',transform=plt.gca().transAxes)
         plt.savefig(f"{save_path}/MLP_error.png")
         plt.figure()
         plt.imshow(errors3,extent=[0,self.radius,self.t0,self.T],aspect='auto',cmap='RdBu_r')
         plt.colorbar()
-        plt.title("ScaML error, rho={:d}".format(rho))
+        plt.title("ScaML error")
         plt.xlabel("distance from origin")
         plt.ylabel("time")
-        #display the nanmean of the errors
-        plt.text(0.5,0.5,"nan sum={:.2f}".format(np.nanmean(errors3)),horizontalalignment='center',verticalalignment='center',transform=plt.gca().transAxes)
         plt.savefig(f"{save_path}/ScaML_error.png")
-        plt.figure()
-        plt.imshow(errors_13,extent=[0,self.radius,self.t0,self.T],aspect='auto',cmap='RdBu_r')
-        plt.colorbar()
-        plt.title("|PINN error| - |ScaML error|, rho={:d}".format(rho))
-        plt.xlabel("distance from origin")
-        plt.ylabel("time")
-        #display the positive count and negative count of the difference of the errors
-        plt.text(0.5,0.5,"positive count={:.2f}, negative count={:.2f}".format(np.sum(errors_13>0),np.sum(errors_13<0),horizontalalignment='center',verticalalignment='center',transform=plt.gca().transAxes))   
-        plt.savefig(f"{save_path}/PINN_ScaML_error.png")
-        plt.figure()
-        plt.imshow(errors_23,extent=[0,self.radius,self.t0,self.T],aspect='auto',cmap='RdBu_r')
-        plt.colorbar()
-        plt.title("|MLP error| - |ScaML error|, rho={:d}".format(rho))
-        plt.xlabel("distance from origin")
-        plt.ylabel("time")
-        #display the positive count and negative count of the difference of the errors
-        plt.text(0.5,0.5,"positive count={:.2f}, negative count={:.2f}".format(np.sum(errors_23>0),np.sum(errors_23<0),horizontalalignment='center',verticalalignment='center',transform=plt.gca().transAxes))
-        plt.savefig(f"{save_path}/MLP_ScaML_error.png")
         wandb.log({"PINN error": wandb.Image(f"{save_path}/PINN_error.png"), "MLP error": wandb.Image(f"{save_path}/MLP_error.png"), "ScaML error": wandb.Image(f"{save_path}/ScaML_error.png")})
-        wandb.log({"PINN-ScaML error": wandb.Image(f"{save_path}/PINN_ScaML_error.png"), "MLP-ScaML error": wandb.Image(f"{save_path}/MLP_ScaML_error.png")})
 

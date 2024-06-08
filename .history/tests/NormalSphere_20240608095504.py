@@ -57,8 +57,7 @@ class NormalSphere(object):
         plt.title("MLP error, rho={:d}".format(rho))
         plt.xlabel("distance from origin")
         plt.ylabel("time")
-        #display the nanmean of the errors
-        plt.text(0.5,0.5,"nan sum={:.2f}".format(np.nanmean(errors2)),horizontalalignment='center',verticalalignment='center',transform=plt.gca().transAxes)
+        #di
         plt.savefig(f"{save_path}/MLP_error.png")
         plt.figure()
         plt.imshow(errors3,extent=[0,self.radius,self.t0,self.T],aspect='auto',cmap='RdBu_r')
@@ -66,27 +65,10 @@ class NormalSphere(object):
         plt.title("ScaML error, rho={:d}".format(rho))
         plt.xlabel("distance from origin")
         plt.ylabel("time")
-        #display the nanmean of the errors
-        plt.text(0.5,0.5,"nan sum={:.2f}".format(np.nanmean(errors3)),horizontalalignment='center',verticalalignment='center',transform=plt.gca().transAxes)
         plt.savefig(f"{save_path}/ScaML_error.png")
         plt.figure()
         plt.imshow(errors_13,extent=[0,self.radius,self.t0,self.T],aspect='auto',cmap='RdBu_r')
         plt.colorbar()
-        plt.title("|PINN error| - |ScaML error|, rho={:d}".format(rho))
-        plt.xlabel("distance from origin")
-        plt.ylabel("time")
-        #display the positive count and negative count of the difference of the errors
-        plt.text(0.5,0.5,"positive count={:.2f}, negative count={:.2f}".format(np.sum(errors_13>0),np.sum(errors_13<0),horizontalalignment='center',verticalalignment='center',transform=plt.gca().transAxes))   
-        plt.savefig(f"{save_path}/PINN_ScaML_error.png")
-        plt.figure()
-        plt.imshow(errors_23,extent=[0,self.radius,self.t0,self.T],aspect='auto',cmap='RdBu_r')
-        plt.colorbar()
-        plt.title("|MLP error| - |ScaML error|, rho={:d}".format(rho))
-        plt.xlabel("distance from origin")
-        plt.ylabel("time")
-        #display the positive count and negative count of the difference of the errors
-        plt.text(0.5,0.5,"positive count={:.2f}, negative count={:.2f}".format(np.sum(errors_23>0),np.sum(errors_23<0),horizontalalignment='center',verticalalignment='center',transform=plt.gca().transAxes))
-        plt.savefig(f"{save_path}/MLP_ScaML_error.png")
+        plt.title("|PINN error| - |ScaML error|")
         wandb.log({"PINN error": wandb.Image(f"{save_path}/PINN_error.png"), "MLP error": wandb.Image(f"{save_path}/MLP_error.png"), "ScaML error": wandb.Image(f"{save_path}/ScaML_error.png")})
-        wandb.log({"PINN-ScaML error": wandb.Image(f"{save_path}/PINN_ScaML_error.png"), "MLP-ScaML error": wandb.Image(f"{save_path}/MLP_ScaML_error.png")})
 
