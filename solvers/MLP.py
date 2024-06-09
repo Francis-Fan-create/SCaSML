@@ -14,6 +14,7 @@ class MLP(object):
         self.mu=equation.mu
         self.f=equation.f
         self.g=equation.g
+        equation.geometry()
         self.T=equation.T
         self.t0=equation.t0
         self.n_input=equation.n_input

@@ -40,10 +40,10 @@ wandb.config.update({"device": device.type}) # record device type
 #initialize the equation
 equation=Explict_Solution_Example(n_input=101,n_output=1)
 #check if trained model is already saved
-if os.path.exists(r"results/Explicit_Solution_Example/model.pth"):
+if os.path.exists(r"results/Explicit_Solution_Example/model_weights.params"):
     #load the model
     net=FNN([101]+[50]*5+[1],equation)
-    net.load_state_dict(torch.load(r"results/Explicit_Solution_Example/model_weights.params"))
+    net.load_state_dict(torch.load(r"results/Explicit_Solution_Example/model_weights.params",map_location=device))
     trained_net=net
 else:
     data=equation.generate_data()
