@@ -53,7 +53,7 @@ else:
     #initialize the optimizer
     optimizer=Adam_LBFGS(101,1,net,data)
     #train the model
-    trained_model=optimizer.train("results/Explicit_Solution_Example/model_weights.params",cycle=40,adam_every=50,lbfgs_every=10,metrics=["l2 relative error","mse"])
+    trained_model=optimizer.train("results/Explicit_Solution_Example/model_weights.params")
     trained_net=trained_model.net
 
 
