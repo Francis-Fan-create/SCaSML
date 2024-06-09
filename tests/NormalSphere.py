@@ -32,7 +32,9 @@ class NormalSphere(object):
             for j in range(x_mesh.shape[1]):
                 x_values=np.random.normal(0,1,(n_samples,self.dim))
                 x_values/=np.linalg.norm(x_values,axis=1)[:,np.newaxis]*x_mesh[i,j]
-                exact_sol=eq.exact_solution(np.concatenate((x_values,[t_mesh[i,j]]))[np.newaxis,:])
+                '''TO DO: Bugs To Fix Here'''
+                t_values = np.full((n_samples, 1), t_mesh[i, j]) # Create a 2D array filled with t_mesh[i, j]
+                exact_sol=eq.exact_solution(np.concatenate((x_values,t_values),axis=1)[np.newaxis,:])
                 sol1=self.solver1(np.concatenate((x_values,[t_mesh[i,j]]))[np.newaxis,:])
                 sol2=self.solver2.uz_solve(n,rho,np.concatenate((x_values,[t_mesh[i,j]]))[np.newaxis,:])[:,0]
                 sol3=self.solver3.u_solve(n,rho,np.concatenate((x_values,[t_mesh[i,j]]))[np.newaxis,:])
