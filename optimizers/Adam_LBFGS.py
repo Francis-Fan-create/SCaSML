@@ -28,17 +28,47 @@ class Adam_LBFGS(object):
         wandb.config.update({"LBFGS lr": lr, "LBFGS max_iter": max_iter, "LBFGS tolerance_change": tolerance_change, "LBFGS tolerance_grad": tolerance_grad})  # record hyperparameters
         return lbfgs
 
-    def train(self,save_path,cycle=40,adam_every=50,lbfgs_every=10,metrics=["l2 relative error","mse"]):
+    def train(self,save_path,cycle=14,adam_every=50,lbfgs_every=10,metrics=["l2 relative error","mse"]):
         #interleaved training of adam and lbfgs
         loss_weights=[1e-3]*(self.n_input-1)+[1]+[1e-2]
         wandb.config.update({"cycle": cycle, "adam_every": adam_every, "lbfgs_every": lbfgs_every,"loss_weights":loss_weights}) # record hyperparameters
         for i in range(cycle):
             self.model.compile(optimizer=self.Adam(),metrics=metrics,loss_weights=loss_weights)
             self.model.train(iterations=adam_every, display_every=10)
-            wandb.log({"Adam loss": self.model.train_state.loss_train, "Adam metrics": self.model.train_state.metrics_test})  # record loss and metrics
+            # log a list of Adam losses and metrics, which are both lists, one by one
+            counter1=0
+            for loss in self.model.train_state.loss_train:
+                counter1+=1
+                wandb.log({"Adam loss_{:d}".format(counter1): loss})
+            counter2=0
+            for metric in self.model.train_state.metrics_test:
+                counter2+=1
+                wandb.log({"Adam metric_{:d}".format(counter2): metric})
 
             self.model.compile(optimizer=self.LBFGS(),metrics=metrics,loss_weights=loss_weights)
             self.model.train(iterations=lbfgs_every, display_every=1)
-            wandb.log({"LBFGS loss": self.model.train_state.loss_train, "LBFGS metrics": self.model.train_state.metrics_test})  # record loss and metrics
-        self.model.save(save_path)
+            counter3=0
+            for loss in self.model.train_state.loss_train:
+                counter3+=1
+                wandb.log({"LBFGS loss_{:d}".format(counter3): loss})
+            counter4=0
+            for metric in self.model.train_state.metrics_test:
+                counter4+=1
+                wandb.log({"LBFGS metric_{:d}".format(counter4): metric})
+        #stablize the training by further training with Adam
+        self.model.compile(optimizer=self.Adam(),metrics=metrics,loss_weights=loss_weights)
+        self.model.train(iterations=40*adam_every, display_every=10)
+        # log a list of Adam losses and metrics, which are both lists, one by one
+        counter5=0
+        for loss in self.model.train_state.loss_train:
+            counter5+=1
+            wandb.log({"Adam loss_{:d}".format(counter5): loss})
+        counter6=0
+        for metric in self.model.train_state.metrics_test:
+            counter6+=1
+            wandb.log({"Adam metric_{:d}".format(counter6): metric})
+        #save the model
+        torch.save(self.net.state_dict(), save_path)
+        #log the model
+        wandb.log_model(path=save_path, name="model")
         return self.model
