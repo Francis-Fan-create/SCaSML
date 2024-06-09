@@ -1,6 +1,0 @@
-Traceback (most recent call last):
-  File "c:\Users\86189\ScaML-Experiment\results\Explicit_Solution_Example\experiment_run.py", line 49, in <module>
-    data=equation.generate_data()
-  File "c:\Users\86189\ScaML-Experiment\results\Explicit_Solution_Example\..\..\equations\equations.py", line 139, in generate_data
-    [self.tc], #additional conditions other than PDE loss
-AttributeError: 'Explict_Solution_Example' object has no attribute 'tc'
