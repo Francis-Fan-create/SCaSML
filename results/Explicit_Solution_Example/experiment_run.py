@@ -34,16 +34,16 @@ if device.type == 'cuda':
     gpu_name = torch.cuda.get_device_name()
 
 #initialize wandb
-wandb.init(project="Explicit_Solution_Example")
+wandb.init(project="Explicit_Solution_Example", notes="100 d", tags=["normal sphere test","Adam-LBFGS training"])
 wandb.config.update({"device": device.type}) # record device type
 
 #initialize the equation
 equation=Explict_Solution_Example(n_input=101,n_output=1)
 #check if trained model is already saved
-if os.path.exists("results/Explicit_Solution_Example/model.pth"):
+if os.path.exists(r"results/Explicit_Solution_Example/model.pth"):
     #load the model
     net=FNN([101]+[50]*5+[1],equation)
-    net.load("results/Explicit_Solution_Example/model.pth")
+    net.load_state_dict(torch.load(r"results/Explicit_Solution_Example/model_weights.params"))
     trained_net=net
 else:
     data=equation.generate_data()
@@ -53,7 +53,7 @@ else:
     #initialize the optimizer
     optimizer=Adam_LBFGS(101,1,net,data)
     #train the model
-    trained_model=optimizer.train("results/Explicit_Solution_Example/model.pth",cycle=40,adam_every=50,lbfgs_every=10,metrics=["l2 relative error","mse"])
+    trained_model=optimizer.train("results/Explicit_Solution_Example/model_weights.params",cycle=40,adam_every=50,lbfgs_every=10,metrics=["l2 relative error","mse"])
     trained_net=trained_model.net
 
 

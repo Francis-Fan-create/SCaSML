@@ -1,0 +1,6 @@
+Traceback (most recent call last):
+  File "c:\Users\86189\ScaML-Experiment\results\Explicit_Solution_Example\experiment_run.py", line 52, in <module>
+    net=FNN(layers,equation)
+  File "c:\Users\86189\ScaML-Experiment\results\Explicit_Solution_Example\..\..\models\FNN.py", line 9, in __init__
+    super(FNN, self).__init__()
+TypeError: FNN.__init__() missing 3 required positional arguments: 'layer_sizes', 'activation', and 'kernel_initializer'

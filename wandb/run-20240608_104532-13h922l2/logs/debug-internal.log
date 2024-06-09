@@ -1,0 +1,272 @@
+2024-06-08 10:45:32,647 INFO    StreamThr :20308 [internal.py:wandb_internal():86] W&B internal server running at pid: 20308, started at: 2024-06-08 10:45:32.647250
+2024-06-08 10:45:32,647 DEBUG   HandlerThread:20308 [handler.py:handle_request():146] handle_request: status
+2024-06-08 10:45:32,652 INFO    WriterThread:20308 [datastore.py:open_for_write():87] open: C:\Users\86189\ScaML-Experiment\wandb\run-20240608_104532-13h922l2\run-13h922l2.wandb
+2024-06-08 10:45:32,654 DEBUG   SenderThread:20308 [sender.py:send():379] send: header
+2024-06-08 10:45:32,688 DEBUG   SenderThread:20308 [sender.py:send():379] send: run
+2024-06-08 10:45:33,485 INFO    SenderThread:20308 [dir_watcher.py:__init__():211] watching files in: C:\Users\86189\ScaML-Experiment\wandb\run-20240608_104532-13h922l2\files
+2024-06-08 10:45:33,485 INFO    SenderThread:20308 [sender.py:_start_run_threads():1124] run started: 13h922l2 with start time 1717814732.64725
+2024-06-08 10:45:33,491 DEBUG   HandlerThread:20308 [handler.py:handle_request():146] handle_request: check_version
+2024-06-08 10:45:33,492 DEBUG   SenderThread:20308 [sender.py:send_request():406] send_request: check_version
+2024-06-08 10:45:33,713 DEBUG   HandlerThread:20308 [handler.py:handle_request():146] handle_request: run_start
+2024-06-08 10:45:33,726 DEBUG   HandlerThread:20308 [system_info.py:__init__():26] System info init
+2024-06-08 10:45:33,726 DEBUG   HandlerThread:20308 [system_info.py:__init__():41] System info init done
+2024-06-08 10:45:33,726 INFO    HandlerThread:20308 [system_monitor.py:start():194] Starting system monitor
+2024-06-08 10:45:33,726 INFO    SystemMonitor:20308 [system_monitor.py:_start():158] Starting system asset monitoring threads
+2024-06-08 10:45:33,726 INFO    HandlerThread:20308 [system_monitor.py:probe():214] Collecting system info
+2024-06-08 10:45:33,732 INFO    SystemMonitor:20308 [interfaces.py:start():190] Started cpu monitoring
+2024-06-08 10:45:33,737 DEBUG   HandlerThread:20308 [system_info.py:probe():150] Probing system
+2024-06-08 10:45:33,737 INFO    SystemMonitor:20308 [interfaces.py:start():190] Started disk monitoring
+2024-06-08 10:45:33,741 INFO    SystemMonitor:20308 [interfaces.py:start():190] Started memory monitoring
+2024-06-08 10:45:33,750 INFO    SystemMonitor:20308 [interfaces.py:start():190] Started network monitoring
+2024-06-08 10:45:33,750 DEBUG   HandlerThread:20308 [system_info.py:_probe_git():135] Probing git
+2024-06-08 10:45:33,813 DEBUG   HandlerThread:20308 [system_info.py:_probe_git():143] Probing git done
+2024-06-08 10:45:33,813 DEBUG   HandlerThread:20308 [system_info.py:probe():198] Probing system done
+2024-06-08 10:45:33,813 DEBUG   HandlerThread:20308 [system_monitor.py:probe():223] {'os': 'Windows-10-10.0.22631-SP0', 'python': '3.10.8', 'heartbeatAt': '2024-06-08T02:45:33.737631', 'startedAt': '2024-06-08T02:45:32.625182', 'docker': None, 'cuda': None, 'args': (), 'state': 'running', 'program': 'c:\\Users\\86189\\ScaML-Experiment\\results\\Explicit_Solution_Example\\experiment_run.py', 'codePathLocal': 'results\\Explicit_Solution_Example\\experiment_run.py', 'codePath': 'results\\Explicit_Solution_Example\\experiment_run.py', 'git': {'remote': 'https://github.com/Francis-Fan-create/ScaML-Experiment.git', 'commit': '9602386b1099a2ead49a2112529ed5f69116b2ca'}, 'email': '145922867+Francis-Fan-create@users.noreply.github.com', 'root': 'C:/Users/86189/ScaML-Experiment', 'host': 'Frank_Lin', 'username': '86189', 'executable': 'C:\\Users\\86189\\Anaconda3\\python.exe', 'cpu_count': 12, 'cpu_count_logical': 16, 'cpu_freq': {'current': 1532.0, 'min': 0.0, 'max': 2500.0}, 'cpu_freq_per_core': [{'current': 1532.0, 'min': 0.0, 'max': 2500.0}], 'disk': {'/': {'total': 475.81151962280273, 'used': 219.56240463256836}}, 'memory': {'total': 15.717826843261719}}
+2024-06-08 10:45:33,813 INFO    HandlerThread:20308 [system_monitor.py:probe():224] Finished collecting system info
+2024-06-08 10:45:33,813 INFO    HandlerThread:20308 [system_monitor.py:probe():227] Publishing system info
+2024-06-08 10:45:33,813 DEBUG   HandlerThread:20308 [system_info.py:_save_conda():207] Saving list of conda packages installed into the current environment
+2024-06-08 10:45:34,509 INFO    Thread-16 :20308 [dir_watcher.py:_on_file_created():271] file/dir created: C:\Users\86189\ScaML-Experiment\wandb\run-20240608_104532-13h922l2\files\conda-environment.yaml
+2024-06-08 10:45:47,352 DEBUG   HandlerThread:20308 [system_info.py:_save_conda():222] Saving conda packages done
+2024-06-08 10:45:47,352 INFO    HandlerThread:20308 [system_monitor.py:probe():229] Finished publishing system info
+2024-06-08 10:45:47,368 DEBUG   HandlerThread:20308 [handler.py:handle_request():146] handle_request: status_report
+2024-06-08 10:45:47,368 DEBUG   HandlerThread:20308 [handler.py:handle_request():146] handle_request: keepalive
+2024-06-08 10:45:47,368 DEBUG   HandlerThread:20308 [handler.py:handle_request():146] handle_request: status_report
+2024-06-08 10:45:47,368 DEBUG   HandlerThread:20308 [handler.py:handle_request():146] handle_request: keepalive
+2024-06-08 10:45:47,368 DEBUG   SenderThread:20308 [sender.py:send():379] send: files
+2024-06-08 10:45:47,368 INFO    SenderThread:20308 [sender.py:_save_file():1390] saving file wandb-metadata.json with policy now
+2024-06-08 10:45:47,664 INFO    Thread-16 :20308 [dir_watcher.py:_on_file_modified():288] file/dir modified: C:\Users\86189\ScaML-Experiment\wandb\run-20240608_104532-13h922l2\files\conda-environment.yaml
+2024-06-08 10:45:47,664 INFO    Thread-16 :20308 [dir_watcher.py:_on_file_created():271] file/dir created: C:\Users\86189\ScaML-Experiment\wandb\run-20240608_104532-13h922l2\files\wandb-metadata.json
+2024-06-08 10:45:47,797 DEBUG   HandlerThread:20308 [handler.py:handle_request():146] handle_request: python_packages
+2024-06-08 10:45:47,797 DEBUG   HandlerThread:20308 [handler.py:handle_request():146] handle_request: stop_status
+2024-06-08 10:45:47,797 DEBUG   HandlerThread:20308 [handler.py:handle_request():146] handle_request: internal_messages
+2024-06-08 10:45:47,797 DEBUG   SenderThread:20308 [sender.py:send_request():406] send_request: python_packages
+2024-06-08 10:45:47,814 DEBUG   SenderThread:20308 [sender.py:send_request():406] send_request: stop_status
+2024-06-08 10:45:47,814 DEBUG   HandlerThread:20308 [handler.py:handle_request():146] handle_request: status_report
+2024-06-08 10:45:48,053 DEBUG   SenderThread:20308 [sender.py:send():379] send: telemetry
+2024-06-08 10:45:48,053 DEBUG   SenderThread:20308 [sender.py:send():379] send: config
+2024-06-08 10:45:48,132 DEBUG   SenderThread:20308 [sender.py:send():379] send: config
+2024-06-08 10:45:48,132 DEBUG   SenderThread:20308 [sender.py:send():379] send: telemetry
+2024-06-08 10:45:48,132 DEBUG   SenderThread:20308 [sender.py:send():379] send: config
+2024-06-08 10:45:48,666 INFO    Thread-16 :20308 [dir_watcher.py:_on_file_created():271] file/dir created: C:\Users\86189\ScaML-Experiment\wandb\run-20240608_104532-13h922l2\files\requirements.txt
+2024-06-08 10:45:48,955 INFO    wandb-upload_0:20308 [upload_job.py:push():131] Uploaded file C:\Users\86189\AppData\Local\Temp\tmpzpj4mjq_wandb\ghirpshd-wandb-metadata.json
+2024-06-08 10:45:49,008 DEBUG   SenderThread:20308 [sender.py:send():379] send: config
+2024-06-08 10:45:49,069 DEBUG   SenderThread:20308 [sender.py:send():379] send: exit
+2024-06-08 10:45:49,069 INFO    SenderThread:20308 [sender.py:send_exit():586] handling exit code: 1
+2024-06-08 10:45:49,069 INFO    SenderThread:20308 [sender.py:send_exit():588] handling runtime: 15
+2024-06-08 10:45:49,071 INFO    SenderThread:20308 [sender.py:_save_file():1390] saving file wandb-summary.json with policy end
+2024-06-08 10:45:49,072 INFO    SenderThread:20308 [sender.py:send_exit():594] send defer
+2024-06-08 10:45:49,072 DEBUG   HandlerThread:20308 [handler.py:handle_request():146] handle_request: defer
+2024-06-08 10:45:49,073 INFO    HandlerThread:20308 [handler.py:handle_request_defer():172] handle defer: 0
+2024-06-08 10:45:49,073 DEBUG   SenderThread:20308 [sender.py:send_request():406] send_request: defer
+2024-06-08 10:45:49,073 INFO    SenderThread:20308 [sender.py:send_request_defer():610] handle sender defer: 0
+2024-06-08 10:45:49,073 INFO    SenderThread:20308 [sender.py:transition_state():614] send defer: 1
+2024-06-08 10:45:49,073 DEBUG   HandlerThread:20308 [handler.py:handle_request():146] handle_request: defer
+2024-06-08 10:45:49,074 INFO    HandlerThread:20308 [handler.py:handle_request_defer():172] handle defer: 1
+2024-06-08 10:45:49,074 DEBUG   SenderThread:20308 [sender.py:send_request():406] send_request: defer
+2024-06-08 10:45:49,074 INFO    SenderThread:20308 [sender.py:send_request_defer():610] handle sender defer: 1
+2024-06-08 10:45:49,074 INFO    SenderThread:20308 [sender.py:transition_state():614] send defer: 2
+2024-06-08 10:45:49,074 DEBUG   HandlerThread:20308 [handler.py:handle_request():146] handle_request: defer
+2024-06-08 10:45:49,074 INFO    HandlerThread:20308 [handler.py:handle_request_defer():172] handle defer: 2
+2024-06-08 10:45:49,074 INFO    HandlerThread:20308 [system_monitor.py:finish():203] Stopping system monitor
+2024-06-08 10:45:49,074 DEBUG   SystemMonitor:20308 [system_monitor.py:_start():172] Starting system metrics aggregation loop
+2024-06-08 10:45:49,074 DEBUG   SystemMonitor:20308 [system_monitor.py:_start():179] Finished system metrics aggregation loop
+2024-06-08 10:45:49,074 DEBUG   SystemMonitor:20308 [system_monitor.py:_start():183] Publishing last batch of metrics
+2024-06-08 10:45:49,075 INFO    HandlerThread:20308 [interfaces.py:finish():202] Joined cpu monitor
+2024-06-08 10:45:49,075 INFO    HandlerThread:20308 [interfaces.py:finish():202] Joined disk monitor
+2024-06-08 10:45:49,075 INFO    HandlerThread:20308 [interfaces.py:finish():202] Joined memory monitor
+2024-06-08 10:45:49,075 INFO    HandlerThread:20308 [interfaces.py:finish():202] Joined network monitor
+2024-06-08 10:45:49,076 DEBUG   SenderThread:20308 [sender.py:send_request():406] send_request: defer
+2024-06-08 10:45:49,076 INFO    SenderThread:20308 [sender.py:send_request_defer():610] handle sender defer: 2
+2024-06-08 10:45:49,076 INFO    SenderThread:20308 [sender.py:transition_state():614] send defer: 3
+2024-06-08 10:45:49,076 DEBUG   HandlerThread:20308 [handler.py:handle_request():146] handle_request: defer
+2024-06-08 10:45:49,076 INFO    HandlerThread:20308 [handler.py:handle_request_defer():172] handle defer: 3
+2024-06-08 10:45:49,077 DEBUG   SenderThread:20308 [sender.py:send_request():406] send_request: defer
+2024-06-08 10:45:49,077 INFO    SenderThread:20308 [sender.py:send_request_defer():610] handle sender defer: 3
+2024-06-08 10:45:49,077 INFO    SenderThread:20308 [sender.py:transition_state():614] send defer: 4
+2024-06-08 10:45:49,077 DEBUG   HandlerThread:20308 [handler.py:handle_request():146] handle_request: defer
+2024-06-08 10:45:49,077 INFO    HandlerThread:20308 [handler.py:handle_request_defer():172] handle defer: 4
+2024-06-08 10:45:49,077 DEBUG   SenderThread:20308 [sender.py:send_request():406] send_request: defer
+2024-06-08 10:45:49,077 INFO    SenderThread:20308 [sender.py:send_request_defer():610] handle sender defer: 4
+2024-06-08 10:45:49,078 INFO    SenderThread:20308 [sender.py:transition_state():614] send defer: 5
+2024-06-08 10:45:49,078 DEBUG   HandlerThread:20308 [handler.py:handle_request():146] handle_request: defer
+2024-06-08 10:45:49,078 INFO    HandlerThread:20308 [handler.py:handle_request_defer():172] handle defer: 5
+2024-06-08 10:45:49,078 DEBUG   SenderThread:20308 [sender.py:send():379] send: summary
+2024-06-08 10:45:49,080 INFO    SenderThread:20308 [sender.py:_save_file():1390] saving file wandb-summary.json with policy end
+2024-06-08 10:45:49,080 DEBUG   SenderThread:20308 [sender.py:send_request():406] send_request: defer
+2024-06-08 10:45:49,080 INFO    SenderThread:20308 [sender.py:send_request_defer():610] handle sender defer: 5
+2024-06-08 10:45:49,080 INFO    SenderThread:20308 [sender.py:transition_state():614] send defer: 6
+2024-06-08 10:45:49,080 DEBUG   HandlerThread:20308 [handler.py:handle_request():146] handle_request: defer
+2024-06-08 10:45:49,080 INFO    HandlerThread:20308 [handler.py:handle_request_defer():172] handle defer: 6
+2024-06-08 10:45:49,080 DEBUG   SenderThread:20308 [sender.py:send_request():406] send_request: defer
+2024-06-08 10:45:49,080 INFO    SenderThread:20308 [sender.py:send_request_defer():610] handle sender defer: 6
+2024-06-08 10:45:49,085 DEBUG   HandlerThread:20308 [handler.py:handle_request():146] handle_request: status_report
+2024-06-08 10:45:49,304 INFO    SenderThread:20308 [sender.py:transition_state():614] send defer: 7
+2024-06-08 10:45:49,304 DEBUG   HandlerThread:20308 [handler.py:handle_request():146] handle_request: defer
+2024-06-08 10:45:49,304 INFO    HandlerThread:20308 [handler.py:handle_request_defer():172] handle defer: 7
+2024-06-08 10:45:49,304 DEBUG   SenderThread:20308 [sender.py:send_request():406] send_request: defer
+2024-06-08 10:45:49,304 INFO    SenderThread:20308 [sender.py:send_request_defer():610] handle sender defer: 7
+2024-06-08 10:45:49,669 INFO    Thread-16 :20308 [dir_watcher.py:_on_file_modified():288] file/dir modified: C:\Users\86189\ScaML-Experiment\wandb\run-20240608_104532-13h922l2\files\config.yaml
+2024-06-08 10:45:49,669 INFO    Thread-16 :20308 [dir_watcher.py:_on_file_created():271] file/dir created: C:\Users\86189\ScaML-Experiment\wandb\run-20240608_104532-13h922l2\files\wandb-summary.json
+2024-06-08 10:45:49,669 INFO    Thread-16 :20308 [dir_watcher.py:_on_file_created():271] file/dir created: C:\Users\86189\ScaML-Experiment\wandb\run-20240608_104532-13h922l2\files\output.log
+2024-06-08 10:45:50,079 DEBUG   HandlerThread:20308 [handler.py:handle_request():146] handle_request: poll_exit
+2024-06-08 10:45:51,101 INFO    SenderThread:20308 [sender.py:transition_state():614] send defer: 8
+2024-06-08 10:45:51,101 DEBUG   SenderThread:20308 [sender.py:send_request():406] send_request: poll_exit
+2024-06-08 10:45:51,101 DEBUG   HandlerThread:20308 [handler.py:handle_request():146] handle_request: defer
+2024-06-08 10:45:51,101 INFO    HandlerThread:20308 [handler.py:handle_request_defer():172] handle defer: 8
+2024-06-08 10:45:51,101 DEBUG   SenderThread:20308 [sender.py:send_request():406] send_request: defer
+2024-06-08 10:45:51,101 INFO    SenderThread:20308 [sender.py:send_request_defer():610] handle sender defer: 8
+2024-06-08 10:45:51,101 INFO    SenderThread:20308 [job_builder.py:build():318] Attempting to build job artifact
+2024-06-08 10:45:51,101 INFO    SenderThread:20308 [job_builder.py:_get_source_type():455] is repo sourced job
+2024-06-08 10:45:51,142 INFO    SenderThread:20308 [job_builder.py:build():431] adding wandb-job metadata file
+2024-06-08 10:45:51,158 INFO    SenderThread:20308 [sender.py:transition_state():614] send defer: 9
+2024-06-08 10:45:51,158 DEBUG   HandlerThread:20308 [handler.py:handle_request():146] handle_request: defer
+2024-06-08 10:45:51,158 INFO    HandlerThread:20308 [handler.py:handle_request_defer():172] handle defer: 9
+2024-06-08 10:45:51,158 DEBUG   SenderThread:20308 [sender.py:send():379] send: artifact
+2024-06-08 10:45:51,701 INFO    Thread-16 :20308 [dir_watcher.py:_on_file_modified():288] file/dir modified: C:\Users\86189\ScaML-Experiment\wandb\run-20240608_104532-13h922l2\files\output.log
+2024-06-08 10:45:52,102 DEBUG   HandlerThread:20308 [handler.py:handle_request():146] handle_request: poll_exit
+2024-06-08 10:45:52,245 INFO    SenderThread:20308 [sender.py:send_artifact():1468] sent artifact job-https___github.com_Francis-Fan-create_ScaML-Experiment.git_results_Explicit_Solution_Example_experiment_run.py - {'id': 'QXJ0aWZhY3Q6ODY0MzYwMTU2', 'state': 'COMMITTED', 'artifactSequence': {'id': 'QXJ0aWZhY3RDb2xsZWN0aW9uOjE4MzUwOTI4MA==', 'latestArtifact': {'id': 'QXJ0aWZhY3Q6ODY0MzYwMTU2', 'versionIndex': 4}}}
+2024-06-08 10:45:52,245 DEBUG   SenderThread:20308 [sender.py:send_request():406] send_request: defer
+2024-06-08 10:45:52,245 INFO    SenderThread:20308 [sender.py:send_request_defer():610] handle sender defer: 9
+2024-06-08 10:45:52,245 INFO    SenderThread:20308 [dir_watcher.py:finish():358] shutting down directory watcher
+2024-06-08 10:45:52,704 INFO    SenderThread:20308 [dir_watcher.py:finish():388] scan: C:\Users\86189\ScaML-Experiment\wandb\run-20240608_104532-13h922l2\files
+2024-06-08 10:45:52,704 INFO    SenderThread:20308 [dir_watcher.py:finish():402] scan save: C:\Users\86189\ScaML-Experiment\wandb\run-20240608_104532-13h922l2\files\conda-environment.yaml conda-environment.yaml
+2024-06-08 10:45:52,704 INFO    SenderThread:20308 [dir_watcher.py:finish():402] scan save: C:\Users\86189\ScaML-Experiment\wandb\run-20240608_104532-13h922l2\files\config.yaml config.yaml
+2024-06-08 10:45:52,704 INFO    SenderThread:20308 [dir_watcher.py:finish():402] scan save: C:\Users\86189\ScaML-Experiment\wandb\run-20240608_104532-13h922l2\files\output.log output.log
+2024-06-08 10:45:52,707 INFO    SenderThread:20308 [dir_watcher.py:finish():402] scan save: C:\Users\86189\ScaML-Experiment\wandb\run-20240608_104532-13h922l2\files\requirements.txt requirements.txt
+2024-06-08 10:45:52,707 INFO    SenderThread:20308 [dir_watcher.py:finish():402] scan save: C:\Users\86189\ScaML-Experiment\wandb\run-20240608_104532-13h922l2\files\wandb-metadata.json wandb-metadata.json
+2024-06-08 10:45:52,707 INFO    SenderThread:20308 [dir_watcher.py:finish():402] scan save: C:\Users\86189\ScaML-Experiment\wandb\run-20240608_104532-13h922l2\files\wandb-summary.json wandb-summary.json
+2024-06-08 10:45:52,709 INFO    SenderThread:20308 [sender.py:transition_state():614] send defer: 10
+2024-06-08 10:45:52,710 DEBUG   SenderThread:20308 [sender.py:send_request():406] send_request: poll_exit
+2024-06-08 10:45:52,710 DEBUG   HandlerThread:20308 [handler.py:handle_request():146] handle_request: defer
+2024-06-08 10:45:52,710 INFO    HandlerThread:20308 [handler.py:handle_request_defer():172] handle defer: 10
+2024-06-08 10:45:52,714 DEBUG   SenderThread:20308 [sender.py:send_request():406] send_request: defer
+2024-06-08 10:45:52,715 INFO    SenderThread:20308 [sender.py:send_request_defer():610] handle sender defer: 10
+2024-06-08 10:45:52,715 INFO    SenderThread:20308 [file_pusher.py:finish():172] shutting down file pusher
+2024-06-08 10:45:53,109 DEBUG   HandlerThread:20308 [handler.py:handle_request():146] handle_request: poll_exit
+2024-06-08 10:45:53,109 DEBUG   SenderThread:20308 [sender.py:send_request():406] send_request: poll_exit
+2024-06-08 10:45:53,834 INFO    wandb-upload_0:20308 [upload_job.py:push():131] Uploaded file C:\Users\86189\ScaML-Experiment\wandb\run-20240608_104532-13h922l2\files\conda-environment.yaml
+2024-06-08 10:45:54,121 DEBUG   HandlerThread:20308 [handler.py:handle_request():146] handle_request: poll_exit
+2024-06-08 10:45:54,121 DEBUG   SenderThread:20308 [sender.py:send_request():406] send_request: poll_exit
+2024-06-08 10:45:55,123 DEBUG   HandlerThread:20308 [handler.py:handle_request():146] handle_request: poll_exit
+2024-06-08 10:45:55,123 DEBUG   SenderThread:20308 [sender.py:send_request():406] send_request: poll_exit
+2024-06-08 10:45:56,137 DEBUG   HandlerThread:20308 [handler.py:handle_request():146] handle_request: poll_exit
+2024-06-08 10:45:56,137 DEBUG   SenderThread:20308 [sender.py:send_request():406] send_request: poll_exit
+2024-06-08 10:45:57,152 DEBUG   HandlerThread:20308 [handler.py:handle_request():146] handle_request: poll_exit
+2024-06-08 10:45:57,152 DEBUG   SenderThread:20308 [sender.py:send_request():406] send_request: poll_exit
+2024-06-08 10:45:57,215 INFO    wandb-upload_3:20308 [upload_job.py:push():131] Uploaded file C:\Users\86189\ScaML-Experiment\wandb\run-20240608_104532-13h922l2\files\requirements.txt
+2024-06-08 10:45:57,441 ERROR   wandb-upload_2:20308 [internal_api.py:upload_file():2767] upload_file exception https://storage.googleapis.com/wandb-production.appspot.com/scale_lab/Explicit_Solution_Example/13h922l2/output.log?Expires=1717901153&GoogleAccessId=gorilla-files-url-signer-man%40wandb-production.iam.gserviceaccount.com&Signature=DEkueMstZSRJuTP8EVTqQv0AdWr9MevyJ%2Bri1KBx4GYgozccUCSYllKLKzxNkQM2BERx40F4ICDpOwomkng87GLzZQ%2FQ0bhtXHHIOR%2BKLDwVgHj2FWU9GvhBGcDS4UZejhEknVhUg3Nlc6pg2BBLOYshQsR07YyyudGHTUWp5uPmkERalEMUL50YLCG9%2FSQHw%2BBBquySmT8VcJFqntrw35hJqYGQF4u6PCI4dL5CDuRQORiuIBsbkKskZd5yHdazzuSyoiywmyTEELIMfblj2PUNyRZRM%2BRjMLU%2FOziIUfbcEeic4zFUoZD1PqF0iD4XskXzRDdkBfooO174bZcLyQ%3D%3D: HTTPSConnectionPool(host='storage.googleapis.com', port=443): Max retries exceeded with url: /wandb-production.appspot.com/scale_lab/Explicit_Solution_Example/13h922l2/output.log?Expires=1717901153&GoogleAccessId=gorilla-files-url-signer-man%40wandb-production.iam.gserviceaccount.com&Signature=DEkueMstZSRJuTP8EVTqQv0AdWr9MevyJ%2Bri1KBx4GYgozccUCSYllKLKzxNkQM2BERx40F4ICDpOwomkng87GLzZQ%2FQ0bhtXHHIOR%2BKLDwVgHj2FWU9GvhBGcDS4UZejhEknVhUg3Nlc6pg2BBLOYshQsR07YyyudGHTUWp5uPmkERalEMUL50YLCG9%2FSQHw%2BBBquySmT8VcJFqntrw35hJqYGQF4u6PCI4dL5CDuRQORiuIBsbkKskZd5yHdazzuSyoiywmyTEELIMfblj2PUNyRZRM%2BRjMLU%2FOziIUfbcEeic4zFUoZD1PqF0iD4XskXzRDdkBfooO174bZcLyQ%3D%3D (Caused by SSLError(SSLEOFError(8, 'EOF occurred in violation of protocol (_ssl.c:997)')))
+2024-06-08 10:45:57,441 ERROR   wandb-upload_2:20308 [internal_api.py:upload_file():2769] upload_file request headers: {'User-Agent': 'python-requests/2.31.0', 'Accept-Encoding': 'gzip, deflate, br, zstd', 'Accept': '*/*', 'Connection': 'keep-alive', 'Content-Length': '3041'}
+2024-06-08 10:45:57,441 ERROR   wandb-upload_2:20308 [internal_api.py:upload_file():2771] upload_file response body: 
+2024-06-08 10:45:58,163 DEBUG   HandlerThread:20308 [handler.py:handle_request():146] handle_request: status_report
+2024-06-08 10:45:58,163 DEBUG   HandlerThread:20308 [handler.py:handle_request():146] handle_request: poll_exit
+2024-06-08 10:45:58,163 DEBUG   SenderThread:20308 [sender.py:send_request():406] send_request: poll_exit
+2024-06-08 10:45:58,278 ERROR   wandb-upload_1:20308 [internal_api.py:upload_file():2767] upload_file exception https://storage.googleapis.com/wandb-production.appspot.com/scale_lab/Explicit_Solution_Example/13h922l2/config.yaml?Expires=1717901153&GoogleAccessId=gorilla-files-url-signer-man%40wandb-production.iam.gserviceaccount.com&Signature=MaIU%2FC0zzEKXgYWCTae2AKm6eNICb7tSrMJ5bMDx9w2wSoNS8yKoHqxS%2Fs9Bgw3VFsvfrkgKqyh%2B4zHeE2hl3N3x%2BF6xtNlAfTjsk3wSuzwVgHbG57puALGoMsknUAfiwUjRtNz7ZYqlCfiO3Ubcp0DUDLcVfJyzdI5J9mD%2FACFkBo2nm6NuvvXvd%2FSNgOGxtvNTIv969JQ2wBjxRsTDFbSaZ8Kr58MJ2DHtqbFMECkxBeu3nLToJB58WgkiCoMn8G0E%2FHUdYqAaZ%2BCJQn4zbpqx2sbRLUTNBIrwCpwng86dh8X2pmFr3oNVUkUJQO1bufiGdAydm1LXLrguADqcBQ%3D%3D: ('Connection aborted.', ConnectionResetError(10054, '远程主机强迫关闭了一个现有的连接。', None, 10054, None))
+2024-06-08 10:45:58,281 ERROR   wandb-upload_1:20308 [internal_api.py:upload_file():2769] upload_file request headers: {'User-Agent': 'python-requests/2.31.0', 'Accept-Encoding': 'gzip, deflate, br, zstd', 'Accept': '*/*', 'Connection': 'keep-alive', 'Content-Length': '1999'}
+2024-06-08 10:45:58,282 ERROR   wandb-upload_1:20308 [internal_api.py:upload_file():2771] upload_file response body: 
+2024-06-08 10:45:58,633 INFO    wandb-upload_4:20308 [upload_job.py:push():131] Uploaded file C:\Users\86189\ScaML-Experiment\wandb\run-20240608_104532-13h922l2\files\wandb-summary.json
+2024-06-08 10:45:59,169 DEBUG   HandlerThread:20308 [handler.py:handle_request():146] handle_request: poll_exit
+2024-06-08 10:45:59,169 DEBUG   SenderThread:20308 [sender.py:send_request():406] send_request: poll_exit
+2024-06-08 10:46:00,170 DEBUG   HandlerThread:20308 [handler.py:handle_request():146] handle_request: poll_exit
+2024-06-08 10:46:00,170 DEBUG   SenderThread:20308 [sender.py:send_request():406] send_request: poll_exit
+2024-06-08 10:46:00,283 ERROR   wandb-upload_2:20308 [internal_api.py:upload_file():2767] upload_file exception https://storage.googleapis.com/wandb-production.appspot.com/scale_lab/Explicit_Solution_Example/13h922l2/output.log?Expires=1717901153&GoogleAccessId=gorilla-files-url-signer-man%40wandb-production.iam.gserviceaccount.com&Signature=DEkueMstZSRJuTP8EVTqQv0AdWr9MevyJ%2Bri1KBx4GYgozccUCSYllKLKzxNkQM2BERx40F4ICDpOwomkng87GLzZQ%2FQ0bhtXHHIOR%2BKLDwVgHj2FWU9GvhBGcDS4UZejhEknVhUg3Nlc6pg2BBLOYshQsR07YyyudGHTUWp5uPmkERalEMUL50YLCG9%2FSQHw%2BBBquySmT8VcJFqntrw35hJqYGQF4u6PCI4dL5CDuRQORiuIBsbkKskZd5yHdazzuSyoiywmyTEELIMfblj2PUNyRZRM%2BRjMLU%2FOziIUfbcEeic4zFUoZD1PqF0iD4XskXzRDdkBfooO174bZcLyQ%3D%3D: HTTPSConnectionPool(host='storage.googleapis.com', port=443): Max retries exceeded with url: /wandb-production.appspot.com/scale_lab/Explicit_Solution_Example/13h922l2/output.log?Expires=1717901153&GoogleAccessId=gorilla-files-url-signer-man%40wandb-production.iam.gserviceaccount.com&Signature=DEkueMstZSRJuTP8EVTqQv0AdWr9MevyJ%2Bri1KBx4GYgozccUCSYllKLKzxNkQM2BERx40F4ICDpOwomkng87GLzZQ%2FQ0bhtXHHIOR%2BKLDwVgHj2FWU9GvhBGcDS4UZejhEknVhUg3Nlc6pg2BBLOYshQsR07YyyudGHTUWp5uPmkERalEMUL50YLCG9%2FSQHw%2BBBquySmT8VcJFqntrw35hJqYGQF4u6PCI4dL5CDuRQORiuIBsbkKskZd5yHdazzuSyoiywmyTEELIMfblj2PUNyRZRM%2BRjMLU%2FOziIUfbcEeic4zFUoZD1PqF0iD4XskXzRDdkBfooO174bZcLyQ%3D%3D (Caused by SSLError(SSLEOFError(8, 'EOF occurred in violation of protocol (_ssl.c:997)')))
+2024-06-08 10:46:00,283 ERROR   wandb-upload_2:20308 [internal_api.py:upload_file():2769] upload_file request headers: {'User-Agent': 'python-requests/2.31.0', 'Accept-Encoding': 'gzip, deflate, br, zstd', 'Accept': '*/*', 'Connection': 'keep-alive', 'Content-Length': '3041'}
+2024-06-08 10:46:00,283 ERROR   wandb-upload_2:20308 [internal_api.py:upload_file():2771] upload_file response body: 
+2024-06-08 10:46:00,283 INFO    wandb-upload_2:20308 [retry.py:__call__():172] Retry attempt failed:
+urllib3.exceptions.SSLError: EOF occurred in violation of protocol (_ssl.c:997)
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\86189\Anaconda3\lib\site-packages\requests\adapters.py", line 486, in send
+    resp = conn.urlopen(
+  File "C:\Users\86189\Anaconda3\lib\site-packages\urllib3\connectionpool.py", line 847, in urlopen
+    retries = retries.increment(
+  File "C:\Users\86189\Anaconda3\lib\site-packages\urllib3\util\retry.py", line 515, in increment
+    raise MaxRetryError(_pool, url, reason) from reason  # type: ignore[arg-type]
+urllib3.exceptions.MaxRetryError: HTTPSConnectionPool(host='storage.googleapis.com', port=443): Max retries exceeded with url: /wandb-production.appspot.com/scale_lab/Explicit_Solution_Example/13h922l2/output.log?Expires=1717901153&GoogleAccessId=gorilla-files-url-signer-man%40wandb-production.iam.gserviceaccount.com&Signature=DEkueMstZSRJuTP8EVTqQv0AdWr9MevyJ%2Bri1KBx4GYgozccUCSYllKLKzxNkQM2BERx40F4ICDpOwomkng87GLzZQ%2FQ0bhtXHHIOR%2BKLDwVgHj2FWU9GvhBGcDS4UZejhEknVhUg3Nlc6pg2BBLOYshQsR07YyyudGHTUWp5uPmkERalEMUL50YLCG9%2FSQHw%2BBBquySmT8VcJFqntrw35hJqYGQF4u6PCI4dL5CDuRQORiuIBsbkKskZd5yHdazzuSyoiywmyTEELIMfblj2PUNyRZRM%2BRjMLU%2FOziIUfbcEeic4zFUoZD1PqF0iD4XskXzRDdkBfooO174bZcLyQ%3D%3D (Caused by SSLError(SSLEOFError(8, 'EOF occurred in violation of protocol (_ssl.c:997)')))
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\86189\Anaconda3\lib\site-packages\wandb\sdk\internal\internal_api.py", line 2760, in upload_file
+    response = self._upload_file_session.put(
+  File "C:\Users\86189\Anaconda3\lib\site-packages\requests\sessions.py", line 649, in put
+    return self.request("PUT", url, data=data, **kwargs)
+  File "C:\Users\86189\Anaconda3\lib\site-packages\requests\sessions.py", line 589, in request
+    resp = self.send(prep, **send_kwargs)
+  File "C:\Users\86189\Anaconda3\lib\site-packages\requests\sessions.py", line 703, in send
+    r = adapter.send(request, **kwargs)
+  File "C:\Users\86189\Anaconda3\lib\site-packages\requests\adapters.py", line 517, in send
+    raise SSLError(e, request=request)
+requests.exceptions.SSLError: HTTPSConnectionPool(host='storage.googleapis.com', port=443): Max retries exceeded with url: /wandb-production.appspot.com/scale_lab/Explicit_Solution_Example/13h922l2/output.log?Expires=1717901153&GoogleAccessId=gorilla-files-url-signer-man%40wandb-production.iam.gserviceaccount.com&Signature=DEkueMstZSRJuTP8EVTqQv0AdWr9MevyJ%2Bri1KBx4GYgozccUCSYllKLKzxNkQM2BERx40F4ICDpOwomkng87GLzZQ%2FQ0bhtXHHIOR%2BKLDwVgHj2FWU9GvhBGcDS4UZejhEknVhUg3Nlc6pg2BBLOYshQsR07YyyudGHTUWp5uPmkERalEMUL50YLCG9%2FSQHw%2BBBquySmT8VcJFqntrw35hJqYGQF4u6PCI4dL5CDuRQORiuIBsbkKskZd5yHdazzuSyoiywmyTEELIMfblj2PUNyRZRM%2BRjMLU%2FOziIUfbcEeic4zFUoZD1PqF0iD4XskXzRDdkBfooO174bZcLyQ%3D%3D (Caused by SSLError(SSLEOFError(8, 'EOF occurred in violation of protocol (_ssl.c:997)')))
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\86189\Anaconda3\lib\site-packages\wandb\sdk\lib\retry.py", line 131, in __call__
+    result = self._call_fn(*args, **kwargs)
+  File "C:\Users\86189\Anaconda3\lib\site-packages\wandb\sdk\internal\internal_api.py", line 2791, in upload_file
+    raise _e.with_traceback(sys.exc_info()[2])
+  File "C:\Users\86189\Anaconda3\lib\site-packages\wandb\sdk\internal\internal_api.py", line 2760, in upload_file
+    response = self._upload_file_session.put(
+  File "C:\Users\86189\Anaconda3\lib\site-packages\requests\sessions.py", line 649, in put
+    return self.request("PUT", url, data=data, **kwargs)
+  File "C:\Users\86189\Anaconda3\lib\site-packages\requests\sessions.py", line 589, in request
+    resp = self.send(prep, **send_kwargs)
+  File "C:\Users\86189\Anaconda3\lib\site-packages\requests\sessions.py", line 703, in send
+    r = adapter.send(request, **kwargs)
+  File "C:\Users\86189\Anaconda3\lib\site-packages\requests\adapters.py", line 517, in send
+    raise SSLError(e, request=request)
+wandb.sdk.lib.retry.TransientError: None
+2024-06-08 10:46:00,477 INFO    wandb-upload_1:20308 [upload_job.py:push():131] Uploaded file C:\Users\86189\ScaML-Experiment\wandb\run-20240608_104532-13h922l2\files\config.yaml
+2024-06-08 10:46:01,185 DEBUG   HandlerThread:20308 [handler.py:handle_request():146] handle_request: poll_exit
+2024-06-08 10:46:01,185 DEBUG   SenderThread:20308 [sender.py:send_request():406] send_request: poll_exit
+2024-06-08 10:46:02,193 DEBUG   HandlerThread:20308 [handler.py:handle_request():146] handle_request: poll_exit
+2024-06-08 10:46:02,193 DEBUG   SenderThread:20308 [sender.py:send_request():406] send_request: poll_exit
+2024-06-08 10:46:03,201 INFO    wandb-upload_2:20308 [upload_job.py:push():131] Uploaded file C:\Users\86189\ScaML-Experiment\wandb\run-20240608_104532-13h922l2\files\output.log
+2024-06-08 10:46:03,203 DEBUG   HandlerThread:20308 [handler.py:handle_request():146] handle_request: status_report
+2024-06-08 10:46:03,203 DEBUG   HandlerThread:20308 [handler.py:handle_request():146] handle_request: poll_exit
+2024-06-08 10:46:03,203 DEBUG   SenderThread:20308 [sender.py:send_request():406] send_request: poll_exit
+2024-06-08 10:46:03,403 INFO    Thread-15 (_thread_body):20308 [sender.py:transition_state():614] send defer: 11
+2024-06-08 10:46:03,403 DEBUG   HandlerThread:20308 [handler.py:handle_request():146] handle_request: defer
+2024-06-08 10:46:03,403 INFO    HandlerThread:20308 [handler.py:handle_request_defer():172] handle defer: 11
+2024-06-08 10:46:03,403 DEBUG   SenderThread:20308 [sender.py:send_request():406] send_request: defer
+2024-06-08 10:46:03,403 INFO    SenderThread:20308 [sender.py:send_request_defer():610] handle sender defer: 11
+2024-06-08 10:46:03,403 INFO    SenderThread:20308 [file_pusher.py:join():178] waiting for file pusher
+2024-06-08 10:46:03,403 INFO    SenderThread:20308 [sender.py:transition_state():614] send defer: 12
+2024-06-08 10:46:03,403 DEBUG   HandlerThread:20308 [handler.py:handle_request():146] handle_request: defer
+2024-06-08 10:46:03,403 INFO    HandlerThread:20308 [handler.py:handle_request_defer():172] handle defer: 12
+2024-06-08 10:46:03,403 DEBUG   SenderThread:20308 [sender.py:send_request():406] send_request: defer
+2024-06-08 10:46:03,403 INFO    SenderThread:20308 [sender.py:send_request_defer():610] handle sender defer: 12
+2024-06-08 10:46:03,403 INFO    SenderThread:20308 [file_stream.py:finish():614] file stream finish called
+2024-06-08 10:46:03,620 INFO    SenderThread:20308 [file_stream.py:finish():618] file stream finish is done
+2024-06-08 10:46:03,620 INFO    SenderThread:20308 [sender.py:transition_state():614] send defer: 13
+2024-06-08 10:46:03,620 DEBUG   HandlerThread:20308 [handler.py:handle_request():146] handle_request: defer
+2024-06-08 10:46:03,620 INFO    HandlerThread:20308 [handler.py:handle_request_defer():172] handle defer: 13
+2024-06-08 10:46:03,620 DEBUG   SenderThread:20308 [sender.py:send_request():406] send_request: defer
+2024-06-08 10:46:03,620 INFO    SenderThread:20308 [sender.py:send_request_defer():610] handle sender defer: 13
+2024-06-08 10:46:03,620 INFO    SenderThread:20308 [sender.py:transition_state():614] send defer: 14
+2024-06-08 10:46:03,620 DEBUG   HandlerThread:20308 [handler.py:handle_request():146] handle_request: defer
+2024-06-08 10:46:03,620 INFO    HandlerThread:20308 [handler.py:handle_request_defer():172] handle defer: 14
+2024-06-08 10:46:03,620 DEBUG   SenderThread:20308 [sender.py:send():379] send: final
+2024-06-08 10:46:03,620 DEBUG   SenderThread:20308 [sender.py:send():379] send: footer
+2024-06-08 10:46:03,620 DEBUG   SenderThread:20308 [sender.py:send_request():406] send_request: defer
+2024-06-08 10:46:03,620 INFO    SenderThread:20308 [sender.py:send_request_defer():610] handle sender defer: 14
+2024-06-08 10:46:03,620 DEBUG   HandlerThread:20308 [handler.py:handle_request():146] handle_request: poll_exit
+2024-06-08 10:46:03,620 DEBUG   SenderThread:20308 [sender.py:send_request():406] send_request: poll_exit
+2024-06-08 10:46:03,620 DEBUG   HandlerThread:20308 [handler.py:handle_request():146] handle_request: poll_exit
+2024-06-08 10:46:03,620 DEBUG   HandlerThread:20308 [handler.py:handle_request():146] handle_request: server_info
+2024-06-08 10:46:03,620 DEBUG   HandlerThread:20308 [handler.py:handle_request():146] handle_request: get_summary
+2024-06-08 10:46:03,620 DEBUG   HandlerThread:20308 [handler.py:handle_request():146] handle_request: sampled_history
+2024-06-08 10:46:03,620 DEBUG   HandlerThread:20308 [handler.py:handle_request():146] handle_request: internal_messages
+2024-06-08 10:46:03,620 DEBUG   SenderThread:20308 [sender.py:send_request():406] send_request: poll_exit
+2024-06-08 10:46:03,620 DEBUG   SenderThread:20308 [sender.py:send_request():406] send_request: server_info
+2024-06-08 10:46:03,841 INFO    MainThread:20308 [wandb_run.py:_footer_history_summary_info():3920] rendering history
+2024-06-08 10:46:03,841 INFO    MainThread:20308 [wandb_run.py:_footer_history_summary_info():3952] rendering summary
+2024-06-08 10:46:03,841 INFO    MainThread:20308 [wandb_run.py:_footer_sync_info():3879] logging synced files
+2024-06-08 10:46:03,843 DEBUG   HandlerThread:20308 [handler.py:handle_request():146] handle_request: shutdown
+2024-06-08 10:46:03,843 INFO    HandlerThread:20308 [handler.py:finish():866] shutting down handler
+2024-06-08 10:46:04,635 INFO    WriterThread:20308 [datastore.py:close():296] close: C:\Users\86189\ScaML-Experiment\wandb\run-20240608_104532-13h922l2\run-13h922l2.wandb
+2024-06-08 10:46:04,844 INFO    SenderThread:20308 [sender.py:finish():1546] shutting down sender
+2024-06-08 10:46:04,844 INFO    SenderThread:20308 [file_pusher.py:finish():172] shutting down file pusher
+2024-06-08 10:46:04,844 INFO    SenderThread:20308 [file_pusher.py:join():178] waiting for file pusher

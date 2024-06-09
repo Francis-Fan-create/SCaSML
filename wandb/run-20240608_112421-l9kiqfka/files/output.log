@@ -1,0 +1,43 @@
+c:\Users\86189\ScaML-Experiment\results\Explicit_Solution_Example\..\..\equations\equations.py:58: UserWarning: To copy construct from a tensor, it is recommended to use sourceTensor.clone().detach() or sourceTensor.clone().detach().requires_grad_(True), rather than torch.tensor(sourceTensor).
+  x_t = torch.tensor(x_t).detach().numpy() if isinstance(x_t, torch.Tensor) else x_t
+c:\Users\86189\ScaML-Experiment\results\Explicit_Solution_Example\..\..\equations\equations.py:59: UserWarning: To copy construct from a tensor, it is recommended to use sourceTensor.clone().detach() or sourceTensor.clone().detach().requires_grad_(True), rather than torch.tensor(sourceTensor).
+  u = torch.tensor(u).detach().numpy() if isinstance(u, torch.Tensor) else u
+Traceback (most recent call last):
+  File "c:\Users\86189\ScaML-Experiment\results\Explicit_Solution_Example\experiment_run.py", line 56, in <module>
+    trained_net=optimizer.train("results/Explicit_Solution_Example/model.pth",cycle=40,adam_every=500,lbfgs_every=10,metrics=["l2 relative error","mse"]).net
+  File "c:\Users\86189\ScaML-Experiment\results\Explicit_Solution_Example\..\..\optimizers\Adam_LBFGS.py", line 37, in train
+    self.model.train(iterations=adam_every, display_every=10)
+  File "C:\Users\86189\Anaconda3\lib\site-packages\deepxde\utils\internal.py", line 22, in wrapper
+    result = f(*args, **kwargs)
+  File "C:\Users\86189\Anaconda3\lib\site-packages\deepxde\model.py", line 636, in train
+    self._test()
+  File "C:\Users\86189\Anaconda3\lib\site-packages\deepxde\model.py", line 825, in _test
+    ) = self._outputs_losses(
+  File "C:\Users\86189\Anaconda3\lib\site-packages\deepxde\model.py", line 546, in _outputs_losses
+    outs = outputs_losses(inputs, targets, auxiliary_vars)
+  File "C:\Users\86189\Anaconda3\lib\site-packages\deepxde\model.py", line 320, in outputs_losses_train
+    return outputs_losses(
+  File "C:\Users\86189\Anaconda3\lib\site-packages\deepxde\model.py", line 308, in outputs_losses
+    losses = losses_fn(targets, outputs_, loss_fn, inputs, self, aux=aux)
+  File "C:\Users\86189\Anaconda3\lib\site-packages\deepxde\data\data.py", line 13, in losses_train
+    return self.losses(targets, outputs, loss_fn, inputs, model, aux=aux)
+  File "C:\Users\86189\Anaconda3\lib\site-packages\deepxde\data\pde.py", line 146, in losses
+    f = self.pde(inputs, outputs_pde)
+  File "c:\Users\86189\ScaML-Experiment\results\Explicit_Solution_Example\..\..\equations\equations.py", line 91, in gPDE_loss
+    du_t = dde.grad.jacobian(u,x_t,i=0,j=self.n_input-1)
+  File "C:\Users\86189\Anaconda3\lib\site-packages\deepxde\gradients\gradients.py", line 34, in jacobian
+    return gradients_reverse.jacobian(ys, xs, i=i, j=j)
+  File "C:\Users\86189\Anaconda3\lib\site-packages\deepxde\gradients\gradients_reverse.py", line 73, in jacobian
+    return jacobian._Jacobians(ys, xs, i=i, j=j)
+  File "C:\Users\86189\Anaconda3\lib\site-packages\deepxde\gradients\jacobian.py", line 128, in __call__
+    return self.Js[key](i, j)
+  File "C:\Users\86189\Anaconda3\lib\site-packages\deepxde\gradients\gradients_reverse.py", line 29, in __call__
+    self.J[i] = torch.autograd.grad(
+  File "C:\Users\86189\Anaconda3\lib\site-packages\torch\autograd\__init__.py", line 412, in grad
+    result = _engine_run_backward(
+  File "C:\Users\86189\Anaconda3\lib\site-packages\torch\autograd\graph.py", line 744, in _engine_run_backward
+    return Variable._execution_engine.run_backward(  # Calls into the C++ engine to run the backward pass
+RuntimeError: element 0 of tensors does not require grad and does not have a grad_fn
+Compiling model...
+'compile' took 0.000690 s
+Training model...
