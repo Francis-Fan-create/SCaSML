@@ -34,8 +34,8 @@ if device.type == 'cuda':
     gpu_name = torch.cuda.get_device_name()
 
 #initialize wandb
-wandb.init(project="Explicit_Solution_Example", notes="100 d", tags=["normal sphere test","Adam-LBFGS training"],mode="disabled") #debug mode
-# wandb.init(project="Explicit_Solution_Example", notes="100 d", tags=["normal sphere test","Adam-LBFGS training"]) #working mode
+# wandb.init(project="Explicit_Solution_Example", notes="100 d", tags=["normal sphere test","Adam-LBFGS training"],mode="disabled") #debug mode
+wandb.init(project="Explicit_Solution_Example", notes="100 d", tags=["normal sphere test","Adam-LBFGS training"]) #working mode
 wandb.config.update({"device": device.type}) # record device type
 
 #initialize the equation
