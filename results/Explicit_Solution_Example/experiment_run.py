@@ -34,7 +34,8 @@ if device.type == 'cuda':
     gpu_name = torch.cuda.get_device_name()
 
 #initialize wandb
-wandb.init(project="Explicit_Solution_Example", notes="100 d", tags=["normal sphere test","Adam-LBFGS training"])
+wandb.init(project="Explicit_Solution_Example", notes="100 d", tags=["normal sphere test","Adam-LBFGS training"],mode="disabled") #debug mode
+# wandb.init(project="Explicit_Solution_Example", notes="100 d", tags=["normal sphere test","Adam-LBFGS training"]) #working mode
 wandb.config.update({"device": device.type}) # record device type
 
 #initialize the equation
@@ -66,14 +67,14 @@ profiler = cProfile.Profile()
 profiler.enable()
 #run the test
 test=NormalSphere(equation,solver1,solver2,solver3)
-test.test("results/Explicit_Solution_Example")
+test.test(r"results/Explicit_Solution_Example")
 #stop the profiler
 profiler.disable()
 #save the profiler results
-profiler.dump_stats("results/Explicit_Solution_Example/explicit_solution_example.prof")
+profiler.dump_stats(r"results/Explicit_Solution_Example/explicit_solution_example.prof")
 #upload the profiler results to wandb
-artifact=wandb.Artifact("explicit_solution_example_profiler", type="profile")
-artifact.add_file("results/Explicit_Solution_Example/explicit_solution_example.prof")
+artifact=wandb.Artifact(r"explicit_solution_example_profiler", type="profile")
+artifact.add_file(r"results/Explicit_Solution_Example/explicit_solution_example.prof")
 wandb.log_artifact(artifact)
 
 

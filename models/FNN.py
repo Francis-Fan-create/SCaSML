@@ -4,6 +4,7 @@ import torch.nn as nn
 import wandb
 class FNN(nn.Module):
     '''FNN structure network based on deepxde framework'''
+    # notice that the input x_t is a tensor, and the output is also a tensor. Remember to convert them to numpy array when using them
     def __init__(self, layers,equation):
         #initialize the FNN parameters
         super(FNN, self).__init__()

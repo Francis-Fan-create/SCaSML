@@ -1,6 +1,8 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import wandb
+import torch
+from tqdm import tqdm
 class NormalSphere(object):
     '''Normal sphere test in high dimensions'''
     def __init__(self, equation, solver1,solver2,solver3):
@@ -28,19 +30,23 @@ class NormalSphere(object):
         errors2=np.zeros_like(x_mesh)
         errors3=np.zeros_like(x_mesh)
         #compute the errors
-        for i in range(x_mesh.shape[0]):
-            for j in range(x_mesh.shape[1]):
+        for i in tqdm(range(x_mesh.shape[0]),desc=f"Computing errors"):
+            for j in tqdm(range(x_mesh.shape[1]),desc=f"Computing errors at time {t_grid[i]}"):
                 x_values=np.random.normal(0,1,(n_samples,self.dim))
-                x_values/=np.linalg.norm(x_values,axis=1)[:,np.newaxis]*x_mesh[i,j]
-                '''TO DO: Bugs To Fix Here'''
+                # print(np.linalg.norm(x_values,axis=1)[:,np.newaxis])
+                # print(x_mesh[i,j])
+                x_values/=np.linalg.norm(x_values,axis=1)[:,np.newaxis]
+                x_values*=x_mesh[i,j]
                 t_values = np.full((n_samples, 1), t_mesh[i, j]) # Create a 2D array filled with t_mesh[i, j]
-                exact_sol=eq.exact_solution(np.concatenate((x_values,t_values),axis=1)[np.newaxis,:])
-                sol1=self.solver1(np.concatenate((x_values,[t_mesh[i,j]]))[np.newaxis,:])
-                sol2=self.solver2.uz_solve(n,rho,np.concatenate((x_values,[t_mesh[i,j]]))[np.newaxis,:])[:,0]
-                sol3=self.solver3.u_solve(n,rho,np.concatenate((x_values,[t_mesh[i,j]]))[np.newaxis,:])
-                errors1[i,j]+=np.mean(np.linalg.norm(sol1-exact_sol,axis=1))
-                errors2[i,j]+=np.mean(np.linalg.norm(sol2-exact_sol,axis=1))
-                errors3[i,j]+=np.mean(np.linalg.norm(sol3-exact_sol,axis=1))
+                xt_values=np.concatenate((x_values,t_values),axis=1)
+                exact_sol=eq.exact_solution(xt_values)
+                '''A little bug: sol1 is float32 while sol2 and sol3 are float64'''
+                sol1=self.solver1(torch.tensor(xt_values,dtype=torch.float32)).detach().numpy()[:,0]
+                sol2=self.solver2.uz_solve(n,rho,xt_values)[:,0]
+                sol3=self.solver3.u_solve(n,rho,xt_values)
+                errors1[i,j]+=np.mean(sol1-exact_sol)
+                errors2[i,j]+=np.mean(sol2-exact_sol)
+                errors3[i,j]+=np.mean(sol3-exact_sol)
         # compute |errors1|-|errors3|,|errrors2|-|errors3|
         errors_13=np.abs(errors1)-np.abs(errors3)
         errors_23=np.abs(errors2)-np.abs(errors3)

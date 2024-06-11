@@ -12,22 +12,25 @@ class ScaML(object):
         self.equation=equation
         self.sigma=equation.sigma
         self.mu=equation.mu
+        equation.geometry()
         self.T=equation.T
         self.t0=equation.t0
         self.n_input=equation.n_input
         self.n_output=equation.n_output
         net.eval()
         self.net=net
-        # TO DO: define a function of x_t,u_hat,grad_u_hat_x,dt,using disretization instead of autodiff to accelerate the inferrence
+        '''A potential way to accelerate the inference process: use discretized version of laplacian'''
      
     def f(self,x_t,u_breve,z_breve):
-        # generator of ScaML
+        # generator of ScaML, this is the large version
         eq=self.equation
         tensor_x_t=torch.tensor(x_t,requires_grad=True).float()
-        u_hat=self.net(tensor_x_t).detach().numpy()
-        grad_u_hat_x=torch.autograd.grad(u_hat,tensor_x_t,grad_outputs=torch.ones_like(u_hat),create_graph=True)[0][:, :-1].detach().numpy()
-        epsilon=eq.PDE_loss(x_t,u_hat,grad_u_hat_x)
-        val1=eq.f(x_t,u_breve+u_hat,z_breve+eq.sigma(x_t)*grad_u_hat_x)  
+        tensor_u_hat=self.net(tensor_x_t)
+        u_hat=tensor_u_hat.detach().numpy()
+        tensor_grad_u_hat_x=torch.autograd.grad(tensor_u_hat,tensor_x_t,grad_outputs=torch.ones_like(tensor_u_hat),retain_graph=True,create_graph=True)[0][:, :-1]
+        grad_u_hat_x=tensor_grad_u_hat_x.detach().numpy()
+        epsilon=eq.PDE_loss(tensor_x_t,tensor_u_hat,tensor_grad_u_hat_x).detach().numpy()
+        val1=eq.f(x_t,u_breve+u_hat,eq.sigma(x_t)*(grad_u_hat_x+z_breve))  
         val2=eq.f(x_t,u_hat,eq.sigma(x_t)*grad_u_hat_x)
         return val1-val2-epsilon
     def g(self,x_t):
@@ -35,7 +38,7 @@ class ScaML(object):
         eq=self.equation
         tensor_x_t=torch.tensor(x_t,requires_grad=True).float()
         u_hat=self.net(tensor_x_t).detach().numpy()
-        result=eq.g(x_t)-u_hat
+        result=eq.g(x_t)-u_hat[:,0]
         return result
     
     def inverse_gamma(self, gamma_input):
@@ -69,38 +72,33 @@ class ScaML(object):
         w = (b-a) / ((1-y*y) * Lp * Lp) * N2 * N2 / (N1 * N1) # compute weights
         return x[0], w[0]
 
-    def approx_parameters(self, rhomax):
-        # approximate parameters for the MLP
-        levels = np.arange(1, rhomax+1)  # level list
-        Q = np.zeros((rhomax, rhomax))  # number of quadrature points
-        Mf = np.zeros((rhomax, rhomax))  # number of forward Euler steps
-        Mg = np.zeros((rhomax, rhomax+1))  # number of backward Euler steps
-
-        rho_values = np.arange(1, rhomax+1).reshape(-1, 1)
-        k_values = np.arange(1, rhomax+1)
-
-        Q = np.round(self.inverse_gamma(rho_values ** (k_values / 2)))
-        Mf = np.round(rho_values ** (k_values / 2))
-        Mg[:, :-1] = np.round(rho_values ** (k_values - 1))
-        Mg[:, -1] = rho_values.flatten() ** rho_values.flatten()
-
-        qmax = int(np.max(Q))  # maximum number of quadrature points
-        c = np.zeros((qmax, qmax))  # quadrature points
-        w = np.zeros((qmax, qmax))  # quadrature weights
-
-        k_values = np.arange(1, qmax+1)
-        ctemp, wtemp = self.lgwt(k_values, 0, self.T)  # Legendre-Gauss nodes and weights
-        c = np.concatenate([ctemp[::-1], np.zeros((qmax, qmax - len(k_values)))], axis=0)  # quadrature points
-        w = np.concatenate([wtemp[::-1], np.zeros((qmax, qmax - len(k_values)))], axis=0)  # quadrature weights
-
+    def approx_parameters(self,rhomax):
+        #approximate parameters for the MLP
+        levels = list(range(1, rhomax+1)) #level list
+        Q = np.zeros((rhomax, rhomax)) #number of quadrature points
+        Mf = np.zeros((rhomax, rhomax)) #number of forward Euler steps
+        Mg = np.zeros((rhomax, rhomax+1)) #number of backward Euler steps
+        for rho in range(1, rhomax+1):
+            for k in range(1, levels[rho-1]+1):
+                Q[rho-1][k-1] = round(self.inverse_gamma(rho ** (k/2))) #inverse gamma function
+                Mf[rho-1][k-1] = round(rho ** (k/2)) #forward Euler steps
+                Mg[rho-1][k-1] = round(rho ** (k-1)) #backward Euler steps
+            Mg[rho-1][rho] = rho ** rho #backward Euler steps
+        qmax = int(np.max(Q)) #maximum number of quadrature points
+        c = np.zeros((qmax, qmax)) #quadrature points
+        w = np.zeros((qmax, qmax)) #quadrature weights
+        for k in range(1, qmax+1):
+            ctemp, wtemp = self.lgwt(k, 0, self.T) #Legendre-Gauss nodes and weights
+            c[:, k-1] = np.concatenate([ctemp[::-1], np.zeros(qmax-k)]) #quadrature points
+            w[:, k-1] = np.concatenate([wtemp[::-1], np.zeros(qmax-k)]) #quadrature weights
         return Mf, Mg, Q, c, w
         
     def u_breve_z_breve_solve(self,n, rho, x_t): 
         #approximate the solution of the PDE, return the value of u_breve(x_t) and z_breve(x_t), batchwisely
         #n: backward Euler samples needed
         #rho: current level
-        #x_t: a batch of spatial-temporal coordinates
-        Mf, Mg, Q, c, w = self.approxparameters(rho)
+        #x_t: a batch of spatial-temporal coordinates, ndarray
+        Mf, Mg, Q, c, w = self.approx_parameters(rho)
         T=self.T #terminal time
         dim=self.n_input-1 #spatial dimensions
         batch_size=x_t.shape[0] #batch size
@@ -112,35 +110,51 @@ class ScaML(object):
         cloc = (T-t)[:, np.newaxis,np.newaxis] * c[np.newaxis,:]/T #local time
         wloc = (T-t)[:, np.newaxis,np.newaxis] * w[np.newaxis,:]/T #local weights
         MC = int(Mg[rho-1, n]) # number of monte carlo samples for backward Euler
-        W = np.sqrt(T-t)[:, np.newaxis] * np.random.normal(size=(batch_size,MC, dim))
-        X = np.repeat(x, MC, axis=1) + sigma * W
-        u_breve = np.mean(np.apply_along_axis(g, 1, X), axis=1)
-        z_breve = np.sum((np.repeat((np.apply_along_axis(g, 1, X)-g(x)[:, np.newaxis,:])[:,0], dim, axis=-1) * W), axis=1) / (MC * (T-t)[:, np.newaxis])
+        W = np.sqrt(T-t)[:, np.newaxis,np.newaxis] * np.random.normal(size=(batch_size,MC, dim))
+        X = np.repeat(x.reshape(x.shape[0], 1, x.shape[1]), MC, axis=1) + sigma * W
+        # print(X.shape)
+        # print(X)
+        terminals=np.zeros((batch_size,MC,1))
+        differences=np.zeros((batch_size,MC,1))
+        for i in range(MC):
+            input_terminal = np.concatenate((X[:, i, :], np.full((batch_size, 1), T)), axis=1)
+            disturbed_input_terminal= np.concatenate((X[:, i, :]+W[:,i,:], np.full((batch_size, 1), T)), axis=1)
+            terminals[:,i,:]=g(input_terminal)[:,np.newaxis]
+            differences[:,i,:]=(g(disturbed_input_terminal)-g(input_terminal))[:,np.newaxis]
+        u_breve = np.mean(terminals, axis=1)+np.sum(differences,axis=1) / MC
+        z_breve = np.sum(differences*W,axis=1)/ (MC * (T-t)[:, np.newaxis])
         if n <= 0:
             return np.concatenate((u_breve, z_breve),axis=-1)
         for l in range(n):
             q = int(Q[rho-1, n-l-1]) # number of quadrature points
-            d = cloc[:,:q, q-1] - np.concatenate((t, cloc[:,:q-1, q-1]),axis=1) # time step
+            d = cloc[:,:q, q-1] - np.concatenate((t[:,np.newaxis], cloc[:,:q-1, q-1]),axis=1) # time step
             MC = int(Mf[rho-1, n-l-1])
-            X = np.repeat([x], MC, axis=1)
+            X = np.repeat(x.reshape(x.shape[0], 1, x.shape[1]), MC, axis=1)
             W = np.zeros((batch_size,MC, dim))
+            simulated=np.zeros((batch_size,MC,dim+1))
             for k in range(q):
-                dW = np.sqrt(d[:,k]) * np.random.normal(size=(batch_size, MC, dim))
+                dW = np.sqrt(np.maximum(d[:,k], 0))[:,np.newaxis,np.newaxis] * np.random.normal(size=(batch_size, MC, dim))
                 W += dW           
-                X += sigma * dW            
-                simulated=np.apply_along_axis(lambda x_t:self.u_breve_z_breve_solve(n=l,rho=rho,x_t=x_t),1,np.concatenate((X, np.repeat(cloc[:,k,q-1],MC,axis=1)),axis=-1))
+                X += sigma * dW 
+                co_solver_l=lambda x_t:self.u_breve_z_breve_solve(n=l,rho=rho,x_t=x_t)
+                co_solver_l_minus_1=lambda x_t:self.u_breve_z_breve_solve(n=l-1,rho=rho,x_t=x_t)
+                for i in range(MC):
+                    disturbed_input_intermediate= np.concatenate((X[:, i, :]+dW[:,i,:], cloc[:,k,q-1][:,np.newaxis]), axis=1)
+                    simulated[:,i,:]=co_solver_l(disturbed_input_intermediate)           
                 simulated_u_breve, simulated_z_breve = simulated[:,:, 0].reshape(batch_size,MC,1), simulated[:,:, 1:] 
-                y = np.array( [f(cloc[:,k,q-1], X[:,i,:], simulated_u_breve[:,i,:], simulated_z_breve[:,i,:]) for i in range(MC)])
+                y = np.array( [f(disturbed_input_intermediate,simulated_u_breve[:,i,:], simulated_z_breve[:,i,:]) for i in range(MC)])
                 y=y.transpose(1,0,2)
-                u_breve += wloc[:,k, q-1] * np.mean(y, axis=1) 
-                z_breve += wloc[:,k, q-1] * np.sum(np.repeat(y[:,:,0], dim, axis=-1) * W, axis=1) / (MC * (cloc[:,k, q-1]-t)[:,np.newaxis])
+                u_breve += wloc[:,k, q-1][:,np.newaxis] * np.mean(y, axis=1)
+                z_breve += wloc[:,k, q-1][:,np.newaxis] * np.sum(y * W, axis=1) / (MC * (cloc[:,k, q-1]-t)[:,np.newaxis])
                 if l:
-                    simulated=np.apply_along_axis(lambda x_t:self.u_breve_z_breve_solve(n=l-1,rho=rho,x_t=x_t),1,np.concatenate((X, np.repeat(cloc[:,k,q-1],MC,axis=1)),axis=-1))
+                    for i in range(MC):
+                        disturbed_input_intermediate= np.concatenate((X[:, i, :]+dW[:,i,:], cloc[:,k,q-1][:,np.newaxis]), axis=1)
+                        simulated[:,i,:]=co_solver_l_minus_1(disturbed_input_intermediate)
                     simulated_u_breve, simulated_z_breve = simulated[:,:, 0].reshape(batch_size,MC,1), simulated[:,:, 1:] 
-                    y = np.array( [f(cloc[:,k,q-1], X[:,i,:], simulated_u_breve[:,i,:], simulated_z_breve[:,i,:]) for i in range(MC)])
+                    y = np.array( [f(disturbed_input_intermediate,simulated_u_breve[:,i,:], simulated_z_breve[:,i,:]) for i in range(MC)])
                     y=y.transpose(1,0,2)
-                    u_breve -= wloc[:,k, q-1] * np.mean(y, axis=1) 
-                    z_breve -= wloc[:,k, q-1] * np.sum(np.repeat(y[:,:,0], dim, axis=-1) * W, axis=1) / (MC * (cloc[:,k, q-1]-t)[:,np.newaxis])
+                    u_breve -= wloc[:,k, q-1][:,np.newaxis] * np.mean(y, axis=1)
+                    z_breve -= wloc[:,k, q-1][:,np.newaxis] * np.sum(y * W, axis=1) / (MC * (cloc[:,k, q-1]-t)[:,np.newaxis])
         return np.concatenate((u_breve, z_breve),axis=-1)
     def u_solve(self,n, rho, x_t): 
         #approximate the solution of the PDE, return the value of u(x_t) and z(x_t), batchwisely
@@ -150,6 +164,7 @@ class ScaML(object):
         u_breve_z=self.u_breve_z_breve_solve(n, rho, x_t)
         u_breve,z_breve=u_breve_z[:,0],u_breve_z[:,1:]
         tensor_x_t=torch.tensor(x_t,requires_grad=True).float()
-        u_hat=self.net(tensor_x_t).detach().numpy()
+        u_hat=self.net(tensor_x_t).detach().numpy()[:,0]
         u=u_breve+u_hat
         return u
+    

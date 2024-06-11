@@ -83,6 +83,7 @@ class Explict_Solution_Example(Equation):
     def __init__(self, n_input, n_output=1):
         super().__init__(n_input, n_output)
     def PDE_loss(self, x_t,u,z):
+        #takes tensors as inputs and outputs
         du_t = dde.grad.jacobian(u,x_t,i=0,j=self.n_input-1)
         laplacian=0
         div=0
@@ -92,7 +93,7 @@ class Explict_Solution_Example(Equation):
         residual=du_t + (self.sigma()**2 * u - 1/self.n_input - self.sigma()**2/2) * div + self.sigma()**2/2 * laplacian
         return residual 
     def gPDE_loss(self, x_t,u):
-        #use gPINN loss in this example
+        #use gPINN loss in this example, takes tensors as inputs and outputs
         du_t = dde.grad.jacobian(u,x_t,i=0,j=self.n_input-1)
         laplacian=0
         div=0
@@ -106,6 +107,7 @@ class Explict_Solution_Example(Equation):
         g_loss.append(residual)
         return g_loss
     def terminal_constraint(self, x_t):
+        #notice that the result should be a 1d vector, with its rows being the batch size
         result= np.exp(x_t[:,-1] + np.sum(x_t[:,:self.n_input],axis=1) / (1 + np.exp(x_t[:,-1] + np.sum(x_t[:,:self.n_input],axis=1))))
         return result 
 
