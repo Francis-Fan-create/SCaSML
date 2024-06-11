@@ -77,7 +77,7 @@ class MLP(object):
         #n: backward Euler samples needed
         #rho: current level
         #x_t: a batch of spatial-temporal coordinates, ndarray
-        Mf, Mg, Q, c, w = self.approxparameters(rho)
+        Mf, Mg, Q, c, w = self.approx_parameters(rho)
         T=self.T #terminal time
         dim=self.n_input-1 #spatial dimensions
         batch_size=x_t.shape[0] #batch size
@@ -89,34 +89,50 @@ class MLP(object):
         cloc = (T-t)[:, np.newaxis,np.newaxis] * c[np.newaxis,:]/T #local time
         wloc = (T-t)[:, np.newaxis,np.newaxis] * w[np.newaxis,:]/T #local weights
         MC = int(Mg[rho-1, n]) # number of monte carlo samples for backward Euler
-        W = np.sqrt(T-t)[:, np.newaxis] * np.random.normal(size=(batch_size,MC, dim))
-        X = np.repeat(x, MC, axis=1) + sigma * W
-        u = np.mean(np.apply_along_axis(g, 1, X), axis=1)
-        z = np.sum((np.repeat((np.apply_along_axis(g, 1, X)-g(x)[:, np.newaxis,:])[:,0], dim, axis=-1) * W), axis=1) / (MC * (T-t)[:, np.newaxis])
+        W = np.sqrt(T-t)[:, np.newaxis,np.newaxis] * np.random.normal(size=(batch_size,MC, dim))
+        X = np.repeat(x.reshape(x.shape[0], 1, x.shape[1]), MC, axis=1) + sigma * W
+        # print(X.shape)
+        # print(X)
+        terminals=np.zeros((batch_size,MC,1))
+        differences=np.zeros((batch_size,MC,1))
+        for i in range(MC):
+            input_terminal = np.concatenate((X[:, i, :], np.full((batch_size, 1), T)), axis=1)
+            disturbed_input_terminal= np.concatenate((X[:, i, :]+W[:,i,:], np.full((batch_size, 1), T)), axis=1)
+            terminals[:,i,:]=g(input_terminal)[:,np.newaxis]
+            differences[:,i,:]=(g(disturbed_input_terminal)-g(input_terminal))[:,np.newaxis]
+        u = np.mean(terminals, axis=1)+np.sum(differences,axis=1) / MC
+        z = np.sum(differences*W,axis=1)/ (MC * (T-t)[:, np.newaxis])
         if n <= 0:
             return np.concatenate((u, z),axis=-1)
         for l in range(n):
             q = int(Q[rho-1, n-l-1]) # number of quadrature points
-            d = cloc[:,:q, q-1] - np.concatenate((t, cloc[:,:q-1, q-1]),axis=1) # time step
+            d = cloc[:,:q, q-1] - np.concatenate((t[:,np.newaxis], cloc[:,:q-1, q-1]),axis=1) # time step
             MC = int(Mf[rho-1, n-l-1])
-            X = np.repeat([x], MC, axis=1)
+            X = np.repeat(x.reshape(x.shape[0], 1, x.shape[1]), MC, axis=1)
             W = np.zeros((batch_size,MC, dim))
+            simulated=np.zeros((batch_size,MC,dim+1))
             for k in range(q):
-                dW = np.sqrt(d[:,k]) * np.random.normal(size=(batch_size, MC, dim))
+                dW = np.sqrt(np.maximum(d[:,k], 0))[:,np.newaxis,np.newaxis] * np.random.normal(size=(batch_size, MC, dim))
                 W += dW           
-                X += sigma * dW            
-                simulated=np.apply_along_axis(lambda x_t:self.uz_solve(n=l,rho=rho,x_t=x_t),1,np.concatenate((X, np.repeat(cloc[:,k,q-1],MC,axis=1)),axis=-1))
+                X += sigma * dW 
+                co_solver_l=lambda x_t:self.uz_solve(n=l,rho=rho,x_t=x_t)
+                co_solver_l_minus_1=lambda x_t:self.uz_solve(n=l-1,rho=rho,x_t=x_t)
+                for i in range(MC):
+                    disturbed_input_intermediate= np.concatenate((X[:, i, :]+dW[:,i,:], cloc[:,k,q-1][:,np.newaxis]), axis=1)
+                    simulated[:,i,:]=co_solver_l(disturbed_input_intermediate)           
                 simulated_u, simulated_z = simulated[:,:, 0].reshape(batch_size,MC,1), simulated[:,:, 1:] 
-                y = np.array( [f(cloc[:,k,q-1], X[:,i,:], simulated_u[:,i,:], simulated_z[:,i,:]) for i in range(MC)])
+                y = np.array( [f(disturbed_input_intermediate, simulated_u[:,i,:], simulated_z[:,i,:]) for i in range(MC)])
                 y=y.transpose(1,0,2)
-                u += wloc[:,k, q-1] * np.mean(y, axis=1) 
-                z += wloc[:,k, q-1] * np.sum(np.repeat(y[:,:,0], dim, axis=-1) * W, axis=1) / (MC * (cloc[:,k, q-1]-t)[:,np.newaxis])
+                u += wloc[:,k, q-1][:,np.newaxis] * np.mean(y, axis=1)
+                z += wloc[:,k, q-1][:,np.newaxis] * np.sum(y * W, axis=1) / (MC * (cloc[:,k, q-1]-t)[:,np.newaxis])
                 if l:
-                    simulated=np.apply_along_axis(lambda x_t:self.uz_solve(n=l-1,rho=rho,x_t=x_t),1,np.concatenate((X, np.repeat(cloc[:,k,q-1],MC,axis=1)),axis=-1))
+                    for i in range(MC):
+                        disturbed_input_intermediate= np.concatenate((X[:, i, :]+dW[:,i,:], cloc[:,k,q-1][:,np.newaxis]), axis=1)
+                        simulated[:,i,:]=co_solver_l_minus_1(disturbed_input_intermediate)
                     simulated_u, simulated_z = simulated[:,:, 0].reshape(batch_size,MC,1), simulated[:,:, 1:] 
-                    y = np.array( [f(cloc[:,k,q-1], X[:,i,:], simulated_u[:,i,:], simulated_z[:,i,:]) for i in range(MC)])
+                    y = np.array( [f(disturbed_input_intermediate, simulated_u[:,i,:], simulated_z[:,i,:]) for i in range(MC)])
                     y=y.transpose(1,0,2)
-                    u -= wloc[:,k, q-1] * np.mean(y, axis=1) 
-                    z -= wloc[:,k, q-1] * np.sum(np.repeat(y[:,:,0], dim, axis=-1) * W, axis=1) / (MC * (cloc[:,k, q-1]-t)[:,np.newaxis])
+                    u -= wloc[:,k, q-1][:,np.newaxis] * np.mean(y, axis=1)
+                    z -= wloc[:,k, q-1][:,np.newaxis] * np.sum(y * W, axis=1) / (MC * (cloc[:,k, q-1]-t)[:,np.newaxis])
         return np.concatenate((u, z),axis=-1)
 
