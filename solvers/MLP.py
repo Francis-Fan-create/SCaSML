@@ -112,7 +112,7 @@ class MLP(object):
             W = np.zeros((batch_size,MC, dim))
             simulated=np.zeros((batch_size,MC,dim+1))
             for k in range(q):
-                dW = np.sqrt(np.maximum(d[:,k], 0))[:,np.newaxis,np.newaxis] * np.random.normal(size=(batch_size, MC, dim))
+                dW = np.sqrt(d[:,k])[:,np.newaxis,np.newaxis] * np.random.normal(size=(batch_size, MC, dim))
                 W += dW           
                 X += sigma * dW 
                 co_solver_l=lambda x_t:self.uz_solve(n=l,rho=rho,x_t=x_t)

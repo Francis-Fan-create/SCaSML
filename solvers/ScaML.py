@@ -29,10 +29,11 @@ class ScaML(object):
         u_hat=tensor_u_hat.detach().numpy()
         tensor_grad_u_hat_x=torch.autograd.grad(tensor_u_hat,tensor_x_t,grad_outputs=torch.ones_like(tensor_u_hat),retain_graph=True,create_graph=True)[0][:, :-1]
         grad_u_hat_x=tensor_grad_u_hat_x.detach().numpy()
-        epsilon=eq.PDE_loss(tensor_x_t,tensor_u_hat,tensor_grad_u_hat_x).detach().numpy()
+        # epsilon=eq.PDE_loss(tensor_x_t,tensor_u_hat,tensor_grad_u_hat_x).detach().numpy()
         val1=eq.f(x_t,u_breve+u_hat,eq.sigma(x_t)*(grad_u_hat_x+z_breve))  
         val2=eq.f(x_t,u_hat,eq.sigma(x_t)*grad_u_hat_x)
-        return val1-val2-epsilon
+        # return val1-val2-epsilon #large version
+        return val1-val2 #light version
     def g(self,x_t):
         # terminal constraint of ScaML
         eq=self.equation
@@ -133,7 +134,7 @@ class ScaML(object):
             W = np.zeros((batch_size,MC, dim))
             simulated=np.zeros((batch_size,MC,dim+1))
             for k in range(q):
-                dW = np.sqrt(np.maximum(d[:,k], 0))[:,np.newaxis,np.newaxis] * np.random.normal(size=(batch_size, MC, dim))
+                dW = np.sqrt(d[:,k])[:,np.newaxis,np.newaxis] * np.random.normal(size=(batch_size, MC, dim))
                 W += dW           
                 X += sigma * dW 
                 co_solver_l=lambda x_t:self.u_breve_z_breve_solve(n=l,rho=rho,x_t=x_t)
