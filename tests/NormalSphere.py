@@ -3,6 +3,10 @@ import matplotlib.pyplot as plt
 import wandb
 import torch
 from tqdm import tqdm
+from matplotlib.colors import TwoSlopeNorm
+import cProfile
+import io
+import pstats
 class NormalSphere(object):
     '''Normal sphere test in high dimensions'''
     def __init__(self, equation, solver1,solver2,solver3):
@@ -19,13 +23,18 @@ class NormalSphere(object):
         self.t0=equation.t0
         self.T=equation.T
         self.radius=np.sqrt(self.dim*(self.T-self.t0)**2)
-    def test(self,save_path,rho=2,n_samples=10,x_grid_num=100,t_grid_num=10):
+    def test(self,save_path,rhomax=2,n_samples=10,x_grid_num=100,t_grid_num=10):
+        #initialize the profiler
+        profiler = cProfile.Profile()
+        profiler.enable()
         #compare solvers on different distances on the sphere
         eq=self.equation
-        n=rho
+        n=rhomax
         x_grid=np.linspace(0,self.radius,x_grid_num)
         t_grid=np.linspace(self.t0,self.T,t_grid_num)
         x_mesh,t_mesh=np.meshgrid(x_grid,t_grid)
+        self.solver2.set_approx_parameters(rhomax)  
+        self.solver3.set_approx_parameters(rhomax)  
         errors1=np.zeros_like(x_mesh)
         errors2=np.zeros_like(x_mesh)
         errors3=np.zeros_like(x_mesh)
@@ -42,59 +51,89 @@ class NormalSphere(object):
                 exact_sol=eq.exact_solution(xt_values)
                 '''A little bug: sol1 is float32 while sol2 and sol3 are float64'''
                 sol1=self.solver1(torch.tensor(xt_values,dtype=torch.float32)).detach().numpy()[:,0]
-                sol2=self.solver2.uz_solve(n,rho,xt_values)[:,0]
-                sol3=self.solver3.u_solve(n,rho,xt_values)
+                sol2=self.solver2.uz_solve(n,rhomax,xt_values)[:,0]
+                sol3=self.solver3.u_solve(n,rhomax,xt_values)
                 errors1[i,j]+=np.mean(sol1-exact_sol)
                 errors2[i,j]+=np.mean(sol2-exact_sol)
                 errors3[i,j]+=np.mean(sol3-exact_sol)
         # compute |errors1|-|errors3|,|errrors2|-|errors3|
         errors_13=np.abs(errors1)-np.abs(errors3)
         errors_23=np.abs(errors2)-np.abs(errors3)
+
+        # Find the global minimum and maximum error
+        vmin = min(np.min(errors1), np.min(errors2), np.min(errors3), np.min(errors_13), np.min(errors_23))
+        vmax = max(np.max(errors1), np.max(errors2), np.max(errors3), np.max(errors_13), np.max(errors_23))
+        # Create a TwoSlopeNorm object
+        norm =TwoSlopeNorm(vmin=vmin, vcenter=0, vmax=vmax)
+        # Plot the errors
         plt.figure()
-        plt.imshow(errors1,extent=[0,self.radius,self.t0,self.T],aspect='auto',cmap='RdBu_r')
+        plt.imshow(errors1, extent=[0, self.radius, self.t0, self.T], aspect='auto', cmap='RdBu_r',norm=norm)
         plt.colorbar()
-        plt.title("PINN error")
+        plt.title("PINN error, rho={:d}".format(rhomax))
         plt.xlabel("distance from origin")
         plt.ylabel("time")
-        #display the nanmean of the errors
-        print('mean magnitude of PINN error:',np.nanmean(np.abs(errors1)))
-        plt.savefig(f"{save_path}/PINN_error.png")
+        plt.savefig(f"{save_path}/PINN_error_rho={rhomax}.png")
+        abs_errors1=np.abs(errors1)
+        print(f"magnitude of PINN error, rho={rhomax}->","min:",np.min(abs_errors1),"max:",np.max(abs_errors1),"mean:",np.mean(abs_errors1))
+
         plt.figure()
-        plt.imshow(errors2,extent=[0,self.radius,self.t0,self.T],aspect='auto',cmap='RdBu_r')
+        plt.imshow(errors2, extent=[0, self.radius, self.t0, self.T], aspect='auto', cmap='RdBu_r',norm=norm)
         plt.colorbar()
-        plt.title("MLP error, rho={:d}".format(rho))
+        plt.title("MLP error, rho={:d}".format(rhomax))
         plt.xlabel("distance from origin")
         plt.ylabel("time")
-        #display the nanmean of the errors
-        print('mean magnitude of MLP error:',np.nanmean(np.abs(errors2)))
-        plt.savefig(f"{save_path}/MLP_error.png")
+        plt.savefig(f"{save_path}/MLP_error_rho={rhomax}.png")
+        abs_errors2=np.abs(errors2)
+        print(f"maginitude of MLP error, rho={rhomax}->","min:",np.min(abs_errors2),"max:",np.max(abs_errors2),"mean:",np.mean(abs_errors2))
+
         plt.figure()
-        plt.imshow(errors3,extent=[0,self.radius,self.t0,self.T],aspect='auto',cmap='RdBu_r')
+        plt.imshow(errors3, extent=[0, self.radius, self.t0, self.T], aspect='auto', cmap='RdBu_r',norm=norm)
         plt.colorbar()
-        plt.title("ScaML error, rho={:d}".format(rho))
+        plt.title("ScaML error, rho={:d}".format(rhomax))
         plt.xlabel("distance from origin")
         plt.ylabel("time")
-        #display the nanmean of the errors
-        print('mean magnitude of ScaML error:',np.nanmean(np.abs(errors3)))
-        plt.savefig(f"{save_path}/ScaML_error.png")
+        plt.savefig(f"{save_path}/ScaML_error_rho={rhomax}.png")
+        abs_errors3=np.abs(errors3)
+        print(f"magnitude of ScaML error, rho={rhomax}->","min:",np.min(abs_errors3),"max:",np.max(abs_errors3),"mean:",np.mean(abs_errors3))
+
         plt.figure()
-        plt.imshow(errors_13,extent=[0,self.radius,self.t0,self.T],aspect='auto',cmap='RdBu_r')
+        plt.imshow(errors_13, extent=[0, self.radius, self.t0, self.T], aspect='auto', cmap='RdBu_r',norm=norm)
         plt.colorbar()
-        plt.title("|PINN error| - |ScaML error|, rho={:d}".format(rho))
+        plt.title("|PINN error| - |ScaML error|, rho={:d}".format(rhomax))
         plt.xlabel("distance from origin")
         plt.ylabel("time")
+        plt.savefig(f"{save_path}/PINN_ScaML_error_rho={rhomax}.png")
+
+        plt.figure()
+        plt.imshow(errors_23, extent=[0, self.radius, self.t0, self.T], aspect='auto', cmap='RdBu_r',norm=norm)
+        plt.colorbar()
+        plt.title("|MLP error| - |ScaML error|, rho={:d}".format(rhomax))
+        plt.xlabel("distance from origin")
+        plt.ylabel("time")
+        plt.savefig(f"{save_path}/MLP_ScaML_error_rho={rhomax}.png")
         #display the positive count and negative count of the difference of the errors
-        print('|PINN error| - |ScaML error|->','positve count:',np.sum(errors_13>0),'negative count:',np.sum(errors_13<0))
-        plt.savefig(f"{save_path}/PINN_ScaML_error.png")
-        plt.figure()
-        plt.imshow(errors_23,extent=[0,self.radius,self.t0,self.T],aspect='auto',cmap='RdBu_r')
-        plt.colorbar()
-        plt.title("|MLP error| - |ScaML error|, rho={:d}".format(rho))
-        plt.xlabel("distance from origin")
-        plt.ylabel("time")
-        #display the positive count and negative count of the difference of the errors
-        print('|MLP error| - |ScaML error|->','positve count:',np.sum(errors_23>0),'negative count:',np.sum(errors_23<0))
-        plt.savefig(f"{save_path}/MLP_ScaML_error.png")
-        wandb.log({"PINN error": wandb.Image(f"{save_path}/PINN_error.png"), "MLP error": wandb.Image(f"{save_path}/MLP_error.png"), "ScaML error": wandb.Image(f"{save_path}/ScaML_error.png")})
-        wandb.log({"PINN-ScaML error": wandb.Image(f"{save_path}/PINN_ScaML_error.png"), "MLP-ScaML error": wandb.Image(f"{save_path}/MLP_ScaML_error.png")})
+        print(f'|PINN error| - |ScaML error|,rho={rhomax}->','positve count:',np.sum(errors_13>0),'negative count:',np.sum(errors_13<0))
+        print(f'|MLP error| - |ScaML error|,rho={rhomax}->','positve count:',np.sum(errors_23>0),'negative count:',np.sum(errors_23<0))
+        wandb.log({f"PINN error,rho={rhomax}": wandb.Image(f"{save_path}/PINN_error_rho={rhomax}.png"), f"MLP error,rho={rhomax}": wandb.Image(f"{save_path}/MLP_error_rho={rhomax}.png"), f"ScaML error,rho={rhomax}": wandb.Image(f"{save_path}/ScaML_error_rho={rhomax}.png")})
+        wandb.log({f"PINN-ScaML error,rho={rhomax}": wandb.Image(f"{save_path}/PINN_ScaML_error_rho={rhomax}.png"), f"MLP-ScaML error,rho={rhomax}": wandb.Image(f"{save_path}/MLP_ScaML_error_rho={rhomax}.png")})
+        wandb.log({f"mean magnitude of PINN error,rho={rhomax}": np.mean(abs_errors1), f"mean magnitude of MLP error,rho={rhomax}": np.mean(abs_errors2), f"mean magnitude of ScaML error,rho={rhomax}": np.mean(abs_errors3)})
+        wandb.log({f"max maginitude of PINN error,rho={rhomax}": np.max(abs_errors1), f"max maginitude of MLP error,rho={rhomax}": np.max(abs_errors2), f"max maginitude of ScaML error,rho={rhomax}": np.max(abs_errors3)})
+        wandb.log({f"min maginitude of PINN error,rho={rhomax}": np.min(abs_errors1), f"min maginitude of MLP error,rho={rhomax}": np.min(abs_errors2), f"min maginitude of ScaML error,rho={rhomax}": np.min(abs_errors3)})
+        wandb.log({f"|PINN error| - |ScaML error|,rho={rhomax}-> positve count": np.sum(errors_13>0), f"|PINN error| - |ScaML error|,rho={rhomax}-> negative count": np.sum(errors_13<0)}) 
+        #stop the profiler
+        profiler.disable()
+        #save the profiler results
+        profiler.dump_stats(r"results/Explicit_Solution_Example/explicit_solution_example.prof")
+        #upload the profiler results to wandb
+        artifact=wandb.Artifact(r"explicit_solution_example_profiler", type="profile")
+        artifact.add_file(r"results/Explicit_Solution_Example/explicit_solution_example.prof")
+        wandb.log_artifact(artifact)
+
+        # Create a StringIO object to redirect the profiler output
+        s = io.StringIO()
+        # Create a pstats.Stats object and print the stats
+        stats = pstats.Stats(profiler, stream=s)
+        stats.print_stats()
+        # Print the profiler output
+        print(s.getvalue())
 

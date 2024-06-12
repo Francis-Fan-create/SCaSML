@@ -71,13 +71,16 @@ class MLP(object):
             c[:, k-1] = np.concatenate([ctemp[::-1], np.zeros(qmax-k)]) #quadrature points
             w[:, k-1] = np.concatenate([wtemp[::-1], np.zeros(qmax-k)]) #quadrature weights
         return Mf, Mg, Q, c, w
+    def set_approx_parameters(self,rhomax):
+        #set the approximation parameters, needs to be called before solving the PDE
+        self.Mf, self.Mg, self.Q, self.c, self.w = self.approx_parameters(rhomax)
     
     def uz_solve(self,n, rho, x_t): 
         #approximate the solution of the PDE, return the value of u(x_t) and z(x_t), batchwisely
         #n: backward Euler samples needed
         #rho: current level
         #x_t: a batch of spatial-temporal coordinates, ndarray
-        Mf, Mg, Q, c, w = self.approx_parameters(rho)
+        Mf, Mg, Q, c, w = self.Mf, self.Mg, self.Q, self.c, self.w
         T=self.T #terminal time
         dim=self.n_input-1 #spatial dimensions
         batch_size=x_t.shape[0] #batch size
@@ -86,7 +89,7 @@ class MLP(object):
         t=x_t[:, -1] #temporal coordinates
         f=self.f #generator term
         g=self.g #terminal constraint
-        cloc = (T-t)[:, np.newaxis,np.newaxis] * c[np.newaxis,:]/T #local time
+        cloc = (T-t)[:, np.newaxis,np.newaxis] * c[np.newaxis,:]/T+t[:,np.newaxis,np.newaxis] #local time
         wloc = (T-t)[:, np.newaxis,np.newaxis] * w[np.newaxis,:]/T #local weights
         MC = int(Mg[rho-1, n]) # number of monte carlo samples for backward Euler
         W = np.sqrt(T-t)[:, np.newaxis,np.newaxis] * np.random.normal(size=(batch_size,MC, dim))
@@ -100,8 +103,12 @@ class MLP(object):
             disturbed_input_terminal= np.concatenate((X[:, i, :]+W[:,i,:], np.full((batch_size, 1), T)), axis=1)
             terminals[:,i,:]=g(input_terminal)[:,np.newaxis]
             differences[:,i,:]=(g(disturbed_input_terminal)-g(input_terminal))[:,np.newaxis]
-        u = np.mean(terminals, axis=1)+np.sum(differences,axis=1) / MC
-        z = np.sum(differences*W,axis=1)/ (MC * (T-t)[:, np.newaxis])
+        u = np.mean(differences+terminals,axis=1) 
+        if (T-t).any()==0:
+            delta_t=(T-t+1e-6)[:,np.newaxis]
+            z = np.sum(differences*W,axis=1)/ (MC * delta_t)
+        else:
+            z = np.sum(differences*W,axis=1)/ (MC * (T-t)[:, np.newaxis])
         if n <= 0:
             return np.concatenate((u, z),axis=-1)
         for l in range(n):
@@ -115,24 +122,36 @@ class MLP(object):
                 dW = np.sqrt(d[:,k])[:,np.newaxis,np.newaxis] * np.random.normal(size=(batch_size, MC, dim))
                 W += dW           
                 X += sigma * dW 
-                co_solver_l=lambda x_t:self.uz_solve(n=l,rho=rho,x_t=x_t)
-                co_solver_l_minus_1=lambda x_t:self.uz_solve(n=l-1,rho=rho,x_t=x_t)
+                co_solver_l=lambda X_t:self.uz_solve(n=l,rho=rho,x_t=X_t)
+                co_solver_l_minus_1=lambda X_t:self.uz_solve(n=l-1,rho=rho,x_t=X_t)
+                input_intermediates=np.zeros((batch_size,MC,dim+1))
                 for i in range(MC):
-                    disturbed_input_intermediate= np.concatenate((X[:, i, :]+dW[:,i,:], cloc[:,k,q-1][:,np.newaxis]), axis=1)
-                    simulated[:,i,:]=co_solver_l(disturbed_input_intermediate)           
+                    input_intermediate= np.concatenate((X[:, i, :], cloc[:,k,q-1][:,np.newaxis]), axis=1)
+                    simulated[:,i,:]=co_solver_l(input_intermediate)          
+                    input_intermediates[:,i,:]=input_intermediate
                 simulated_u, simulated_z = simulated[:,:, 0].reshape(batch_size,MC,1), simulated[:,:, 1:] 
-                y = np.array( [f(disturbed_input_intermediate, simulated_u[:,i,:], simulated_z[:,i,:]) for i in range(MC)])
+                y = np.array( [f(input_intermediates[:,i,:], simulated_u[:,i,:], simulated_z[:,i,:]) for i in range(MC)])
                 y=y.transpose(1,0,2)
                 u += wloc[:,k, q-1][:,np.newaxis] * np.mean(y, axis=1)
-                z += wloc[:,k, q-1][:,np.newaxis] * np.sum(y * W, axis=1) / (MC * (cloc[:,k, q-1]-t)[:,np.newaxis])
+                if (cloc[:,k, q-1]-t).any()==0:
+                    delta_t=(cloc[:,k, q-1]-t+1e-6)[:,np.newaxis]
+                    z += wloc[:,k, q-1][:,np.newaxis] * np.sum(y*W, axis=1) / (MC * delta_t)
+                else:
+                    z += wloc[:,k, q-1][:,np.newaxis] * np.sum(y*W, axis=1) / (MC * (cloc[:,k, q-1]-t)[:,np.newaxis])
                 if l:
+                    input_intermediates=np.zeros((batch_size,MC,dim+1))
                     for i in range(MC):
-                        disturbed_input_intermediate= np.concatenate((X[:, i, :]+dW[:,i,:], cloc[:,k,q-1][:,np.newaxis]), axis=1)
-                        simulated[:,i,:]=co_solver_l_minus_1(disturbed_input_intermediate)
+                        input_intermediate= np.concatenate((X[:, i, :], cloc[:,k,q-1][:,np.newaxis]), axis=1)
+                        simulated[:,i,:]=co_solver_l_minus_1(input_intermediate)          
+                        input_intermediates[:,i,:]=input_intermediate
                     simulated_u, simulated_z = simulated[:,:, 0].reshape(batch_size,MC,1), simulated[:,:, 1:] 
-                    y = np.array( [f(disturbed_input_intermediate, simulated_u[:,i,:], simulated_z[:,i,:]) for i in range(MC)])
+                    y = np.array( [f(input_intermediates[:,i,:], simulated_u[:,i,:], simulated_z[:,i,:]) for i in range(MC)])
                     y=y.transpose(1,0,2)
                     u -= wloc[:,k, q-1][:,np.newaxis] * np.mean(y, axis=1)
-                    z -= wloc[:,k, q-1][:,np.newaxis] * np.sum(y * W, axis=1) / (MC * (cloc[:,k, q-1]-t)[:,np.newaxis])
+                    if (cloc[:,k, q-1]-t).any()==0:
+                        delta_t=(cloc[:,k, q-1]-t+1e-6)[:,np.newaxis]
+                        z -= wloc[:,k, q-1][:,np.newaxis] * np.sum(y*W, axis=1) / (MC * delta_t)
+                    else:
+                        z -= wloc[:,k, q-1][:,np.newaxis] * np.sum(y*W, axis=1) / (MC * (cloc[:,k, q-1]-t)[:,np.newaxis])
         return np.concatenate((u, z),axis=-1)
 

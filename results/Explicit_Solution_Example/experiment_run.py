@@ -15,7 +15,6 @@ from solvers.ScaML import ScaML
 import numpy as np
 import torch
 import wandb
-import cProfile
 import deepxde as dde
 
 #fix random seed for dde
@@ -34,8 +33,8 @@ if device.type == 'cuda':
     gpu_name = torch.cuda.get_device_name()
 
 #initialize wandb
-# wandb.init(project="Explicit_Solution_Example", notes="100 d", tags=["normal sphere test","Adam-LBFGS training"],mode="disabled") #debug mode
-wandb.init(project="Explicit_Solution_Example", notes="100 d", tags=["normal sphere test","Adam-LBFGS training"]) #working mode
+wandb.init(project="Explicit_Solution_Example", notes="100 d", tags=["normal sphere test","Adam-LBFGS training"],mode="disabled") #debug mode
+# wandb.init(project="Explicit_Solution_Example", notes="100 d", tags=["normal sphere test","Adam-LBFGS training"]) #working mode
 wandb.config.update({"device": device.type}) # record device type
 
 #initialize the equation
@@ -63,19 +62,12 @@ solver1=trained_net #PINN network
 solver1.eval()
 solver2=MLP(equation=equation) #Multilevel Picard object
 solver3=ScaML(equation=equation,net=solver1) #ScaML object
-profiler = cProfile.Profile()
-profiler.enable()
+
+
 #run the test
 test=NormalSphere(equation,solver1,solver2,solver3)
 test.test(r"results/Explicit_Solution_Example")
-#stop the profiler
-profiler.disable()
-#save the profiler results
-profiler.dump_stats(r"results/Explicit_Solution_Example/explicit_solution_example.prof")
-#upload the profiler results to wandb
-artifact=wandb.Artifact(r"explicit_solution_example_profiler", type="profile")
-artifact.add_file(r"results/Explicit_Solution_Example/explicit_solution_example.prof")
-wandb.log_artifact(artifact)
+
 
 
 #finish wandb
