@@ -93,14 +93,15 @@ class MLP(object):
         wloc = (T-t)[:, np.newaxis,np.newaxis] * w[np.newaxis,:]/T #local weights
         MC = int(Mg[rho-1, n]) # number of monte carlo samples for backward Euler
         W = np.sqrt(T-t)[:, np.newaxis,np.newaxis] * np.random.normal(size=(batch_size,MC, dim))
-        X = np.repeat(x.reshape(x.shape[0], 1, x.shape[1]), MC, axis=1) + sigma * W
+        X = np.repeat(x.reshape(x.shape[0], 1, x.shape[1]), MC, axis=1)
+        disturbed_X = np.repeat(x.reshape(x.shape[0], 1, x.shape[1]), MC, axis=1) + sigma * W
         # print(X.shape)
         # print(X)
         terminals=np.zeros((batch_size,MC,1))
         differences=np.zeros((batch_size,MC,1))
         for i in range(MC):
             input_terminal = np.concatenate((X[:, i, :], np.full((batch_size, 1), T)), axis=1)
-            disturbed_input_terminal= np.concatenate((X[:, i, :]+W[:,i,:], np.full((batch_size, 1), T)), axis=1)
+            disturbed_input_terminal= np.concatenate((disturbed_X[:, i, :], np.full((batch_size, 1), T)), axis=1)
             terminals[:,i,:]=g(input_terminal)[:,np.newaxis]
             differences[:,i,:]=(g(disturbed_input_terminal)-g(input_terminal))[:,np.newaxis]
         u = np.mean(differences+terminals,axis=1) 
@@ -154,4 +155,8 @@ class MLP(object):
                     else:
                         z -= wloc[:,k, q-1][:,np.newaxis] * np.sum(y*W, axis=1) / (MC * (cloc[:,k, q-1]-t)[:,np.newaxis])
         return np.concatenate((u, z),axis=-1)
+    def u_solve(self,n, rho, x_t):
+        #approximate the solution of the PDE, return the value of u(x_t), batchwisely
+        return self.uz_solve(n, rho, x_t)[:,0][:,np.newaxis]
+
 

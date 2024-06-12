@@ -93,7 +93,7 @@ class Explict_Solution_Example(Equation):
         residual=du_t + (self.sigma()**2 * u - 1/self.n_input - self.sigma()**2/2) * div + self.sigma()**2/2 * laplacian
         return residual 
     def gPDE_loss(self, x_t,u):
-        #use gPINN loss in this example, takes tensors as inputs and outputs
+        #use gPINN loss in this example, which takes tensors as inputs and outputs
         du_t = dde.grad.jacobian(u,x_t,i=0,j=self.n_input-1)
         laplacian=0
         div=0

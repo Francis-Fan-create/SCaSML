@@ -44,9 +44,9 @@ class NormalSphere(object):
                 t_values = np.full((n_samples, 1), t_mesh[i, j]) # Create a 2D array filled with t_mesh[i, j]
                 xt_values=np.concatenate((x_values,t_values),axis=1)
                 exact_sol=eq.exact_solution(xt_values)
-                '''A little bug: sol1 is float32 while sol2 and sol3 are float64'''
+                '''A little bug to fix: sol1 is float32 while sol2 and sol3 are float64'''
                 sol1=self.solver1(torch.tensor(xt_values,dtype=torch.float32)).detach().numpy()[:,0]
-                sol2=self.solver2.uz_solve(n,rhomax,xt_values)[:,0]
+                sol2=self.solver2.u_solve(n,rhomax,xt_values)
                 sol3=self.solver3.u_solve(n,rhomax,xt_values)
                 errors1[i,j]+=np.mean(sol1-exact_sol)
                 errors2[i,j]+=np.mean(sol2-exact_sol)
