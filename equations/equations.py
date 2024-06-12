@@ -108,7 +108,7 @@ class Explict_Solution_Example(Equation):
         return g_loss
     def terminal_constraint(self, x_t):
         #notice that the result should be a 1d vector, with its rows being the batch size
-        result= np.exp(x_t[:,-1] + np.sum(x_t[:,:self.n_input-1],axis=1) / (1 + np.exp(x_t[:,-1] + np.sum(x_t[:,:self.n_input-1],axis=1))))
+        result= 1-1 / (1 + np.exp(x_t[:,-1] + np.sum(x_t[:,:self.n_input-1],axis=1)))
         return result 
 
     def mu(self, x_t=0):
@@ -116,9 +116,9 @@ class Explict_Solution_Example(Equation):
     def sigma(self, x_t=0):
         return 0.25
     def f(self, x_t,u,z):
-        #generator term for this PDE
-        div=np.sum(z[:,0:self.n_input-1])
-        result=(self.sigma()**2 * u - 1/(self.n_input-1) - self.sigma()**2/2) * div
+        #generator term for this PDE, returns a 2d vector
+        div=np.sum(z[:,0:self.n_input-1],axis=1)
+        result=self.sigma()*(u-(2+self.sigma()**2*(self.n_input-1)/(2*self.sigma()**2*(self.n_input-1)))*div[:,np.newaxis])
         return result
     
     def exact_solution(self, x_t):
