@@ -16,6 +16,9 @@ import numpy as np
 import torch
 import wandb
 import deepxde as dde
+import cProfile
+import io
+import pstats
 
 #fix random seed for dde
 dde.config.set_random_seed(1234)
@@ -63,10 +66,28 @@ solver1.eval()
 solver2=MLP(equation=equation) #Multilevel Picard object
 solver3=ScaML(equation=equation,net=solver1) #ScaML object
 
-
+#initialize the profiler
+profiler = cProfile.Profile()
+profiler.enable()
 #run the test
 test=NormalSphere(equation,solver1,solver2,solver3)
-test.test(r"results/Explicit_Solution_Example")
+rhomax=test.test(r"results/Explicit_Solution_Example")
+#stop the profiler
+profiler.disable()
+#save the profiler results
+profiler.dump_stats(f"results/Explicit_Solution_Example/explicit_solution_example_profiler_rho_{rhomax}.prof")
+#upload the profiler results to wandb
+artifact=wandb.Artifact(f"explicit_solution_example_profiler_rho_{rhomax}.prof", type="profile")
+artifact.add_file(f"results/Explicit_Solution_Example/explicit_solution_example_profiler_rho_{rhomax}.prof")
+wandb.log_artifact(artifact)
+
+# Create a StringIO object to redirect the profiler output
+s = io.StringIO()
+# Create a pstats.Stats object and print the stats
+stats = pstats.Stats(profiler, stream=s)
+stats.print_stats()
+# Print the profiler output
+print(s.getvalue())
 
 
 

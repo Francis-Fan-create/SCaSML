@@ -4,9 +4,7 @@ import wandb
 import torch
 from tqdm import tqdm
 from matplotlib.colors import TwoSlopeNorm
-import cProfile
-import io
-import pstats
+
 class NormalSphere(object):
     '''Normal sphere test in high dimensions'''
     def __init__(self, equation, solver1,solver2,solver3):
@@ -24,9 +22,6 @@ class NormalSphere(object):
         self.T=equation.T
         self.radius=np.sqrt(self.dim*(self.T-self.t0)**2)
     def test(self,save_path,rhomax=2,n_samples=10,x_grid_num=100,t_grid_num=10):
-        #initialize the profiler
-        profiler = cProfile.Profile()
-        profiler.enable()
         #compare solvers on different distances on the sphere
         eq=self.equation
         n=rhomax
@@ -120,20 +115,5 @@ class NormalSphere(object):
         wandb.log({f"max maginitude of PINN error,rho={rhomax}": np.max(abs_errors1), f"max maginitude of MLP error,rho={rhomax}": np.max(abs_errors2), f"max maginitude of ScaML error,rho={rhomax}": np.max(abs_errors3)})
         wandb.log({f"min maginitude of PINN error,rho={rhomax}": np.min(abs_errors1), f"min maginitude of MLP error,rho={rhomax}": np.min(abs_errors2), f"min maginitude of ScaML error,rho={rhomax}": np.min(abs_errors3)})
         wandb.log({f"|PINN error| - |ScaML error|,rho={rhomax}-> positve count": np.sum(errors_13>0), f"|PINN error| - |ScaML error|,rho={rhomax}-> negative count": np.sum(errors_13<0)}) 
-        #stop the profiler
-        profiler.disable()
-        #save the profiler results
-        profiler.dump_stats(r"results/Explicit_Solution_Example/explicit_solution_example.prof")
-        #upload the profiler results to wandb
-        artifact=wandb.Artifact(r"explicit_solution_example_profiler", type="profile")
-        artifact.add_file(r"results/Explicit_Solution_Example/explicit_solution_example.prof")
-        wandb.log_artifact(artifact)
-
-        # Create a StringIO object to redirect the profiler output
-        s = io.StringIO()
-        # Create a pstats.Stats object and print the stats
-        stats = pstats.Stats(profiler, stream=s)
-        stats.print_stats()
-        # Print the profiler output
-        print(s.getvalue())
+        return rhomax
 
