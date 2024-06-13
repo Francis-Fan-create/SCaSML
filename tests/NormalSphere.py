@@ -59,7 +59,7 @@ class NormalSphere(object):
                 start = time.time()
                 sol3 = self.solver3.u_solve(n, rhomax, xt_values)
                 time3 += time.time() - start
-
+                # Compute the average error
                 errors1[i, j] += np.mean(sol1 - exact_sol)
                 errors2[i, j] += np.mean(sol2 - exact_sol)
                 errors3[i, j] += np.mean(sol3 - exact_sol)

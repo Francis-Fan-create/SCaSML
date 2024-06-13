@@ -157,6 +157,6 @@ class MLP(object):
         return np.concatenate((u, z),axis=-1)
     def u_solve(self,n, rho, x_t):
         #approximate the solution of the PDE, return the value of u(x_t), batchwisely
-        return self.uz_solve(n, rho, x_t)[:,0][:,np.newaxis]
+        return self.uz_solve(n, rho, x_t)[:,0]
 
 

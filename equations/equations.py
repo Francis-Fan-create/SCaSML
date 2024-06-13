@@ -60,6 +60,7 @@ class Equation(object):
             x=self.geomx.random_points(50) #do not use uniform !!!
             t=self.T*np.ones((50,1))
             my_data=np.concatenate((x,t),axis=1)
+            self.my_data=my_data
             tc=dde.icbc.PointSetBC(my_data,self.terminal_constraint(my_data),0) #need to be enforced on generate_data method
             self.tc=tc
             return tc
@@ -152,6 +153,7 @@ class Explict_Solution_Example(Equation):
                                 num_domain=num_domain, #sample how many points in the domain
                                 num_boundary=0, #sample how many points on the boundary
                                 num_initial=0,  #sample how many points for the initial time
+                                anchors=self.my_data, #enforce terminal points
                                 solution=self.exact_solution,   #incorporate authentic solution to evaluate error metrics
                                 num_test=None #sample how many points for testing. If None, then the training point will be used.
                             )
