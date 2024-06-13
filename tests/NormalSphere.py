@@ -124,14 +124,23 @@ class NormalSphere(object):
         plt.xlabel("distance from origin")
         plt.ylabel("time")
         plt.savefig(f"{save_path}/MLP_ScaML_error_rho={rhomax}.png")
-        #display the positive count and negative count of the difference of the errors
-        print(f'|PINN error| - |ScaML error|,rho={rhomax}->','positve count:',np.sum(errors_13>0),'negative count:',np.sum(errors_13<0))
-        print(f'|MLP error| - |ScaML error|,rho={rhomax}->','positve count:',np.sum(errors_23>0),'negative count:',np.sum(errors_23<0))
+        # Calculate the sums of positive and negative differences
+        positive_sum_13 = np.sum(errors_13[errors_13 > 0])
+        negative_sum_13 = np.sum(errors_13[errors_13 < 0])
+        positive_sum_23 = np.sum(errors_23[errors_23 > 0])
+        negative_sum_23 = np.sum(errors_23[errors_23 < 0])
+        # Display the positive count, negative count, positive sum, and negative sum of the difference of the errors
+        print(f'|PINN error| - |ScaML error|,rho={rhomax}->','positve count:',np.sum(errors_13>0),'negative count:',np.sum(errors_13<0), 'positive sum:', positive_sum_13, 'negative sum:', negative_sum_13)
+        print(f'|MLP error| - |ScaML error|,rho={rhomax}->','positve count:',np.sum(errors_23>0),'negative count:',np.sum(errors_23<0), 'positive sum:', positive_sum_23, 'negative sum:', negative_sum_23)
+        # Log the results to wandb
         wandb.log({f"PINN error,rho={rhomax}": wandb.Image(f"{save_path}/PINN_error_rho={rhomax}.png"), f"MLP error,rho={rhomax}": wandb.Image(f"{save_path}/MLP_error_rho={rhomax}.png"), f"ScaML error,rho={rhomax}": wandb.Image(f"{save_path}/ScaML_error_rho={rhomax}.png")})
         wandb.log({f"PINN-ScaML error,rho={rhomax}": wandb.Image(f"{save_path}/PINN_ScaML_error_rho={rhomax}.png"), f"MLP-ScaML error,rho={rhomax}": wandb.Image(f"{save_path}/MLP_ScaML_error_rho={rhomax}.png")})
         wandb.log({f"mean magnitude of PINN error,rho={rhomax}": np.mean(abs_errors1), f"mean magnitude of MLP error,rho={rhomax}": np.mean(abs_errors2), f"mean magnitude of ScaML error,rho={rhomax}": np.mean(abs_errors3)})
         wandb.log({f"max maginitude of PINN error,rho={rhomax}": np.max(abs_errors1), f"max maginitude of MLP error,rho={rhomax}": np.max(abs_errors2), f"max maginitude of ScaML error,rho={rhomax}": np.max(abs_errors3)})
         wandb.log({f"min maginitude of PINN error,rho={rhomax}": np.min(abs_errors1), f"min maginitude of MLP error,rho={rhomax}": np.min(abs_errors2), f"min maginitude of ScaML error,rho={rhomax}": np.min(abs_errors3)})
         wandb.log({f"|PINN error| - |ScaML error|,rho={rhomax}-> positve count": np.sum(errors_13>0), f"|PINN error| - |ScaML error|,rho={rhomax}-> negative count": np.sum(errors_13<0)}) 
+        wandb.log({f"|PINN error| - |ScaML error|,rho={rhomax}-> positive sum": positive_sum_13, f"|PINN error| - |ScaML error|,rho={rhomax}-> negative sum": negative_sum_13})
+        wandb.log({f"|MLP error| - |ScaML error|,rho={rhomax}-> positve count": np.sum(errors_23>0), f"|MLP error| - |ScaML error|,rho={rhomax}-> negative count": np.sum(errors_23<0)})
+        wandb.log({f"|MLP error| - |ScaML error|,rho={rhomax}-> positive sum": positive_sum_23, f"|MLP error| - |ScaML error|,rho={rhomax}-> negative sum": negative_sum_23})
         return rhomax
 
