@@ -1,9 +1,0 @@
-name: ml-research
-dependencies:
-- python=3.8.15
-- pytorch
-- torchvision
-- tensorboard
-- tqdm
-- gitpython
-- pyyaml
