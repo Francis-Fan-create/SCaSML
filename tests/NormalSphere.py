@@ -4,6 +4,7 @@ import wandb
 import torch
 from tqdm import tqdm
 from matplotlib.colors import TwoSlopeNorm
+import time
 
 class NormalSphere(object):
     '''Normal sphere test in high dimensions'''
@@ -33,24 +34,41 @@ class NormalSphere(object):
         errors1=np.zeros_like(x_mesh)
         errors2=np.zeros_like(x_mesh)
         errors3=np.zeros_like(x_mesh)
-        #compute the errors
-        for i in tqdm(range(x_mesh.shape[0]),desc=f"Computing errors"):
-            for j in tqdm(range(x_mesh.shape[1]),desc=f"Computing errors at time {t_grid[i]}"):
-                x_values=np.random.normal(0,1,(n_samples,self.dim))
-                # print(np.linalg.norm(x_values,axis=1)[:,np.newaxis])
-                # print(x_mesh[i,j])
-                x_values/=np.linalg.norm(x_values,axis=1)[:,np.newaxis]
-                x_values*=x_mesh[i,j]
-                t_values = np.full((n_samples, 1), t_mesh[i, j]) # Create a 2D array filled with t_mesh[i, j]
-                xt_values=np.concatenate((x_values,t_values),axis=1)
-                exact_sol=eq.exact_solution(xt_values)
-                '''A little bug to fix: sol1 is float32 while sol2 and sol3 are float64'''
-                sol1=self.solver1(torch.tensor(xt_values,dtype=torch.float32)).detach().numpy()[:,0]
-                sol2=self.solver2.u_solve(n,rhomax,xt_values)
-                sol3=self.solver3.u_solve(n,rhomax,xt_values)
-                errors1[i,j]+=np.mean(sol1-exact_sol)
-                errors2[i,j]+=np.mean(sol2-exact_sol)
-                errors3[i,j]+=np.mean(sol3-exact_sol)
+        time1,time2,time3=0,0,0 
+        # Compute the errors
+        for i in tqdm(range(x_mesh.shape[0]), desc=f"Computing errors"):
+            for j in tqdm(range(x_mesh.shape[1]), desc=f"Computing errors at time {t_grid[i]}"):
+                x_values = np.random.normal(0, 1, (n_samples, self.dim))
+                x_values /= np.linalg.norm(x_values, axis=1)[:, np.newaxis]
+                x_values *= x_mesh[i, j]
+                t_values = np.full((n_samples, 1), t_mesh[i, j])  # Create a 2D array filled with t_mesh[i, j]
+                xt_values = np.concatenate((x_values, t_values), axis=1)
+                exact_sol = eq.exact_solution(xt_values)
+
+                # Measure the time for solver1
+                start = time.time()
+                sol1 = self.solver1(torch.tensor(xt_values, dtype=torch.float32)).detach().numpy()[:, 0]
+                time1 += time.time() - start
+
+                # Measure the time for solver2
+                start = time.time()
+                sol2 = self.solver2.u_solve(n, rhomax, xt_values)
+                time2 += time.time() - start
+
+                # Measure the time for solver3
+                start = time.time()
+                sol3 = self.solver3.u_solve(n, rhomax, xt_values)
+                time3 += time.time() - start
+
+                errors1[i, j] += np.mean(sol1 - exact_sol)
+                errors2[i, j] += np.mean(sol2 - exact_sol)
+                errors3[i, j] += np.mean(sol3 - exact_sol)
+
+        # Print the total time for each solver
+        print(f"Total time for PINN: {time1} seconds")
+        print(f"Total time for MLP: {time2} seconds")
+        print(f"Total time for ScaML: {time3} seconds")
+        wandb.log({"Total time for PINN": time1, "Total time for MLP": time2, "Total time for ScaML": time3})
         # compute |errors1|-|errors3|,|errrors2|-|errors3|
         errors_13=np.abs(errors1)-np.abs(errors3)
         errors_23=np.abs(errors2)-np.abs(errors3)

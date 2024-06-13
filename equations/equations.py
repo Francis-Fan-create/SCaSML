@@ -90,7 +90,7 @@ class Explict_Solution_Example(Equation):
         for k in range(self.n_input-1): #here, we use a slower accumulating method to avoid computing more autograd, which is a tradeoff
             laplacian +=dde.grad.jacobian(z, x_t, i=k, j=k) #use grad info to compute laplacian
             div += dde.grad.jacobian(u, x_t, i=0, j=k)
-        residual=du_t + (self.sigma()**2 * u - 1/self.n_input - self.sigma()**2/2) * div + self.sigma()**2/2 * laplacian
+        residual=du_t + (self.sigma()**2 * u - 1/(self.n_input-1) - self.sigma()**2/2) * div+ self.sigma()**2/2 * laplacian
         return residual 
     def gPDE_loss(self, x_t,u):
         #use gPINN loss in this example, which takes tensors as inputs and outputs
@@ -100,7 +100,7 @@ class Explict_Solution_Example(Equation):
         for k in range(self.n_input-1): #here, we use a slower accumulating method to avoid computing more autograd, which is a tradeoff
             laplacian +=dde.grad.hessian(u, x_t, i=k, j=k) #lazy
             div += dde.grad.jacobian(u, x_t, i=0, j=k) #lazy
-        residual=du_t + (self.sigma()**2 * u - 1/self.n_input - self.sigma()**2/2) * div + self.sigma()**2/2 * laplacian
+        residual=du_t + (self.sigma()**2 * u - 1/(self.n_input-1) - self.sigma()**2/2) * div + self.sigma()**2/2 * laplacian
         g_loss=[]
         for k in range(self.n_input-1):
             g_loss.append(0.01*dde.grad.jacobian(residual,x_t,i=0,j=k))
@@ -118,7 +118,7 @@ class Explict_Solution_Example(Equation):
     def f(self, x_t,u,z):
         #generator term for this PDE, returns a 2d vector
         div=np.sum(z[:,0:self.n_input-1],axis=1)
-        result=self.sigma()*(u-(2+self.sigma()**2*(self.n_input-1)/(2*self.sigma()**2*(self.n_input-1)))*div[:,np.newaxis])
+        result=(self.sigma()**2 * u - 1/(self.n_input-1) - self.sigma()**2/2) * div[:,np.newaxis]
         return result
     
     def exact_solution(self, x_t):
