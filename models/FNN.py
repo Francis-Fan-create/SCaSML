@@ -9,8 +9,8 @@ class FNN(nn.Module):
         #initialize the FNN parameters
         super(FNN, self).__init__()
         self.layers = layers #layer list of the FNN
-        # self.net=dde.maps.pytorch.FNN(layers, "tanh", "Glorot normal") #initialize the FNN for model 1
-        self.net=dde.maps.FNN(layers, "swish", "Glorot normal") #initialize the FNN for model 2
+        self.net=dde.maps.pytorch.FNN(layers, "tanh", "Glorot normal") #initialize the FNN for model 1
+        # self.net=dde.maps.FNN(layers, "swish", "Glorot normal") #initialize the FNN for model 2
         self.equation=equation
         self.regularizer=None
         #we do not need to initialize wandb here, as it is already initialized in the main script
