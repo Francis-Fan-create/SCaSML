@@ -15,8 +15,10 @@ from solvers.ScaML import ScaML
 import numpy as np
 import torch
 import wandb
-import cProfile
 import deepxde as dde
+import cProfile
+import io
+import pstats
 
 #fix random seed for dde
 dde.config.set_random_seed(1234)
@@ -34,17 +36,17 @@ if device.type == 'cuda':
     gpu_name = torch.cuda.get_device_name()
 
 #initialize wandb
-# wandb.init(project="Explicit_Solution_Example", notes="100 d", tags=["normal sphere test","Adam-LBFGS training"],mode="disabled") #debug mode
-wandb.init(project="Explicit_Solution_Example", notes="100 d", tags=["normal sphere test","Adam-LBFGS training"]) #working mode
+wandb.init(project="Explicit_Solution_Example", notes="100 d", tags=["normal sphere test","Adam-LBFGS training"],mode="disabled") #debug mode
+# wandb.init(project="Explicit_Solution_Example", notes="100 d", tags=["normal sphere test","Adam-LBFGS training"]) #working mode
 wandb.config.update({"device": device.type}) # record device type
 
 #initialize the equation
 equation=Explict_Solution_Example(n_input=101,n_output=1)
 #check if trained model is already saved
-if os.path.exists(r"results/Explicit_Solution_Example/model_weights.params"):
+if os.path.exists(r"results/Explicit_Solution_Example/model_weights_1.params"):
     #load the model
     net=FNN([101]+[50]*5+[1],equation)
-    net.load_state_dict(torch.load(r"results/Explicit_Solution_Example/model_weights.params",map_location=device))
+    net.load_state_dict(torch.load(r"results/Explicit_Solution_Example/model_weights_1.params",map_location=device)) #the other indexes are left for external resources of weights
     trained_net=net
 else:
     data=equation.generate_data()
@@ -54,7 +56,8 @@ else:
     #initialize the optimizer
     optimizer=Adam_LBFGS(101,1,net,data)
     #train the model
-    trained_model=optimizer.train("results/Explicit_Solution_Example/model_weights.params")
+    # trained_model=optimizer.train("results/Explicit_Solution_Example/model_weights_1.params")
+    trained_model=optimizer.train("results/Explicit_Solution_Example/model_weights_2.params")   
     trained_net=trained_model.net
 
 
@@ -63,19 +66,30 @@ solver1=trained_net #PINN network
 solver1.eval()
 solver2=MLP(equation=equation) #Multilevel Picard object
 solver3=ScaML(equation=equation,net=solver1) #ScaML object
+
+#initialize the profiler
 profiler = cProfile.Profile()
 profiler.enable()
 #run the test
 test=NormalSphere(equation,solver1,solver2,solver3)
-test.test(r"results/Explicit_Solution_Example")
+rhomax=test.test(r"results/Explicit_Solution_Example")
 #stop the profiler
 profiler.disable()
 #save the profiler results
-profiler.dump_stats(r"results/Explicit_Solution_Example/explicit_solution_example.prof")
+profiler.dump_stats(f"results/Explicit_Solution_Example/explicit_solution_example_profiler_rho_{rhomax}.prof")
 #upload the profiler results to wandb
-artifact=wandb.Artifact(r"explicit_solution_example_profiler", type="profile")
-artifact.add_file(r"results/Explicit_Solution_Example/explicit_solution_example.prof")
+artifact=wandb.Artifact(f"explicit_solution_example_profiler_rho_{rhomax}.prof", type="profile")
+artifact.add_file(f"results/Explicit_Solution_Example/explicit_solution_example_profiler_rho_{rhomax}.prof")
 wandb.log_artifact(artifact)
+
+# Create a StringIO object to redirect the profiler output
+s = io.StringIO()
+# Create a pstats.Stats object and print the stats
+stats = pstats.Stats(profiler, stream=s)
+stats.print_stats()
+# Print the profiler output
+print(s.getvalue())
+
 
 
 #finish wandb

@@ -90,17 +90,17 @@ class Explict_Solution_Example(Equation):
         for k in range(self.n_input-1): #here, we use a slower accumulating method to avoid computing more autograd, which is a tradeoff
             laplacian +=dde.grad.jacobian(z, x_t, i=k, j=k) #use grad info to compute laplacian
             div += dde.grad.jacobian(u, x_t, i=0, j=k)
-        residual=du_t + (self.sigma()**2 * u - 1/self.n_input - self.sigma()**2/2) * div + self.sigma()**2/2 * laplacian
+        residual=du_t + (self.sigma()**2 * u - 1/(self.n_input-1) - self.sigma()**2/2) * div+ self.sigma()**2/2 * laplacian
         return residual 
     def gPDE_loss(self, x_t,u):
-        #use gPINN loss in this example, takes tensors as inputs and outputs
+        #use gPINN loss in this example, which takes tensors as inputs and outputs
         du_t = dde.grad.jacobian(u,x_t,i=0,j=self.n_input-1)
         laplacian=0
         div=0
         for k in range(self.n_input-1): #here, we use a slower accumulating method to avoid computing more autograd, which is a tradeoff
             laplacian +=dde.grad.hessian(u, x_t, i=k, j=k) #lazy
             div += dde.grad.jacobian(u, x_t, i=0, j=k) #lazy
-        residual=du_t + (self.sigma()**2 * u - 1/self.n_input - self.sigma()**2/2) * div + self.sigma()**2/2 * laplacian
+        residual=du_t + (self.sigma()**2 * u - 1/(self.n_input-1) - self.sigma()**2/2) * div + self.sigma()**2/2 * laplacian
         g_loss=[]
         for k in range(self.n_input-1):
             g_loss.append(0.01*dde.grad.jacobian(residual,x_t,i=0,j=k))
@@ -108,7 +108,7 @@ class Explict_Solution_Example(Equation):
         return g_loss
     def terminal_constraint(self, x_t):
         #notice that the result should be a 1d vector, with its rows being the batch size
-        result= np.exp(x_t[:,-1] + np.sum(x_t[:,:self.n_input],axis=1) / (1 + np.exp(x_t[:,-1] + np.sum(x_t[:,:self.n_input],axis=1))))
+        result= 1-1 / (1 + np.exp(x_t[:,-1] + np.sum(x_t[:,:self.n_input-1],axis=1)))
         return result 
 
     def mu(self, x_t=0):
@@ -116,9 +116,9 @@ class Explict_Solution_Example(Equation):
     def sigma(self, x_t=0):
         return 0.25
     def f(self, x_t,u,z):
-        #generator term for this PDE
-        div=np.sum(z[:,0:self.n_input])
-        result=(self.sigma()**2 * u - 1/self.n_input - self.sigma()**2/2) * div
+        #generator term for this PDE, returns a 2d vector
+        div=np.sum(z[:,0:self.n_input-1],axis=1)
+        result=(self.sigma()**2 * u - 1/(self.n_input-1) - self.sigma()**2/2) * div[:,np.newaxis]
         return result
     
     def exact_solution(self, x_t):
