@@ -55,7 +55,7 @@ class L_inf(object):
             grad_boundary=torch.autograd.grad(loss_boundary,tensor_boundary_points)[0]
             tensor_boundary_points=tensor_boundary_points.detach()+eta*torch.sign(grad_boundary.detach())
             tensor_boundary_points[:,-1]=torch.clamp(tensor_boundary_points[:,-1],eq.t0,eq.T)
-        return tensor_domain_points.detach().numpy(),tensor_boundary_points.detach().numpy()
+        return tensor_domain_points.detach().cpu().numpy(),tensor_boundary_points.detach().cpu().numpy()
     
     def train(self,save_path,cycle=14,domain_anchors=2000,boundary_anchors=500,adam_every=50,lbfgs_every=10,metrics=["l2 relative error","mse"]):
         #interleaved training of adam and lbfgs
@@ -67,7 +67,7 @@ class L_inf(object):
         for i in range(cycle):
             domain_points,boundary_points=self.get_anchors(domain_anchors,boundary_anchors)
             data.replace_with_anchors(domain_points)
-            data.bc_points=boundary_points
+            data.train_x_bc=boundary_points
             self.model.compile(optimizer=adam,metrics=metrics,loss_weights=loss_weights)
             self.model.train(iterations=adam_every, display_every=10)
             # log a list of Adam losses and metrics, which are both lists, one by one
@@ -91,6 +91,9 @@ class L_inf(object):
                 counter4+=1
                 wandb.log({"LBFGS metric_{:d}".format(counter4): metric})
         #stablize the training by further training with Adam
+        domain_points,boundary_points=self.get_anchors(domain_anchors,boundary_anchors)
+        data.replace_with_anchors(domain_points)
+        data.train_x_bc=boundary_points        
         self.model.compile(optimizer=adam,metrics=metrics,loss_weights=loss_weights)
         self.model.train(iterations=40*adam_every, display_every=10)
         # log a list of Adam losses and metrics, which are both lists, one by one
