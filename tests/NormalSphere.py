@@ -47,7 +47,7 @@ class NormalSphere(object):
 
                 # Measure the time for solver1
                 start = time.time()
-                sol1 = self.solver1(torch.tensor(xt_values, dtype=torch.float32)).detach().numpy()[:, 0]
+                sol1 = self.solver1(torch.tensor(xt_values, dtype=torch.float32)).detach().cpu().numpy()[:, 0]
                 time1 += time.time() - start
 
                 # Measure the time for solver2
