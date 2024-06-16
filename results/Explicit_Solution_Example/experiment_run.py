@@ -81,7 +81,7 @@ profiler.disable()
 #save the profiler results
 profiler.dump_stats(f"results/Explicit_Solution_Example/explicit_solution_example_profiler_rho_{rhomax}.prof")
 #upload the profiler results to wandb
-artifact=wandb.Artifact(f"explicit_solution_example_profiler_rho_{rhomax}.prof", type="profile")
+artifact=wandb.Artifact(f"explicit_solution_example_profiler_rho_{rhomax}", type="profile")
 artifact.add_file(f"results/Explicit_Solution_Example/explicit_solution_example_profiler_rho_{rhomax}.prof")
 wandb.log_artifact(artifact)
 
