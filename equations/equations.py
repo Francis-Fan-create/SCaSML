@@ -57,8 +57,8 @@ class Equation(object):
         if hasattr(self, 'terminal_constraint') and hasattr(self, 'geometry'):
             #use PointSetBC to enforce soft temrinal condition
             #  generate terminal point
-            x=self.geomx.random_points(50) #do not use uniform !!!
-            t=self.T*np.ones((50,1))
+            x=self.geomx.random_points(500) #do not use uniform !!!
+            t=self.T*np.ones((500,1))
             my_data=np.concatenate((x,t),axis=1)
             self.my_data=my_data
             tc=dde.icbc.PointSetBC(my_data,self.terminal_constraint(my_data),0) #need to be enforced on generate_data method
