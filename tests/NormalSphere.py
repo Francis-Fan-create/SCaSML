@@ -87,7 +87,7 @@ class NormalSphere(object):
         # Show the plot
         plt.savefig(f"{save_path}/Error_Distribution.png")
         # Upload the plot to wandb
-        wandb
+        wandb.log({"Error Distribution": wandb.Image(f"{save_path}/Error_Distribution.png")})
 
         # Find the global minimum and maximum error
         vmin = min(np.min(errors1), np.min(errors2), np.min(errors3), np.min(errors_13), np.min(errors_23))
