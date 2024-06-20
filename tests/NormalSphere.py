@@ -34,6 +34,10 @@ class NormalSphere(object):
         errors1=np.zeros_like(x_mesh)
         errors2=np.zeros_like(x_mesh)
         errors3=np.zeros_like(x_mesh)
+        rel_error1=np.zeros_like(x_mesh)
+        rel_error2=np.zeros_like(x_mesh)
+        rel_error3=np.zeros_like(x_mesh)
+        real_sol_abs=np.zeros_like(x_mesh)
         time1,time2,time3=0,0,0 
         # Compute the errors
         for i in tqdm(range(x_mesh.shape[0]), desc=f"Computing errors"):
@@ -59,13 +63,15 @@ class NormalSphere(object):
                 start = time.time()
                 sol3 = self.solver3.u_solve(n, rhomax, xt_values)
                 time3 += time.time() - start
-                # Compute the average error
-                errors1[i, j] += np.mean(sol1 - exact_sol)
-                errors2[i, j] += np.mean(sol2 - exact_sol)
-                errors3[i, j] += np.mean(sol3 - exact_sol)
-        errors1=np.abs(errors1)
-        errors2=np.abs(errors2)
-        errors3=np.abs(errors3)
+                # Compute the average error and relative error
+                errors1[i, j] += np.mean(np.abs(sol1 - exact_sol))
+                errors2[i, j] += np.mean(np.abs(sol2 - exact_sol))
+                errors3[i, j] += np.mean(np.abs(sol3 - exact_sol))
+                rel_error1[i, j] += np.mean(np.abs(sol1 - exact_sol) / np.abs(exact_sol))
+                rel_error2[i, j] += np.mean(np.abs(sol2 - exact_sol) / np.abs(exact_sol))
+                rel_error3[i, j] += np.mean(np.abs(sol3 - exact_sol) / np.abs(exact_sol))
+                # compute the absolute value of the real solution
+                real_sol_abs[i, j] = np.mean(np.abs(exact_sol))
         # Print the total time for each solver
         print(f"Total time for PINN: {time1} seconds")
         print(f"Total time for MLP: {time2} seconds")
@@ -75,25 +81,90 @@ class NormalSphere(object):
         errors_13=errors1-errors3
         errors_23=errors2-errors3
         
-        # collect all errors
+        # collect all absolute errors
         errors = [errors1.flatten(), errors2.flatten(), errors3.flatten(), errors_13.flatten(), errors_23.flatten()]
         # Create a boxplot
         plt.boxplot(errors, labels=['PINN_l1', 'MLP_l1', 'ScaML_l1', 'PINN_l1 - ScaML_l1', 'MLP_l1 - ScaML_l1'])
         plt.xticks(rotation=45)
         # Add a title and labels
-        plt.title('Error Distribution')
-        plt.ylabel('Error Value')
+        plt.title('Absolute Error Distribution')
+        plt.ylabel('Absolute Error Value')
         plt.tight_layout()
         # Show the plot
-        plt.savefig(f"{save_path}/Error_Distribution.png")
+        plt.savefig(f"{save_path}/Absolute_Error_Distribution.png")
         # Upload the plot to wandb
-        wandb.log({"Error Distribution": wandb.Image(f"{save_path}/Error_Distribution.png")})
+        wandb.log({"Error Distribution": wandb.Image(f"{save_path}/Absolute_Error_Distribution.png")})
 
+        #collect all relative errors
+        rel_errors = [rel_error1.flatten(), rel_error2.flatten(), rel_error3.flatten()]
+        # Create a boxplot
+        plt.boxplot(rel_errors, labels=['PINN_l1', 'MLP_l1', 'ScaML_l1'])
+        plt.xticks(rotation=45)
+        # Add a title and labels
+        plt.title('Relative Error Distribution')
+        plt.ylabel('Relative Error Value')
+        plt.tight_layout()
+        # Show the plot
+        plt.savefig(f"{save_path}/Relative_Error_Distribution.png")
+        # Upload the plot to wandb
+        wandb.log({"Relative Error Distribution": wandb.Image(f"{save_path}/Relative_Error_Distribution.png")})
+
+        #find the global minimum and maximum relative error
+        vmin = min(np.min(rel_error1), np.min(rel_error2), np.min(rel_error3))
+        vmax = max(np.max(rel_error1), np.max(rel_error2), np.max(rel_error3))
+        # Create a TwoSlopeNorm object
+        norm =TwoSlopeNorm(vmin=-(1e-12), vcenter=0, vmax=vmax)
+        # Plot the relative errors
+        plt.figure()
+        plt.imshow(rel_error1, extent=[0, self.radius, self.t0, self.T], aspect='auto', cmap='RdBu_r',norm=norm)
+        plt.colorbar()
+        plt.title("PINN rel l1, rho={:d}".format(rhomax))
+        plt.xlabel("distance from origin")
+        plt.ylabel("time")
+        plt.savefig(f"{save_path}/PINN_rel_l1_rho={rhomax}.png")
+        # Upload the plot to wandb
+        wandb.log({"PINN rel l1": wandb.Image(f"{save_path}/PINN_rel_l1_rho={rhomax}.png")} )
+        print(f"PINN rel l1, rho={rhomax}->","min:",np.min(rel_error1),"max:",np.max(rel_error1),"mean:",np.mean(rel_error1))
+
+        plt.figure()
+        plt.imshow(rel_error2, extent=[0, self.radius, self.t0, self.T], aspect='auto', cmap='RdBu_r',norm=norm)
+        plt.colorbar()
+        plt.title("MLP rel l1, rho={:d}".format(rhomax))
+        plt.xlabel("distance from origin")
+        plt.ylabel("time")
+        plt.savefig(f"{save_path}/MLP_rel_l1_rho={rhomax}.png")
+        # Upload the plot to wandb
+        wandb.log({"MLP rel l1": wandb.Image(f"{save_path}/MLP_rel_l1_rho={rhomax}.png")} )
+        print(f"MLP rel l1, rho={rhomax}->","min:",np.min(rel_error2),"max:",np.max(rel_error2),"mean:",np.mean(rel_error2))
+
+        plt.figure()
+        plt.imshow(rel_error3, extent=[0, self.radius, self.t0, self.T], aspect='auto', cmap='RdBu_r',norm=norm)
+        plt.colorbar()
+        plt.title("ScaML rel l1, rho={:d}".format(rhomax))
+        plt.xlabel("distance from origin")
+        plt.ylabel("time")
+        plt.savefig(f"{save_path}/ScaML_rel_l1_rho={rhomax}.png")
+        # Upload the plot to wandb
+        wandb.log({"ScaML rel l1": wandb.Image(f"{save_path}/ScaML_rel_l1_rho={rhomax}.png")} )
+        print(f"ScaML rel l1, rho={rhomax}->","min:",np.min(rel_error3),"max:",np.max(rel_error3),"mean:",np.mean(rel_error3))
+         
         # Find the global minimum and maximum error
-        vmin = min(np.min(errors1), np.min(errors2), np.min(errors3), np.min(errors_13), np.min(errors_23))
-        vmax = max(np.max(errors1), np.max(errors2), np.max(errors3), np.max(errors_13), np.max(errors_23))
+        vmin = min(np.min(errors1), np.min(errors2), np.min(errors3), np.min(errors_13), np.min(errors_23),np.min(real_sol_abs))
+        vmax = max(np.max(errors1), np.max(errors2), np.max(errors3), np.max(errors_13), np.max(errors_23),np.max(real_sol_abs))
         # Create a TwoSlopeNorm object
         norm =TwoSlopeNorm(vmin=vmin, vcenter=0, vmax=vmax)
+        # Plot the real solution
+        plt.figure()
+        plt.imshow(real_sol_abs, extent=[0, self.radius, self.t0, self.T], aspect='auto', cmap='RdBu_r',norm=norm)
+        plt.colorbar()
+        plt.title("Real Solution")
+        plt.xlabel("distance from origin")
+        plt.ylabel("time")
+        plt.savefig(f"{save_path}/Real_Solution.png")
+        # Upload the plot to wandb
+        wandb.log({"Real Solution": wandb.Image(f"{save_path}/Real_Solution.png")} )
+        print("Real Solution->","min:",np.min(real_sol_abs),"max:",np.max(real_sol_abs),"mean:",np.mean(real_sol_abs))
+        
         # Plot the errors
         plt.figure()
         plt.imshow(errors1, extent=[0, self.radius, self.t0, self.T], aspect='auto', cmap='RdBu_r',norm=norm)
