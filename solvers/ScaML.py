@@ -26,10 +26,10 @@ class ScaML(object):
         eq=self.equation
         tensor_x_t=torch.tensor(x_t,requires_grad=True).float()
         tensor_u_hat=self.net(tensor_x_t)
-        u_hat=tensor_u_hat.detach().numpy()
+        u_hat=tensor_u_hat.detach().cpu().numpy()
         tensor_grad_u_hat_x=torch.autograd.grad(tensor_u_hat,tensor_x_t,grad_outputs=torch.ones_like(tensor_u_hat),retain_graph=True,create_graph=True)[0][:, :-1]
-        grad_u_hat_x=tensor_grad_u_hat_x.detach().numpy()
-        # epsilon=eq.PDE_loss(tensor_x_t,tensor_u_hat,tensor_grad_u_hat_x).detach().numpy()
+        grad_u_hat_x=tensor_grad_u_hat_x.detach().cpu().numpy()
+        # epsilon=eq.PDE_loss(tensor_x_t,tensor_u_hat,tensor_grad_u_hat_x).detach().cpu().numpy()
         val1=eq.f(x_t,u_breve+u_hat,eq.sigma(x_t)*(grad_u_hat_x+z_breve))  
         val2=eq.f(x_t,u_hat,eq.sigma(x_t)*grad_u_hat_x)
         # return val1-val2-epsilon #large version
@@ -38,7 +38,7 @@ class ScaML(object):
         # terminal constraint of ScaML
         eq=self.equation
         tensor_x_t=torch.tensor(x_t,requires_grad=True).float()
-        u_hat=self.net(tensor_x_t).detach().numpy()
+        u_hat=self.net(tensor_x_t).detach().cpu().numpy()
         result=eq.g(x_t)-u_hat[:,0]
         return result
     
@@ -186,7 +186,7 @@ class ScaML(object):
         u_breve_z_breve=self.uz_solve(n, rho, x_t)
         u_breve,z_breve=u_breve_z_breve[:,0],u_breve_z_breve[:,1:]
         tensor_x_t=torch.tensor(x_t,requires_grad=True).float()
-        u_hat=self.net(tensor_x_t).detach().numpy()[:,0]
+        u_hat=self.net(tensor_x_t).detach().cpu().numpy()[:,0]
         u=u_breve+u_hat
         return u
     
