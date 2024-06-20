@@ -158,3 +158,88 @@ class Explict_Solution_Example(Equation):
                                 num_test=None #sample how many points for testing. If None, then the training point will be used.
                             )
         return data
+    
+class Explict_Solution_Example_Rescale(Equation):
+    '''Expamlpe of high dim PDE with exact solution in rescaled version'''
+    def __init__(self, n_input, n_output=1):
+        super().__init__(n_input, n_output)
+    def PDE_loss(self, x_t,u,z):
+        #takes tensors as inputs and outputs
+        du_t = dde.grad.jacobian(u,x_t,i=0,j=self.n_input-1)
+        laplacian=0
+        div=0
+        dim=self.n_input-1
+        for k in range(self.n_input-1): #here, we use a slower accumulating method to avoid computing more autograd, which is a tradeoff
+            laplacian +=dde.grad.jacobian(z, x_t, i=k, j=k) #use grad info to compute laplacian
+            div += dde.grad.jacobian(u, x_t, i=0, j=k)
+        residual=du_t + (self.sigma()**2 *dim* u - 1 - dim*self.sigma()**2/2) * div+ (dim*self.sigma())**2/2 * laplacian
+        return residual 
+    def gPDE_loss(self, x_t,u):
+        #use gPINN loss in this example, which takes tensors as inputs and outputs
+        du_t = dde.grad.jacobian(u,x_t,i=0,j=self.n_input-1)
+        laplacian=0
+        div=0
+        dim=self.n_input-1
+        for k in range(self.n_input-1): #here, we use a slower accumulating method to avoid computing more autograd, which is a tradeoff
+            laplacian +=dde.grad.hessian(u, x_t, i=k, j=k) #lazy
+            div += dde.grad.jacobian(u, x_t, i=0, j=k) #lazy
+        residual=du_t + (self.sigma()**2 *dim* u - 1 - dim*self.sigma()**2/2) * div+ (dim*self.sigma())**2/2 * laplacian
+        g_loss=[]
+        for k in range(self.n_input-1):
+            g_loss.append(0.01*dde.grad.jacobian(residual,x_t,i=0,j=k))
+        g_loss.append(residual)
+        return g_loss
+    def terminal_constraint(self, x_t):
+        dim=self.n_input-1
+        #notice that the result should be a 1d vector, with its rows being the batch size
+        result= 1-1 / (1 + np.exp(x_t[:,-1] + (1/dim)*np.sum(x_t[:,:self.n_input-1],axis=1)))
+        return result 
+
+    def mu(self, x_t=0):
+        return 0
+    def sigma(self, x_t=0):
+        return 0.25
+    def f(self, x_t,u,z):
+        #generator term for this PDE, returns a 2d vector
+        dim=self.n_input-1
+        div=np.sum(z[:,0:self.n_input-1],axis=1)
+        result=(self.sigma()**2*dim * u - 1 -dim* self.sigma()**2/2) * div[:,np.newaxis]
+        return result
+    
+    def exact_solution(self, x_t):
+        #exact solution of the example
+        dim=self.n_input-1
+        t = x_t[:, -1]
+        x = x_t[:, :-1]
+        sum_x = np.sum(x, axis=1)
+        exp_term =np.exp(t + (1/dim)*sum_x)
+        result=1-1/(1+exp_term)
+        return result
+    
+    def geometry(self,t0=0,T=0.5):
+        #geometry of the domain, which is a hypercube
+        self.t0=t0
+        self.T=T
+        spacedomain = dde.geometry.Hypercube([-0.5]*(self.n_input-1), [0.5]*(self.n_input-1)) 
+        timedomain = dde.geometry.TimeDomain(t0, T) 
+        geom = dde.geometry.GeometryXTime(spacedomain, timedomain) #combine both domains
+        self.geomx=spacedomain
+        self.geomt=timedomain
+        return geom
+    
+    def generate_data(self, num_domain=2000):
+        geom=self.geometry()
+        self.terminal_condition() #generate terminal condition
+        self.boundary_condition()  #generate boundary condition
+        data = dde.data.TimePDE( #time dependent PDE
+                                geom, #geometry of the boundary condition and terminal condition
+                                self.gPDE_loss, #g_pde residual
+                                [self.tc], #additional conditions other than PDE loss
+                                num_domain=num_domain, #sample how many points in the domain
+                                num_boundary=0, #sample how many points on the boundary
+                                num_initial=0,  #sample how many points for the initial time
+                                anchors=self.my_data, #enforce terminal points
+                                solution=self.exact_solution,   #incorporate authentic solution to evaluate error metrics
+                                num_test=None #sample how many points for testing. If None, then the training point will be used.
+                            )
+        return data
