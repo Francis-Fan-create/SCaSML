@@ -28,7 +28,7 @@ class Adam_LBFGS(object):
         wandb.config.update({"LBFGS lr": lr, "LBFGS max_iter": max_iter, "LBFGS tolerance_change": tolerance_change, "LBFGS tolerance_grad": tolerance_grad})  # record hyperparameters
         return lbfgs
 
-    def train(self,save_path,cycle=14,adam_every=50,lbfgs_every=10,metrics=["l2 relative error","mse"]):
+    def train(self,save_path,cycle=14,adam_every=500,lbfgs_every=10,metrics=["l2 relative error","mse"]):
         #interleaved training of adam and lbfgs
         loss_weights=[1e-3]*(self.n_input-1)+[1]+[1e-2]
         wandb.config.update({"cycle": cycle, "adam_every": adam_every, "lbfgs_every": lbfgs_every,"loss_weights":loss_weights}) # record hyperparameters

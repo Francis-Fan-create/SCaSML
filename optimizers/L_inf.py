@@ -57,8 +57,8 @@ class L_inf(object):
             tensor_boundary_points[:,-1]=torch.clamp(tensor_boundary_points[:,-1],eq.t0,eq.T)
         return tensor_domain_points.detach().cpu().numpy(),tensor_boundary_points.detach().cpu().numpy()
     
-    def train(self,save_path,cycle=14,domain_anchors=2000,boundary_anchors=500,adam_every=50,lbfgs_every=10,metrics=["l2 relative error","mse"]):
-        #interleaved training of adam and lbfgs
+    def train(self,save_path,cycle=14,domain_anchors=100,boundary_anchors=50,adam_every=500,lbfgs_every=10,metrics=["l2 relative error","mse"]):
+        #interleaved training of adam and lbfgs, here we will try pure Adam training
         loss_weights=[1e-3]*(self.n_input-1)+[1]+[1e-2]
         wandb.config.update({"cycle": cycle, "adam_every": adam_every, "lbfgs_every": lbfgs_every,"loss_weights":loss_weights}) # record hyperparameters
         adam=self.Adam()
@@ -90,21 +90,6 @@ class L_inf(object):
             for metric in self.model.train_state.metrics_test:
                 counter4+=1
                 wandb.log({"LBFGS metric_{:d}".format(counter4): metric})
-        #stablize the training by further training with Adam
-        domain_points,boundary_points=self.get_anchors(domain_anchors,boundary_anchors)
-        data.replace_with_anchors(domain_points)
-        data.train_x_bc=boundary_points        
-        self.model.compile(optimizer=adam,metrics=metrics,loss_weights=loss_weights)
-        self.model.train(iterations=40*adam_every, display_every=10)
-        # log a list of Adam losses and metrics, which are both lists, one by one
-        counter5=0
-        for loss in self.model.train_state.loss_train:
-            counter5+=1
-            wandb.log({"Adam loss_{:d}".format(counter5): loss})
-        counter6=0
-        for metric in self.model.train_state.metrics_test:
-            counter6+=1
-            wandb.log({"Adam metric_{:d}".format(counter6): metric})
         #save the model
         torch.save(self.net.state_dict(), save_path)
         #log the model
