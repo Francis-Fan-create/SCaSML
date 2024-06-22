@@ -372,9 +372,10 @@ class Complicated_HJB(Equation):
     def sigma(self, x_t=0):
         return np.sqrt(2)
     def f(self, x_t,u,z):
-        #generator term for this PDE, returns a 2d vector
-        result=-np.abs(z)**1.75 +2
-        return result
+        #generator term for this PDE, returns a 2d vector\
+        dim=self.n_input-1
+        result=-(1/dim)*np.sum(np.abs(z)**1.75,axis=1) +2
+        return result[:,np.newaxis]
     
     def exact_solution(self, x_t):
         #exact solution of the example
