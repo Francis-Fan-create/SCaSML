@@ -7,62 +7,92 @@ from matplotlib.colors import TwoSlopeNorm
 import time
 
 class NormalSphere(object):
-    '''Normal sphere test in high dimensions'''
-    def __init__(self, equation, solver1,solver2,solver3):
-        #initialize the normal spheres
-        #solver1 for PINN network
-        #solver2 for MLP object
-        #solver3 for ScaML object
-        self.equation=equation
-        self.dim=equation.n_input-1
-        solver1.eval()
-        self.solver1=solver1
-        self.solver2=solver2
-        self.solver3=solver3
-        self.t0=equation.t0
-        self.T=equation.T
-        self.radius=np.sqrt(self.dim*(self.T-self.t0)**2)
-    def test(self,save_path,rhomax=2,n_samples=10,x_grid_num=100,t_grid_num=10):
-        #compare solvers on different distances on the sphere
-        eq=self.equation
+    '''
+    Normal sphere test in high dimensions.
+
+    Attributes:
+    equation (object): An object representing the equation to solve.
+    dim (int): The dimension of the input space minus one.
+    solver1 (object): A PyTorch model for the PINN network.
+    solver2 (object): An object for the MLP solver.
+    solver3 (object): An object for the ScaML solver.
+    t0 (float): The initial time.
+    T (float): The final time.
+    radius (float): The radius of the sphere calculated based on the dimension and time.
+    '''
+    def __init__(self, equation, solver1, solver2, solver3):
+        '''
+        Initializes the normal spheres with given solvers and equation.
+
+        Parameters:
+        equation (object): The equation object containing problem specifics.
+        solver1 (object): The PINN network solver.
+        solver2 (object): The MLP solver object.
+        solver3 (object): The ScaML solver object.
+        '''
+        # Initialize the normal spheres
+        self.equation = equation
+        self.dim = equation.n_input - 1  # equation.n_input: int
+        solver1.eval()  # Set the PINN network to evaluation mode
+        self.solver1 = solver1
+        self.solver2 = solver2
+        self.solver3 = solver3
+        self.t0 = equation.t0  # equation.t0: float
+        self.T = equation.T  # equation.T: float
+        self.radius = np.sqrt(self.dim * (self.T - self.t0) ** 2)  # radius: float, calculated based on dimension and time
+
+    def test(self, save_path, rhomax=2, n_samples=10, x_grid_num=100, t_grid_num=10):
+        '''
+        Compares solvers on different distances on the sphere.
+
+        Parameters:
+        save_path (str): The path to save the results.
+        rhomax (int): The maximum value of rho for approximation parameters.
+        n_samples (int): The number of samples for testing.
+        x_grid_num (int): The number of grid points in the x dimension.
+        t_grid_num (int): The number of grid points in the time dimension.
+        '''
+        eq = self.equation
         n=rhomax
-        x_grid=np.linspace(0,self.radius,x_grid_num)
-        t_grid=np.linspace(self.t0,self.T,t_grid_num)
-        x_mesh,t_mesh=np.meshgrid(x_grid,t_grid)
-        self.solver2.set_approx_parameters(rhomax)  
-        self.solver3.set_approx_parameters(rhomax)  
-        errors1=np.zeros_like(x_mesh)
-        errors2=np.zeros_like(x_mesh)
-        errors3=np.zeros_like(x_mesh)
-        rel_error1=np.zeros_like(x_mesh)
-        rel_error2=np.zeros_like(x_mesh)
-        rel_error3=np.zeros_like(x_mesh)
-        real_sol_abs=np.zeros_like(x_mesh)
-        time1,time2,time3=0,0,0 
+        x_grid = np.linspace(0, self.radius, x_grid_num)  # x_grid: ndarray, shape: (x_grid_num,), dtype: float
+        t_grid = np.linspace(self.t0, self.T, t_grid_num)  # t_grid: ndarray, shape: (t_grid_num,), dtype: float
+        x_mesh, t_mesh = np.meshgrid(x_grid, t_grid)  # x_mesh, t_mesh: ndarray, shape: (t_grid_num, x_grid_num), dtype: float
+        self.solver2.set_approx_parameters(rhomax)
+        self.solver3.set_approx_parameters(rhomax)
+        errors1 = np.zeros_like(x_mesh)  # errors1: ndarray, shape: (t_grid_num, x_grid_num), dtype: float
+        errors2 = np.zeros_like(x_mesh)  # errors2: ndarray, shape: (t_grid_num, x_grid_num), dtype: float
+        errors3 = np.zeros_like(x_mesh)  # errors3: ndarray, shape: (t_grid_num, x_grid_num), dtype: float
+        rel_error1 = np.zeros_like(x_mesh)  # rel_error1: ndarray, shape: (t_grid_num, x_grid_num), dtype: float
+        rel_error2 = np.zeros_like(x_mesh)  # rel_error2: ndarray, shape: (t_grid_num, x_grid_num), dtype: float
+        rel_error3 = np.zeros_like(x_mesh)  # rel_error3: ndarray, shape: (t_grid_num, x_grid_num), dtype: float
+        real_sol_abs = np.zeros_like(x_mesh)  # real_sol_abs: ndarray, shape: (t_grid_num, x_grid_num), dtype: float
+        time1, time2, time3 = 0, 0, 0  # time1, time2, time3: float, initialized to 0 for timing each solver
+
         # Compute the errors
         for i in tqdm(range(x_mesh.shape[0]), desc=f"Computing errors"):
             for j in tqdm(range(x_mesh.shape[1]), desc=f"Computing errors at time {t_grid[i]}"):
-                x_values = np.random.normal(0, 1, (n_samples, self.dim))
-                x_values /= np.linalg.norm(x_values, axis=1)[:, np.newaxis]
-                x_values *= x_mesh[i, j]
-                t_values = np.full((n_samples, 1), t_mesh[i, j])  # Create a 2D array filled with t_mesh[i, j]
-                xt_values = np.concatenate((x_values, t_values), axis=1)
-                exact_sol = eq.exact_solution(xt_values)
+                x_values = np.random.normal(0, 1, (n_samples, self.dim))  # x_values: ndarray, shape: (n_samples, self.dim), dtype: float
+                x_values /= np.linalg.norm(x_values, axis=1)[:, np.newaxis]  # Normalize x_values
+                x_values *= x_mesh[i, j]  # Scale x_values by x_mesh[i, j]
+                t_values = np.full((n_samples, 1), t_mesh[i, j])  # t_values: ndarray, shape: (n_samples, 1), dtype: float
+                xt_values = np.concatenate((x_values, t_values), axis=1)  # xt_values: ndarray, shape: (n_samples, self.dim + 1), dtype: float
+                exact_sol = eq.exact_solution(xt_values)  # exact_sol: ndarray, shape: (n_samples,), dtype: float
 
                 # Measure the time for solver1
                 start = time.time()
-                sol1 = self.solver1(torch.tensor(xt_values, dtype=torch.float32)).detach().cpu().numpy()[:, 0]
+                sol1 = self.solver1(torch.tensor(xt_values, dtype=torch.float32)).detach().cpu().numpy()[:, 0]  # sol1: ndarray, shape: (n_samples,), dtype: float
                 time1 += time.time() - start
 
                 # Measure the time for solver2
                 start = time.time()
-                sol2 = self.solver2.u_solve(n, rhomax, xt_values)
+                sol2 = self.solver2.u_solve(n, rhomax, xt_values)  # sol2: ndarray, shape: (n_samples,), dtype: float
                 time2 += time.time() - start
 
                 # Measure the time for solver3
                 start = time.time()
-                sol3 = self.solver3.u_solve(n, rhomax, xt_values)
+                sol3 = self.solver3.u_solve(n, rhomax, xt_values)  # sol3: ndarray, shape: (n_samples,), dtype: float
                 time3 += time.time() - start
+
                 # Compute the average error and relative error
                 errors1[i, j] += np.mean(np.abs(sol1 - exact_sol))
                 errors2[i, j] += np.mean(np.abs(sol2 - exact_sol))
@@ -70,8 +100,8 @@ class NormalSphere(object):
                 rel_error1[i, j] += np.mean(np.abs(sol1 - exact_sol) / np.abs(exact_sol))
                 rel_error2[i, j] += np.mean(np.abs(sol2 - exact_sol) / np.abs(exact_sol))
                 rel_error3[i, j] += np.mean(np.abs(sol3 - exact_sol) / np.abs(exact_sol))
-                # compute the absolute value of the real solution
-                real_sol_abs[i, j] = np.mean(np.abs(exact_sol))
+                real_sol_abs[i, j] = np.mean(np.abs(exact_sol))  # Compute the absolute value of the real solution
+
         # Print the total time for each solver
         print(f"Total time for PINN: {time1} seconds")
         print(f"Total time for MLP: {time2} seconds")
