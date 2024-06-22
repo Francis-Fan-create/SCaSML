@@ -81,6 +81,7 @@ class NormalSphere(object):
         errors_13=errors1-errors3
         errors_23=errors2-errors3
         
+        plt.figure()
         # collect all absolute errors
         errors = [errors1.flatten(), errors2.flatten(), errors3.flatten(), errors_13.flatten(), errors_23.flatten()]
         # Create a boxplot
@@ -95,6 +96,7 @@ class NormalSphere(object):
         # Upload the plot to wandb
         wandb.log({"Error Distribution": wandb.Image(f"{save_path}/Absolute_Error_Distribution.png")})
 
+        plt.figure()
         #collect all relative errors
         rel_errors = [rel_error1.flatten(), rel_error2.flatten(), rel_error3.flatten()]
         # Create a boxplot
