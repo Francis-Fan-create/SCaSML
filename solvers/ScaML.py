@@ -128,7 +128,7 @@ class ScaML(object):
             differences[:,i,:]=(g(disturbed_input_terminal)-g(input_terminal))[:,np.newaxis]
         u = np.mean(differences+terminals,axis=1) 
         if (T-t).any()==0:
-            delta_t=(T-t+1e-6)[:,np.newaxis]
+            delta_t=(T-t+1e-15)[:,np.newaxis]
             z = np.sum(differences*W,axis=1)/ (MC * delta_t)
         else:
             z = np.sum(differences*W,axis=1)/ (MC * (T-t)[:, np.newaxis])
@@ -157,7 +157,7 @@ class ScaML(object):
                 y=y.transpose(1,0,2)
                 u += wloc[:,k, q-1][:,np.newaxis] * np.mean(y, axis=1)
                 if (cloc[:,k, q-1]-t).any()==0:
-                    delta_t=(cloc[:,k, q-1]-t+1e-6)[:,np.newaxis]
+                    delta_t=(cloc[:,k, q-1]-t+1e-15)[:,np.newaxis]
                     z += wloc[:,k, q-1][:,np.newaxis] * np.sum(y*W, axis=1) / (MC * delta_t)
                 else:
                     z += wloc[:,k, q-1][:,np.newaxis] * np.sum(y*W, axis=1) / (MC * (cloc[:,k, q-1]-t)[:,np.newaxis])
@@ -172,7 +172,7 @@ class ScaML(object):
                     y=y.transpose(1,0,2)
                     u -= wloc[:,k, q-1][:,np.newaxis] * np.mean(y, axis=1)
                     if (cloc[:,k, q-1]-t).any()==0:
-                        delta_t=(cloc[:,k, q-1]-t+1e-6)[:,np.newaxis]
+                        delta_t=(cloc[:,k, q-1]-t+1e-15)[:,np.newaxis]
                         z -= wloc[:,k, q-1][:,np.newaxis] * np.sum(y*W, axis=1) / (MC * delta_t)
                     else:
                         z -= wloc[:,k, q-1][:,np.newaxis] * np.sum(y*W, axis=1) / (MC * (cloc[:,k, q-1]-t)[:,np.newaxis])

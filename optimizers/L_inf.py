@@ -69,7 +69,7 @@ class L_inf(object):
             data.replace_with_anchors(domain_points)
             data.train_x_bc=boundary_points
             self.model.compile(optimizer=adam,metrics=metrics,loss_weights=loss_weights)
-            self.model.train(iterations=adam_every, display_every=10)
+            self.model.train(iterations=adam_every, display_every=10,disregard_previous_best=True)
             # log a list of Adam losses and metrics, which are both lists, one by one
             counter1=0
             for loss in self.model.train_state.loss_train:
@@ -81,7 +81,7 @@ class L_inf(object):
                 wandb.log({"Adam metric_{:d}".format(counter2): metric})
 
             self.model.compile(optimizer=lbfgs,metrics=metrics,loss_weights=loss_weights)
-            self.model.train(iterations=lbfgs_every, display_every=1)
+            self.model.train(iterations=lbfgs_every, display_every=1,disregard_previous_best=True)
             counter3=0
             for loss in self.model.train_state.loss_train:
                 counter3+=1
