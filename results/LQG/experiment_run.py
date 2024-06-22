@@ -1,4 +1,4 @@
-# We will use this file to run the experiment for the Explicit_Solution_Example equation. We will train the model and then test it on the NormalSphere test. We will also profile the test to see the time taken by each solver to solve the equation. We will save the profiler results and upload them to wandb.
+# We will use this file to run the experiment for the LQG equation. We will train the model and then test it on the NormalSphere test. We will also profile the test to see the time taken by each solver to solve the equation. We will save the profiler results and upload them to wandb.
 import sys
 import os
 #add the parent directory to the path
@@ -6,7 +6,7 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..'))
 
 
 # import the required libraries
-from equations.equations import Explict_Solution_Example
+from equations.equations import LQG
 from models.FNN import FNN
 # from optimizers.Adam_LBFGS import Adam_LBFGS
 from optimizers.L_inf import L_inf  
@@ -37,18 +37,18 @@ if device.type == 'cuda':
     gpu_name = torch.cuda.get_device_name()
 
 #initialize wandb
-wandb.init(project="Explicit_Solution_Example", notes="100 d", tags=["normal sphere test","L_inf training"],mode="disabled") #debug mode
-# wandb.init(project="Explicit_Solution_Example", notes="100 d", tags=["normal sphere test","L_inf training"]) #working mode
+wandb.init(project="LQG", notes="100 d", tags=["normal sphere test","L_inf training"],mode="disabled") #debug mode
+# wandb.init(project="LQG", notes="100 d", tags=["normal sphere test","L_inf training"]) #working mode
 wandb.config.update({"device": device.type}) # record device type
 
 #initialize the equation
-equation=Explict_Solution_Example(n_input=101,n_output=1)
+equation=LQG(n_input=101,n_output=1)
 #check if trained model is already saved
-if os.path.exists(r"results/Explicit_Solution_Example/model_weights_3.params"):
+if os.path.exists(r"results/LQG/model_weights_1.params"):
     '''To Do: Retrain the model with new data points& Try new methods to reduce errors'''
     #load the model
     net=FNN([101]+[50]*5+[1],equation)
-    net.load_state_dict(torch.load(r"results/Explicit_Solution_Example/model_weights_3.params",map_location=device)) #the other indexes are left for external resources of weights
+    net.load_state_dict(torch.load(r"results/LQG/model_weights_1.params",map_location=device)) #the other indexes are left for external resources of weights
     trained_net=net
 else:
     data=equation.generate_data()
@@ -59,8 +59,8 @@ else:
     # optimizer=Adam_LBFGS(101,1,net,data) #Adam-LBFGS optimizer
     optimizer=L_inf(101,1,net,data,equation) #L_inf optimizer
     #train the model
-    trained_model=optimizer.train("results/Explicit_Solution_Example/model_weights_3.params")
-    # trained_model=optimizer.train("results/Explicit_Solution_Example/model_weights_2.params")   
+    trained_model=optimizer.train("results/LQG/model_weights_1.params")
+    # trained_model=optimizer.train("results/LQG/model_weights_2.params")   
     trained_net=trained_model.net
 
 
@@ -75,14 +75,14 @@ profiler = cProfile.Profile()
 profiler.enable()
 #run the test
 test=NormalSphere(equation,solver1,solver2,solver3)
-rhomax=test.test(r"results/Explicit_Solution_Example")
+rhomax=test.test(r"results/LQG")
 #stop the profiler
 profiler.disable()
 #save the profiler results
-profiler.dump_stats(f"results/Explicit_Solution_Example/explicit_solution_example_profiler_rho_{rhomax}.prof")
+profiler.dump_stats(f"results/LQG/LQG_profiler_rho_{rhomax}.prof")
 #upload the profiler results to wandb
-artifact=wandb.Artifact(f"explicit_solution_example_profiler_rho_{rhomax}", type="profile")
-artifact.add_file(f"results/Explicit_Solution_Example/explicit_solution_example_profiler_rho_{rhomax}.prof")
+artifact=wandb.Artifact(f"LQG_profiler_rho_{rhomax}", type="profile")
+artifact.add_file(f"results/LQG/LQG_profiler_rho_{rhomax}.prof")
 wandb.log_artifact(artifact)
 
 # Create a StringIO object to redirect the profiler output
