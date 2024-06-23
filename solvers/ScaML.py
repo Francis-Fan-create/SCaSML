@@ -45,7 +45,7 @@ class ScaML(object):
         # Convert input data to PyTorch tensor with gradient tracking
         tensor_x_t = torch.tensor(x_t, requires_grad=True).float()
         # Forward pass through the network
-        tensor_u_hat = self.net(tensor_x_t)
+        tensor_u_hat = self.net(tensor_x_t) 
         # Convert the network output to numpy array
         u_hat = tensor_u_hat.detach().cpu().numpy()
         # Compute the gradient of the network output with respect to inputs
@@ -213,7 +213,7 @@ class ScaML(object):
         # Calculate u and z
         u = np.mean(differences + terminals, axis=1)
         if (T - t).any() == 0:
-            delta_t = (T - t + 1e-15)[:, np.newaxis]
+            delta_t = (T - t + 1e-6)[:, np.newaxis]
             z = np.sum(differences * W, axis=1) / (MC * delta_t)
         else:
             z = np.sum(differences * W, axis=1) / (MC * (T - t)[:, np.newaxis])
@@ -248,7 +248,7 @@ class ScaML(object):
                 y = y.transpose(1, 0, 2)
                 u += wloc[:, k, q - 1][:, np.newaxis] * np.mean(y, axis=1)
                 if (cloc[:, k, q - 1] - t).any() == 0:
-                    delta_t = (cloc[:, k, q - 1] - t + 1e-15)[:, np.newaxis]
+                    delta_t = (cloc[:, k, q - 1] - t + 1e-6)[:, np.newaxis]
                     z += wloc[:, k, q - 1][:, np.newaxis] * np.sum(y * W, axis=1) / (MC * delta_t)
                 else:
                     z += wloc[:, k, q - 1][:, np.newaxis] * np.sum(y * W, axis=1) / (MC * (cloc[:, k, q - 1] - t)[:, np.newaxis])
@@ -266,7 +266,7 @@ class ScaML(object):
                     y = y.transpose(1, 0, 2)
                     u -= wloc[:, k, q - 1][:, np.newaxis] * np.mean(y, axis=1)
                     if (cloc[:, k, q - 1] - t).any() == 0:
-                        delta_t = (cloc[:, k, q - 1] - t + 1e-15)[:, np.newaxis]
+                        delta_t = (cloc[:, k, q - 1] - t + 1e-6)[:, np.newaxis]
                         z -= wloc[:, k, q - 1][:, np.newaxis] * np.sum(y * W, axis=1) / (MC * delta_t)
                     else:
                         z -= wloc[:, k, q - 1][:, np.newaxis] * np.sum(y * W, axis=1) / (MC * (cloc[:, k, q - 1] - t)[:, np.newaxis])

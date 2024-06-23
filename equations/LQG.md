@@ -21,7 +21,7 @@ without any boundary constraints.
 
 
 
-This PDE has an explicit solution at time $t$
+This PDE has an simulation solution at time $t$
 $$
 \begin{align}
 
@@ -40,7 +40,7 @@ $$
 d&=100\\σ&=0.25\\
 
 D&=[-0.5,0.5]^{100}\\
-
+\lambda&=1\\
 s&=0\\T&=0.5.
 
 \end{align}

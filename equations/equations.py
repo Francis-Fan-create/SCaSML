@@ -769,7 +769,7 @@ class Complicated_HJB(Equation):
         dim=self.n_input-1
         for k in range(self.n_input-1): # Accumulate laplacian and gradient norm using autograd
             laplacian +=dde.grad.jacobian(z, x_t, i=k, j=k)
-            grad_norm +=torch.abs(dde.grad.jacobian(u, x_t, i=0, j=k)) **1.75
+            grad_norm +=torch.abs(dde.grad.jacobian(u, x_t, i=0, j=k)) 
         residual=du_t + laplacian-(1/dim)*grad_norm +2
         return residual
     
@@ -790,7 +790,7 @@ class Complicated_HJB(Equation):
         dim=self.n_input-1
         for k in range(self.n_input-1): # Accumulate laplacian and gradient norm using autograd
             laplacian +=dde.grad.hessian(u, x_t, i=k, j=k)
-            grad_norm +=torch.abs(dde.grad.jacobian(u, x_t, i=0, j=k)) **1.75
+            grad_norm +=torch.abs(dde.grad.jacobian(u, x_t, i=0, j=k)) 
         residual=du_t + laplacian-(1/dim)*grad_norm +2
         g_loss=[]
         for k in range(self.n_input-1):
@@ -845,7 +845,7 @@ class Complicated_HJB(Equation):
             ndarray: The result array with dimensions [batch_size, 1].
         '''
         dim=self.n_input-1
-        result=-(1/dim)*np.sum(np.abs(z)**1.75,axis=1) +2
+        result=-(1/dim)*np.sum(np.abs(z),axis=1) +2
         return result[:,np.newaxis]
     
     def exact_solution(self, x_t):

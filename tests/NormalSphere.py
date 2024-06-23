@@ -5,6 +5,7 @@ import torch
 from tqdm import tqdm
 from matplotlib.colors import TwoSlopeNorm
 import time
+import sys
 
 class NormalSphere(object):
     '''
@@ -30,6 +31,9 @@ class NormalSphere(object):
         solver2 (object): The MLP solver object.
         solver3 (object): The ScaML solver object.
         '''
+        #save original stdout and stderr
+        self.stdout=sys.stdout
+        self.stderr=sys.stderr
         # Initialize the normal spheres
         self.equation = equation
         self.dim = equation.n_input - 1  # equation.n_input: int
@@ -52,6 +56,7 @@ class NormalSphere(object):
         x_grid_num (int): The number of grid points in the x dimension.
         t_grid_num (int): The number of grid points in the time dimension.
         '''
+
         eq = self.equation
         n=rhomax
         x_grid = np.linspace(0, self.radius, x_grid_num)  # x_grid: ndarray, shape: (x_grid_num,), dtype: float
@@ -97,11 +102,15 @@ class NormalSphere(object):
                 errors1[i, j] += np.mean(np.abs(sol1 - exact_sol))
                 errors2[i, j] += np.mean(np.abs(sol2 - exact_sol))
                 errors3[i, j] += np.mean(np.abs(sol3 - exact_sol))
-                rel_error1[i, j] += np.mean(np.abs(sol1 - exact_sol) / np.abs(exact_sol))
-                rel_error2[i, j] += np.mean(np.abs(sol2 - exact_sol) / np.abs(exact_sol))
-                rel_error3[i, j] += np.mean(np.abs(sol3 - exact_sol) / np.abs(exact_sol))
+                rel_error1[i, j] += np.mean(np.abs(sol1 - exact_sol) / (np.abs(exact_sol)+1e-6))
+                rel_error2[i, j] += np.mean(np.abs(sol2 - exact_sol) / (np.abs(exact_sol)+1e-6))
+                rel_error3[i, j] += np.mean(np.abs(sol3 - exact_sol) / (np.abs(exact_sol)+1e-6))
                 real_sol_abs[i, j] = np.mean(np.abs(exact_sol))  # Compute the absolute value of the real solution
-
+        # open a file to save the output
+        log_file = open(f"{save_path}/NormalSphere.log", "w")
+        #redirect stdout and stderr to the log file
+        sys.stdout=log_file
+        sys.stderr=log_file
         # Print the total time for each solver
         print(f"Total time for PINN: {time1} seconds")
         print(f"Total time for MLP: {time2} seconds")
@@ -264,5 +273,10 @@ class NormalSphere(object):
         wandb.log({f"max of PINN l1,rho={rhomax}": np.max(errors1), f"max of MLP l1,rho={rhomax}": np.max(errors2), f"max of ScaML l1,rho={rhomax}": np.max(errors3)})
         wandb.log({f"positive count of PINN l1 - ScaML l1,rho={rhomax}": np.sum(errors_13>0), f"negative count of PINN l1 - ScaML l1,rho={rhomax}": np.sum(errors_13<0), f"positive sum of PINN l1 - ScaML l1,rho={rhomax}": positive_sum_13, f"negative sum of PINN l1 - ScaML l1,rho={rhomax}": negative_sum_13})
         wandb.log({f"positive count of MLP l1 - ScaML l1,rho={rhomax}": np.sum(errors_23>0), f"negative count of MLP l1 - ScaML l1,rho={rhomax}": np.sum(errors_23<0), f"positive sum of MLP l1 - ScaML l1,rho={rhomax}": positive_sum_23, f"negative sum of MLP l1 - ScaML l1,rho={rhomax}": negative_sum_23})
+        # reset stdout and stderr
+        sys.stdout=self.stdout
+        sys.stderr=self.stderr
+        #close the log file
+        log_file.close()
         return rhomax
 
