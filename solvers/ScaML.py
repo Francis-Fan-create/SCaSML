@@ -3,6 +3,7 @@ import numpy as np
 import deepxde as dde
 import torch.nn as nn
 from scipy.special import lambertw
+from utils.log_variables import log_variables
 
 class ScaML(object):
     '''Multilevel Picard Iteration calibrated PINN for high dimensional semilinear PDE'''
@@ -167,7 +168,8 @@ class ScaML(object):
         '''
         # set the approximation parameters
         self.Mf, self.Mg, self.Q, self.c, self.w = self.approx_parameters(rhomax)
-
+        
+    @log_variables
     def uz_solve(self, n, rho, x_t):
         '''
         Approximate the solution of the PDE, return the ndarray of u(x_t) and z(x_t) batchwisely.
