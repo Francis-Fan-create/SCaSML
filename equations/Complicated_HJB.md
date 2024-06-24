@@ -33,4 +33,4 @@ $$
 d=100, \sigma=0.25, D=[-0.5,0.5]^{100}, s=0, T=0.5
 $$
 
-In the experiment, we set $c=1.25, 1.5,1.75$. 
+In the experiment, we set $c=1$. 
