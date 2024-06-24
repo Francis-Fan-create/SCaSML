@@ -122,8 +122,8 @@ class L_inf(object):
         domain_points, boundary_points = self.get_anchors(domain_anchors, boundary_anchors)
         data.replace_with_anchors(domain_points)
         data.train_x_bc = boundary_points
-        self.model.compile(optimizer=adam, metrics=metrics, loss_weights=loss_weights, lr_scheduler=ExponentialLR(adam, gamma=0.9))
-        self.model.train(iterations=adam_iterations, display_every=10, disregard_previous_best=True)
+        self.model.compile(optimizer=adam, metrics=metrics, loss_weights=loss_weights)
+        self.model.train(iterations=adam_iterations, display_every=10)
         counter1 = 0
         for loss in self.model.train_state.loss_train:
             counter1 += 1
