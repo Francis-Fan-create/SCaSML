@@ -46,7 +46,8 @@ equation=LQG(n_input=101,n_output=1)
 if os.path.exists(r"results/LQG/model_weights_2.params"):
     '''To Do: Retrain the model with new data points& Try new methods to reduce errors'''
     #load the model
-    net=FNN([101]+[50]*5+[1],equation)
+    # net=FNN([101]+[50]*5+[1],equation)
+    net=FNN([101]+[4096]*4+[1],equation)
     net.load_state_dict(torch.load(r"results/LQG/model_weights_2.params",map_location=device)) #the other indexes are left for external resources of weights
     trained_net=net
 else:
