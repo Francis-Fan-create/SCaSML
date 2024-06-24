@@ -6,20 +6,19 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..'))
 
 
 # import the required libraries
-from equations.equations import Explict_Solution_Example
+from equations.equations import Explicit_Solution_Example
 from models.FNN import FNN
 # from optimizers.Adam_LBFGS import Adam_LBFGS
 from optimizers.L_inf import L_inf  
 from tests.NormalSphere import NormalSphere
+from tests.SimpleUniform import SimpleUniform
 from solvers.MLP import MLP
 from solvers.ScaML import ScaML
 import numpy as np
 import torch
 import wandb
 import deepxde as dde
-import cProfile
-import io
-import pstats
+
 
 #fix random seed for dde
 dde.config.set_random_seed(1234)
@@ -42,7 +41,7 @@ wandb.init(project="Explicit_Solution_Example", notes="100 d", tags=["normal sph
 wandb.config.update({"device": device.type}) # record device type
 
 #initialize the equation
-equation=Explict_Solution_Example(n_input=101,n_output=1)
+equation=Explicit_Solution_Example(n_input=101,n_output=1)
 #check if trained model is already saved
 if os.path.exists(r"results/Explicit_Solution_Example/model_weights_3.params"):
     '''To Do: Retrain the model with new data points& Try new methods to reduce errors'''
@@ -70,28 +69,14 @@ solver1.eval()
 solver2=MLP(equation=equation) #Multilevel Picard object
 solver3=ScaML(equation=equation,net=solver1) #ScaML object
 
-#initialize the profiler
-profiler = cProfile.Profile()
-profiler.enable()
-#run the test
-test=NormalSphere(equation,solver1,solver2,solver3)
-rhomax=test.test(r"results/Explicit_Solution_Example")
-#stop the profiler
-profiler.disable()
-#save the profiler results
-profiler.dump_stats(f"results/Explicit_Solution_Example/explicit_solution_example_profiler_rho_{rhomax}.prof")
-#upload the profiler results to wandb
-artifact=wandb.Artifact(f"explicit_solution_example_profiler_rho_{rhomax}", type="profile")
-artifact.add_file(f"results/Explicit_Solution_Example/explicit_solution_example_profiler_rho_{rhomax}.prof")
-wandb.log_artifact(artifact)
 
-# Create a StringIO object to redirect the profiler output
-s = io.StringIO()
-# Create a pstats.Stats object and print the stats
-stats = pstats.Stats(profiler, stream=s)
-stats.print_stats()
-# Print the profiler output
-print(s.getvalue())
+#run the test for NormalSphere
+test1=NormalSphere(equation,solver1,solver2,solver3)
+rhomax=test1.test(r"results/Explicit_Solution_Example")
+#run the test for SimpleUniform
+test2=SimpleUniform(equation,solver1,solver2,solver3)
+test2.test(r"results/Explicit_Solution_Example")
+
 
 
 

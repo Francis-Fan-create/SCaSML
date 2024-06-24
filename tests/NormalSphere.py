@@ -6,6 +6,9 @@ from tqdm import tqdm
 from matplotlib.colors import TwoSlopeNorm
 import time
 import sys
+import os
+import cProfile
+import shutil
 
 class NormalSphere(object):
     '''
@@ -56,8 +59,32 @@ class NormalSphere(object):
         x_grid_num (int): The number of grid points in the x dimension.
         t_grid_num (int): The number of grid points in the time dimension.
         '''
-
+        #initialize the profiler
+        profiler = cProfile.Profile()
+        profiler.enable()
+        # create the save path if it does not exist
+        class_name = self.__class__.__name__
+        new_path = f"{save_path}/{class_name}"
+        if not os.path.exists(new_path):
+            os.makedirs(new_path)
+        save_path = new_path
+        directory=f'{save_path}/callbacks'
+        # Delete former callbacks
+        if os.path.exists(directory):
+            # iterate over the files in the directory
+            for filename in os.listdir(directory):
+                file_path = os.path.join(directory, filename)
+                try:
+                    # if it is a file or a link, delete it
+                    if os.path.isfile(file_path) or os.path.islink(file_path):
+                        os.unlink(file_path)
+                    # if it is a directory, delete it
+                    elif os.path.isdir(file_path):
+                        shutil.rmtree(file_path)
+                except Exception as e:
+                    print(f'Failed to delete {file_path}. Reason: {e}')        
         eq = self.equation
+        eq_name = eq.__class__.__name__
         n=rhomax
         x_grid = np.linspace(0, self.radius, x_grid_num)  # x_grid: ndarray, shape: (x_grid_num,), dtype: float
         t_grid = np.linspace(self.t0, self.T, t_grid_num)  # t_grid: ndarray, shape: (t_grid_num,), dtype: float
@@ -106,6 +133,14 @@ class NormalSphere(object):
                 rel_error2[i, j] += np.mean(np.abs(sol2 - exact_sol) / (np.abs(exact_sol)+1e-6))
                 rel_error3[i, j] += np.mean(np.abs(sol3 - exact_sol) / (np.abs(exact_sol)+1e-6))
                 real_sol_abs[i, j] = np.mean(np.abs(exact_sol))  # Compute the absolute value of the real solution
+        #stop the profiler
+        profiler.disable()
+        #save the profiler results
+        profiler.dump_stats(f"{save_path}/{eq_name}_rho_{rhomax}.prof")
+        #upload the profiler results to wandb
+        artifact=wandb.Artifact(f"{eq_name}_rho_{rhomax}", type="profile")
+        artifact.add_file(f"{save_path}/{eq_name}_rho_{rhomax}.prof")
+        wandb.log_artifact(artifact)
         # open a file to save the output
         log_file = open(f"{save_path}/NormalSphere.log", "w")
         #redirect stdout and stderr to the log file

@@ -2,23 +2,35 @@ import functools
 import inspect
 import numpy as np
 import os
-from datetime import datetime
 
 def log_variables(func):
     @functools.wraps(func)
     def wrapper_log_variables(*args, **kwargs):
-        # get the class name of the first argument
-        self_arg = args[0]
-        class_name = self_arg.equation.__class__.__name__  
+        # get the stack of the current frame
+        stack = inspect.stack()
+        eq_name = args[0].equation.__class__.__name__
+        # initialize the calling class name
+        calling_class_name = ""
         
-        # detect the solvers name
-        if hasattr(self_arg, 'net'):
-            caller_type="ScaML"
+        # iterate through the stack to find the calling class name
+        for frame_info in stack:
+            if 'self' in frame_info.frame.f_locals:
+                # get the class name of the calling class
+                calling_class_name = frame_info.frame.f_locals['self'].__class__.__name__
+                if calling_class_name in ['NormalSphere', 'SimpleUniform']:
+                    break
+
+        
+        # check if the caller is ScaML or MLP
+        if hasattr(args[0], 'net'):
+            caller_type = "ScaML"
         else:
-            caller_type="MLP"
-        # get the log file path
-        log_dir = os.path.join('results', f"{class_name}_callbacks")
-        log_file_path = os.path.join(log_dir, f'{caller_type}_function_logs.log')
+            caller_type = "MLP"
+        
+        # create the log directory and file path
+        log_dir = f'results/{eq_name}/{calling_class_name}/callbacks'
+        log_file_path = f'{log_dir}/{caller_type}_{calling_class_name}_function_logs.log'
+        
         
         # create the log directory if it does not exist
         if not os.path.exists(log_dir):

@@ -214,7 +214,7 @@ class Equation(object):
         """
         raise NotImplementedError
     
-class Explict_Solution_Example(Equation):
+class Explicit_Solution_Example(Equation):
     '''
     Example of a high-dimensional PDE with an exact solution.
     '''
@@ -389,7 +389,7 @@ class Explict_Solution_Example(Equation):
                             )
         return data
     
-class Explict_Solution_Example_Rescale(Equation):
+class Explicit_Solution_Example_Rescale(Equation):
     '''
     
     Example of high-dimensional PDE with exact solution in rescaled version.

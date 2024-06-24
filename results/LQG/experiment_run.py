@@ -11,15 +11,14 @@ from models.FNN import FNN
 # from optimizers.Adam_LBFGS import Adam_LBFGS
 from optimizers.L_inf import L_inf  
 from tests.NormalSphere import NormalSphere
+from tests.SimpleUniform import SimpleUniform
 from solvers.MLP import MLP
 from solvers.ScaML import ScaML
 import numpy as np
 import torch
 import wandb
 import deepxde as dde
-import cProfile
-import io
-import pstats
+
 
 #fix random seed for dde
 dde.config.set_random_seed(1234)
@@ -70,28 +69,15 @@ solver1.eval()
 solver2=MLP(equation=equation) #Multilevel Picard object
 solver3=ScaML(equation=equation,net=solver1) #ScaML object
 
-#initialize the profiler
-profiler = cProfile.Profile()
-profiler.enable()
-#run the test
-test=NormalSphere(equation,solver1,solver2,solver3)
-rhomax=test.test(r"results/LQG")
-#stop the profiler
-profiler.disable()
-#save the profiler results
-profiler.dump_stats(f"results/LQG/LQG_profiler_rho_{rhomax}.prof")
-#upload the profiler results to wandb
-artifact=wandb.Artifact(f"LQG_profiler_rho_{rhomax}", type="profile")
-artifact.add_file(f"results/LQG/LQG_profiler_rho_{rhomax}.prof")
-wandb.log_artifact(artifact)
 
-# Create a StringIO object to redirect the profiler output
-s = io.StringIO()
-# Create a pstats.Stats object and print the stats
-stats = pstats.Stats(profiler, stream=s)
-stats.print_stats()
-# Print the profiler output
-print(s.getvalue())
+#run the test for NormalSphere
+test1=NormalSphere(equation,solver1,solver2,solver3)
+rhomax=test1.test(r"results/LQG")
+#run the test for SimpleUniform
+test2=SimpleUniform(equation,solver1,solver2,solver3)
+test2.test(r"results/LQG")
+
+
 
 
 
