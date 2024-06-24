@@ -60,8 +60,8 @@ else:
     # optimizer=Adam_LBFGS(101,1,net,data) #Adam-LBFGS optimizer
     optimizer=L_inf(101,1,net,data,equation) #L_inf optimizer
     #train the model
-    trained_model=optimizer.train("results/LQG/model_weights_1.params")
-    # trained_model=optimizer.train("results/LQG/model_weights_2.params")   
+    # trained_model=optimizer.train("results/LQG/model_weights_1.params")
+    trained_model=optimizer.train("results/LQG/model_weights_2.params")   
     trained_net=trained_model.net
 
 
