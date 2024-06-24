@@ -47,7 +47,6 @@ class L_inf(object):
             torch.optim.Adam: Configured Adam optimizer.
         '''
         adam = Adam(self.net.parameters(), lr=lr, weight_decay=weight_decay)
-        scheduler = ExponentialLR(adam, gamma=gamma)
         wandb.config.update({"Adam lr": lr, "Adam weight_decay": weight_decay, "Adam gamma": gamma})
         return adam
 
@@ -103,51 +102,36 @@ class L_inf(object):
             tensor_boundary_points[:, -1] = torch.clamp(tensor_boundary_points[:, -1], eq.t0, eq.T)
         return tensor_domain_points.detach().cpu().numpy(), tensor_boundary_points.detach().cpu().numpy()
     
-    def train(self, save_path, cycle=14, domain_anchors=100, boundary_anchors=50, adam_every=500, lbfgs_every=10, metrics=["l2 relative error", "mse"]):
+    def train(self, save_path, domain_anchors=100, boundary_anchors=100, adam_iterations=5000, metrics=["l2 relative error", "mse"]):
         '''Trains the model using an interleaved training strategy of Adam and LBFGS optimizers.
         
         Args:
             save_path (str): Path to save the trained model.
-            cycle (int): Number of training cycles.
             domain_anchors (int): Number of domain anchor points.
             boundary_anchors (int): Number of boundary anchor points.
-            adam_every (int): Number of iterations for Adam optimizer in each cycle.
-            lbfgs_every (int): Number of iterations for LBFGS optimizer in each cycle.
+            adam_iterations (int): Number of iterations for Adam optimizer .
             metrics (list): List of metrics to evaluate during training.
         
         Returns:
             dde.Model: The trained model.
         '''
-        loss_weights = [1e-3] * (self.n_input - 1) + [1] + [1e-2]
-        wandb.config.update({"cycle": cycle, "adam_every": adam_every, "lbfgs_every": lbfgs_every, "loss_weights": loss_weights})
+        loss_weights = [1e-6] * (self.n_input - 1) + [7e-4] + [7e-4]
+        wandb.config.update({ "adam_iterations": adam_iterations, "loss_weights": loss_weights})
         adam = self.Adam()
-        lbfgs = self.LBFGS()
         data = self.data
-        for i in range(cycle):
-            domain_points, boundary_points = self.get_anchors(domain_anchors, boundary_anchors)
-            data.replace_with_anchors(domain_points)
-            data.train_x_bc = boundary_points
-            self.model.compile(optimizer=adam, metrics=metrics, loss_weights=loss_weights)
-            self.model.train(iterations=adam_every, display_every=10, disregard_previous_best=True)
-            counter1 = 0
-            for loss in self.model.train_state.loss_train:
-                counter1 += 1
-                wandb.log({"Adam loss_{:d}".format(counter1): loss})
-            counter2 = 0
-            for metric in self.model.train_state.metrics_test:
-                counter2 += 1
-                wandb.log({"Adam metric_{:d}".format(counter2): metric})
-
-            self.model.compile(optimizer=lbfgs, metrics=metrics, loss_weights=loss_weights)
-            self.model.train(iterations=lbfgs_every, display_every=1, disregard_previous_best=True)
-            counter3 = 0
-            for loss in self.model.train_state.loss_train:
-                counter3 += 1
-                wandb.log({"LBFGS loss_{:d}".format(counter3): loss})
-            counter4 = 0
-            for metric in self.model.train_state.metrics_test:
-                counter4 += 1
-                wandb.log({"LBFGS metric_{:d}".format(counter4): metric})
+        domain_points, boundary_points = self.get_anchors(domain_anchors, boundary_anchors)
+        data.replace_with_anchors(domain_points)
+        data.train_x_bc = boundary_points
+        self.model.compile(optimizer=adam, metrics=metrics, loss_weights=loss_weights, lr_scheduler=ExponentialLR(adam, gamma=0.9))
+        self.model.train(iterations=adam_iterations, display_every=10, disregard_previous_best=True)
+        counter1 = 0
+        for loss in self.model.train_state.loss_train:
+            counter1 += 1
+            wandb.log({"Adam loss_{:d}".format(counter1): loss})
+        counter2 = 0
+        for metric in self.model.train_state.metrics_test:
+            counter2 += 1
+            wandb.log({"Adam metric_{:d}".format(counter2): metric})
         torch.save(self.net.state_dict(), save_path)
         wandb.log_model(path=save_path, name="model")
         return self.model
