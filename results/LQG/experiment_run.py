@@ -7,7 +7,7 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..'))
 
 # import the required libraries
 from equations.equations import LQG
-from models.FNN import FNN
+from models.FNN import FNN, FNN_
 # from optimizers.Adam_LBFGS import Adam_LBFGS
 from optimizers.L_inf import L_inf  
 from tests.NormalSphere import NormalSphere
@@ -47,14 +47,13 @@ if os.path.exists(r"results/LQG/model_weights_1.params"):
     '''To Do: Retrain the model with new data points& Try new methods to reduce errors'''
     #load the model
     net=FNN([101]+[50]*5+[1],equation)
-    # net=FNN([101]+[256]*4+[1],equation)
+    # net=FNN_([101]+[4096]*3+[1],equation)
     net.load_state_dict(torch.load(r"results/LQG/model_weights_1.params",map_location=device)) #the other indexes are left for external resources of weights
     trained_net=net
 else:
     data=equation.generate_data()
     #initialize the FNN
     layers=[101]+[50]*5+[1]
-    # layers=[101]+[256]*4+[1]
     net=FNN(layers,equation)
     #initialize the optimizer
     # optimizer=Adam_LBFGS(101,1,net,data) #Adam-LBFGS optimizer

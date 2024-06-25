@@ -40,3 +40,19 @@ class FNN(nn.Module):
             Tensor: The output tensor of the FNN with dimensions [batch_size, output_size].
         '''
         return self.net(x_t)
+
+class FNN_(nn.Module):
+    '''An alternative FNN structure network based on PyTorch for original L_inf training.'''
+    def __init__(self, layers:list,equation):
+        super(FNN_, self).__init__()
+        models = []
+        self.equation = equation
+        for i in range(len(layers)-1):
+            models.append(nn.Linear(layers[i], layers[i+1]))
+            if i != len(layers)-2:
+                models.append(nn.Tanh())
+
+        self.nn = nn.Sequential(*models)
+
+    def forward(self, x):
+        return self.nn(x.to(torch.float64))
