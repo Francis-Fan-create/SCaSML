@@ -52,11 +52,15 @@ class ScaML(object):
         # Compute the gradient of the network output with respect to inputs
         tensor_grad_u_hat_x = torch.autograd.grad(tensor_u_hat, tensor_x_t, grad_outputs=torch.ones_like(tensor_u_hat), retain_graph=True, create_graph=True)[0][:, :-1]
         grad_u_hat_x = tensor_grad_u_hat_x.detach().cpu().numpy()
-        # epsilon=eq.PDE_loss(tensor_x_t,tensor_u_hat,tensor_grad_u_hat_x).detach().cpu().numpy()
+        epsilon=eq.PDE_loss(tensor_x_t,tensor_u_hat,tensor_grad_u_hat_x).detach().cpu().numpy()
         # Calculate the values for the generator function
         val1 = eq.f(x_t, u_breve + u_hat, eq.sigma(x_t) * (grad_u_hat_x + z_breve))
         val2 = eq.f(x_t, u_hat, eq.sigma(x_t) * grad_u_hat_x)
         # Return the difference between val1 and val2 (light version, which does not include epsilon here)
+        # if np.abs(val1 - val2).any() > 0.5:
+        #     print(f'f:{val1 - val2}')
+        # if np.abs(epsilon).any() > 0.5:
+        #     print(f'epsilon:{epsilon}')
         return val1 - val2
         # return val1-val2-epsilon #large version
     
@@ -78,6 +82,8 @@ class ScaML(object):
         u_hat = self.net(tensor_x_t).detach().cpu().numpy()
         # Calculate the result of the terminal constraint function
         result = eq.g(x_t) - u_hat[:, 0]
+        # if np.abs(result).any() > 0.5:
+        #     print(f'g:{result}')
         return result
     
     def inverse_gamma(self, gamma_input):
