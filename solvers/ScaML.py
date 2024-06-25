@@ -73,6 +73,7 @@ class ScaML(object):
         eq = self.equation
         # Convert input data to PyTorch tensor
         tensor_x_t = torch.tensor(x_t, requires_grad=True).float()
+        # tensor_x_t[:, -1] = self.T
         # Compute the network output and convert it to numpy array
         u_hat = self.net(tensor_x_t).detach().cpu().numpy()
         # Calculate the result of the terminal constraint function
@@ -169,7 +170,7 @@ class ScaML(object):
         # set the approximation parameters
         self.Mf, self.Mg, self.Q, self.c, self.w = self.approx_parameters(rhomax)
         
-    @log_variables
+    # @log_variables
     def uz_solve(self, n, rho, x_t):
         '''
         Approximate the solution of the PDE, return the ndarray of u(x_t) and z(x_t) batchwisely.

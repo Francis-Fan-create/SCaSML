@@ -115,7 +115,7 @@ class L_inf(object):
         Returns:
             dde.Model: The trained model.
         '''
-        loss_weights = [1e-6] * (self.n_input - 1) + [7e-4] + [7e-4]
+        loss_weights = [1e-3] * (self.n_input - 1) + [1] + [7e-2]
         wandb.config.update({ "adam_iterations": adam_iterations, "loss_weights": loss_weights})
         adam = self.Adam()
         data = self.data

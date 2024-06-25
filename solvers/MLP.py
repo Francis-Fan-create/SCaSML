@@ -118,7 +118,7 @@ class MLP(object):
         '''
         self.Mf, self.Mg, self.Q, self.c, self.w = self.approx_parameters(rhomax)  # Set approximation parameters
     
-    @log_variables
+    # @log_variables
     def uz_solve(self, n, rho, x_t):
         '''
         Approximate the solution of the PDE, return the value of u(x_t) and z(x_t), batchwisely.

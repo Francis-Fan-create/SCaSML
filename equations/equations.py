@@ -322,8 +322,10 @@ class Explicit_Solution_Example(Equation):
         Returns:
         - result (ndarray): A 2D array of shape (batch_size, n_output), representing the generator term.
         '''
-        div=np.sum(z,axis=1) # Computes the divergence of z.
-        result=(self.sigma()**2 * u - 1/(self.n_input-1) - self.sigma()**2/2) * div[:,np.newaxis] # Computes the generator term.
+        # div=np.sum(z,axis=1) # Computes the divergence of z.
+        # result=(self.sigma()**2 * u - 1/(self.n_input-1) - self.sigma()**2/2) * div[:,np.newaxis] # Computes the generator term.
+        dim=self.n_input-1
+        result=self.sigma() * (u - (2+self.sigma() * self.sigma() * dim) / (2 * self.sigma() * self.sigma() *dim)) * np.sum(z, axis=1, keepdims=True)
         return result
     
     def exact_solution(self, x_t):
@@ -496,8 +498,7 @@ class Explicit_Solution_Example_Rescale(Equation):
             ndarray: Generator term tensor of shape (batch_size, n_output).
         '''
         dim = self.n_input-1
-        div = np.sum(z, axis=1)
-        result = (self.sigma()**2 * dim * u - 1 - dim * self.sigma()**2 / 2) * div[:, np.newaxis]
+        result=(1/dim)*self.sigma() * (u - 0.5-(1/self.sigma())) * (np.sum(z, axis=1,keepdims=True))
         return result
     
     def exact_solution(self, x_t):

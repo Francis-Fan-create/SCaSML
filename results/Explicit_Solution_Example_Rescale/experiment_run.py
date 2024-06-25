@@ -43,12 +43,12 @@ wandb.config.update({"device": device.type}) # record device type
 #initialize the equation
 equation=Explicit_Solution_Example_Rescale(n_input=101,n_output=1)
 #check if trained model is already saved
-if os.path.exists(r"results/Explicit_Solution_Example_Rescale/model_weights_1.params"):
+if os.path.exists(r"results/Explicit_Solution_Example_Rescale/model_weights_3.params"):
     '''To Do: Retrain the model with new data points& Try new methods to reduce errors'''
     #load the model
     net=FNN([101]+[50]*5+[1],equation)
     # net=FNN([101]+[256]*4+[1],equation)
-    net.load_state_dict(torch.load(r"results/Explicit_Solution_Example_Rescale/model_weights_1.params",map_location=device)) #the other indexes are left for external resources of weights
+    net.load_state_dict(torch.load(r"results/Explicit_Solution_Example_Rescale/model_weights_3.params",map_location=device)) #the other indexes are left for external resources of weights
     trained_net=net
 else:
     data=equation.generate_data()
