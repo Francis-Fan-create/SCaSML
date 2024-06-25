@@ -95,7 +95,7 @@ class SimpleUniform(object):
         time1, time2, time3 = 0, 0, 0  # time1, time2, time3: float, initialized to 0 for timing each solver
 
         # Compute the errors
-        xt_values = geom.random_points(n_samples)  # xt_values: ndarray, shape: (n_samples, self.dim + 1), dtype: float
+        xt_values = geom.random_points(n_samples,random="Hammersley")  # xt_values: ndarray, shape: (n_samples, self.dim + 1), dtype: float
         exact_sol = eq.exact_solution(xt_values)  # exact_sol: ndarray, shape: (n_samples,), dtype: float
 
         # Measure the time for solver1
@@ -145,9 +145,11 @@ class SimpleUniform(object):
         
         plt.figure()
         # collect all absolute errors
-        errors = [errors1.flatten(), errors2.flatten(), errors3.flatten(), errors_13.flatten(), errors_23.flatten()]
+        # errors = [errors1.flatten(), errors2.flatten(), errors3.flatten(), errors_13.flatten(), errors_23.flatten()]
+        errors = [errors1.flatten(), errors2.flatten(), errors3.flatten()]
         # Create a boxplot
-        plt.boxplot(errors, labels=['PINN_l1', 'MLP_l1', 'ScaML_l1', 'PINN_l1 - ScaML_l1', 'MLP_l1 - ScaML_l1'])
+        # plt.boxplot(errors, labels=['PINN_l1', 'MLP_l1', 'ScaML_l1', 'PINN_l1 - ScaML_l1', 'MLP_l1 - ScaML_l1'])
+        plt.boxplot(errors, labels=['PINN_l1', 'MLP_l1', 'ScaML_l1'])
         plt.xticks(rotation=45)
         # Add a title and labels
         plt.title('Absolute Error Distribution')

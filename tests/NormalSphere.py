@@ -158,8 +158,10 @@ class NormalSphere(object):
         plt.figure()
         # collect all absolute errors
         errors = [errors1.flatten(), errors2.flatten(), errors3.flatten(), errors_13.flatten(), errors_23.flatten()]
+        errors= [errors1.flatten(), errors2.flatten(), errors3.flatten()]
         # Create a boxplot
-        plt.boxplot(errors, labels=['PINN_l1', 'MLP_l1', 'ScaML_l1', 'PINN_l1 - ScaML_l1', 'MLP_l1 - ScaML_l1'])
+        # plt.boxplot(errors, labels=['PINN_l1', 'MLP_l1', 'ScaML_l1', 'PINN_l1 - ScaML_l1', 'MLP_l1 - ScaML_l1'])
+        plt.boxplot(errors, labels=['PINN_l1', 'MLP_l1', 'ScaML_l1'])
         plt.xticks(rotation=45)
         # Add a title and labels
         plt.title('Absolute Error Distribution')

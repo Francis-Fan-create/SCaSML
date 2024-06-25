@@ -358,7 +358,8 @@ class Explicit_Solution_Example(Equation):
         '''
         self.t0=t0
         self.T=T
-        spacedomain = dde.geometry.Hypercube([-0.5]*(self.n_input-1), [0.5]*(self.n_input-1)) # Defines the spatial domain.
+        # spacedomain = dde.geometry.Hypercube([-0.5]*(self.n_input-1), [0.5]*(self.n_input-1)) # Defines the spatial domain, for train
+        spacedomain = dde.geometry.Hypercube([-0.1]*(self.n_input-1), [0.1]*(self.n_input-1)) # Defines the spatial domain , for test
         timedomain = dde.geometry.TimeDomain(t0, T) # Defines the time domain.
         geom = dde.geometry.GeometryXTime(spacedomain, timedomain) # Combines spatial and time domains.
         self.geomx=spacedomain
@@ -530,7 +531,8 @@ class Explicit_Solution_Example_Rescale(Equation):
         '''
         self.t0 = t0
         self.T = T
-        spacedomain = dde.geometry.Hypercube([-0.5] * (self.n_input-1), [0.5] * (self.n_input-1))
+        # spacedomain = dde.geometry.Hypercube([-0.5] * (self.n_input-1), [0.5] * (self.n_input-1)) #for train
+        spacedomain = dde.geometry.Hypercube([-0.1] * (self.n_input-1), [0.1] * (self.n_input-1)) #for test
         timedomain = dde.geometry.TimeDomain(t0, T)
         geom = dde.geometry.GeometryXTime(spacedomain, timedomain)  # Combine both domains
         self.geomx = spacedomain
