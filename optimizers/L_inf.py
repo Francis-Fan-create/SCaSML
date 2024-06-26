@@ -102,7 +102,7 @@ class L_inf(object):
             tensor_boundary_points[:, -1] = torch.clamp(tensor_boundary_points[:, -1], eq.t0, eq.T)
         return tensor_domain_points.detach().cpu().numpy(), tensor_boundary_points.detach().cpu().numpy()
     
-    def train(self, save_path, domain_anchors=100, boundary_anchors=100, adam_iterations=5000, metrics=["l2 relative error", "mse"]):
+    def train(self, save_path, domain_anchors=100, boundary_anchors=100, adam_iterations=10000, metrics=["l2 relative error", "mse"]):
         '''Trains the model using an interleaved training strategy of Adam and LBFGS optimizers.
         
         Args:
@@ -115,7 +115,7 @@ class L_inf(object):
         Returns:
             dde.Model: The trained model.
         '''
-        loss_weights = [1e-3] * (self.n_input - 1) + [1] + [7e-2]
+        loss_weights = [1e-5] * (self.n_input - 1) + [1e-2] + [1e-3]
         wandb.config.update({ "adam_iterations": adam_iterations, "loss_weights": loss_weights})
         adam = self.Adam()
         data = self.data
@@ -133,5 +133,5 @@ class L_inf(object):
             counter2 += 1
             wandb.log({"Adam metric_{:d}".format(counter2): metric})
         torch.save(self.net.state_dict(), save_path)
-        wandb.log_model(path=save_path, name="model")
+        # wandb.log_model(path=save_path, name="model")
         return self.model

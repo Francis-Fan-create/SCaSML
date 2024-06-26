@@ -52,9 +52,10 @@ class ScaML(object):
         # Compute the gradient of the network output with respect to inputs
         tensor_grad_u_hat_x = torch.autograd.grad(tensor_u_hat, tensor_x_t, grad_outputs=torch.ones_like(tensor_u_hat), retain_graph=True, create_graph=True)[0][:, :-1]
         grad_u_hat_x = tensor_grad_u_hat_x.detach().cpu().numpy()
-        epsilon=eq.PDE_loss(tensor_x_t,tensor_u_hat,tensor_grad_u_hat_x).detach().cpu().numpy()
+        # epsilon=eq.PDE_loss(tensor_x_t,tensor_u_hat,tensor_grad_u_hat_x).detach().cpu().numpy()
         # Calculate the values for the generator function
-        val1 = eq.f(x_t, u_breve + u_hat, eq.sigma(x_t) * (grad_u_hat_x + z_breve))
+        '''TO DO: should we multiply z_breve with sigma(x_t) or not?'''
+        val1 = eq.f(x_t, u_breve + u_hat, eq.sigma(x_t) * (grad_u_hat_x) + z_breve)
         val2 = eq.f(x_t, u_hat, eq.sigma(x_t) * grad_u_hat_x)
         # Return the difference between val1 and val2 (light version, which does not include epsilon here)
         # if np.abs(val1 - val2).any() > 0.5:
@@ -195,6 +196,7 @@ class ScaML(object):
         dim = self.n_input - 1  # Spatial dimensions
         batch_size = x_t.shape[0]  # Batch size
         sigma = self.sigma(x_t)  # Volatility, shape (batch_size, dim)
+        mu= self.mu(x_t) # drift
         x = x_t[:, :-1]  # Spatial coordinates, shape (batch_size, dim)
         t = x_t[:, -1]  # Temporal coordinates, shape (batch_size,)
         f = self.f  # Generator term
@@ -242,7 +244,7 @@ class ScaML(object):
             for k in range(q):
                 dW = np.sqrt(d[:, k])[:, np.newaxis, np.newaxis] * np.random.normal(size=(batch_size, MC, dim))
                 W += dW
-                X += sigma * dW
+                X += mu*(d[:, k])[:,np.newaxis,np.newaxis]+sigma * dW
                 co_solver_l = lambda X_t: self.uz_solve(n=l, rho=rho, x_t=X_t)
                 co_solver_l_minus_1 = lambda X_t: self.uz_solve(n=l - 1, rho=rho, x_t=X_t)
                 input_intermediates = np.zeros((batch_size, MC, dim + 1))

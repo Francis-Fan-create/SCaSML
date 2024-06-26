@@ -139,6 +139,7 @@ class MLP(object):
         dim = self.n_input - 1  # Spatial dimensions
         batch_size = x_t.shape[0]  # Batch size
         sigma = self.sigma(x_t)  # Volatility, shape (batch_size, dim)
+        mu= self.mu(x_t)  # Drift, shape (batch_size, dim)
         x = x_t[:, :-1]  # Spatial coordinates, shape (batch_size, dim)
         t = x_t[:, -1]  # Temporal coordinates, shape (batch_size,)
         f = self.f  # Generator term function
@@ -192,7 +193,7 @@ class MLP(object):
             for k in range(q):
                 dW = np.sqrt(d[:, k])[:, np.newaxis, np.newaxis] * np.random.normal(size=(batch_size, MC, dim))  # Brownian increments for current time step, shape (batch_size, MC, dim)
                 W += dW  # Accumulate Brownian increments
-                X += sigma * dW  # Update spatial coordinates
+                X += mu*(d[:, k])[:,np.newaxis,np.newaxis]+sigma * dW  # Update spatial coordinates
                 co_solver_l = lambda X_t: self.uz_solve(n=l, rho=rho, x_t=X_t)  # Co-solver for level l
                 co_solver_l_minus_1 = lambda X_t: self.uz_solve(n=l - 1, rho=rho, x_t=X_t)  # Co-solver for level l - 1
                 input_intermediates=np.zeros((batch_size,MC,dim+1))
