@@ -33,7 +33,7 @@ class Adam_LBFGS(object):
         self.model = dde.Model(data, net)
         # We do not need to initialize wandb here, as it is already initialized in the main script
 
-    def Adam(self, lr=7e-4, weight_decay=1e-4, gamma=0.9):
+    def Adam(self, lr=1e-2, weight_decay=1e-4, gamma=0.9):
         '''Initializes and returns an Adam optimizer with an exponential learning rate scheduler.
         
         Args:
@@ -50,7 +50,7 @@ class Adam_LBFGS(object):
         wandb.config.update({"Adam lr": lr, "Adam weight_decay": weight_decay, "Adam gamma": gamma})  # Record hyperparameters
         return adam
 
-    def LBFGS(self, lr=7e-4, max_iter=1000, tolerance_change=1e-5, tolerance_grad=1e-3):
+    def LBFGS(self, lr=1e-2, max_iter=1000, tolerance_change=1e-5, tolerance_grad=1e-3):
         '''Initializes and returns an LBFGS optimizer.
         
         Args:
