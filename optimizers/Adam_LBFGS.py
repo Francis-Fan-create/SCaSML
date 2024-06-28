@@ -112,7 +112,7 @@ class Adam_LBFGS(object):
                     wandb.log({"LBFGS metric_{:d}".format(counter4): metric})
             # Stabilize the training by further training with Adam
             self.model.compile(optimizer=adam, metrics=metrics, loss_weights=loss_weights)
-            self.model.train(iterations=40 * adam_every, display_every=10)
+            self.model.train(iterations=5 * adam_every, display_every=10)
             # Log a list of Adam losses and metrics, which are both lists, one by one
             counter5 = 0
             for loss in self.model.train_state.loss_train:

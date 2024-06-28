@@ -8,8 +8,8 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..'))
 # import the required libraries
 from equations.equations import Explicit_Solution_Example_Rescale
 from models.FNN import FNN
-# from optimizers.Adam_LBFGS import Adam_LBFGS
-from optimizers.L_inf import L_inf  
+from optimizers.Adam_LBFGS import Adam_LBFGS
+# from optimizers.L_inf import L_inf  
 from tests.NormalSphere import NormalSphere
 from tests.SimpleUniform import SimpleUniform
 from solvers.MLP import MLP
@@ -57,8 +57,8 @@ else:
     # layers=[101]+[256]*4+[1]
     net=FNN(layers,equation)
     #initialize the optimizer
-    # optimizer=Adam_LBFGS(101,1,net,data) #Adam-LBFGS optimizer
-    optimizer=L_inf(101,1,net,data,equation) #L_inf optimizer
+    optimizer=Adam_LBFGS(101,1,net,data) #Adam-LBFGS optimizer
+    # optimizer=L_inf(101,1,net,data,equation) #L_inf optimizer
     #train the model
     trained_model=optimizer.train(r"results/Explicit_Solution_Example_Rescale/model_weights_3.params")
     # trained_model=optimizer.train(r"results/Explicit_Solution_Example_Rescale/model_weights_2.params")   

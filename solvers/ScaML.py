@@ -56,7 +56,7 @@ class ScaML(object):
         # Calculate the values for the generator function
         '''TO DO: should we multiply z_breve with sigma(x_t) or not?'''
         '''Personally, I think we should, since the W in the algorithm is not multiplied by sigma.'''
-        val1 = eq.f(x_t, u_breve + u_hat, eq.sigma(x_t) * (grad_u_hat_x + z_breve))
+        val1 = eq.f(x_t, u_breve + u_hat, eq.sigma(x_t) * (grad_u_hat_x+ z_breve))
         val2 = eq.f(x_t, u_hat, eq.sigma(x_t) * grad_u_hat_x)
         # Return the difference between val1 and val2 (light version, which does not include epsilon here)
         # if np.abs(val1 - val2).any() > 0.5:
