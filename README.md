@@ -1,8 +1,8 @@
-# ScaML-Experiment
+# ScaSML-Experiment
 
 -------
 
-This is the repository for our paper ScaML for high dimensional semilinear PDE solving
+This is the repository for our paper ScaSML for high dimensional semilinear PDE solving
 ## Quick start
 To Do
 

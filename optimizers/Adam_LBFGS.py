@@ -87,7 +87,7 @@ class Adam_LBFGS(object):
         lbfgs = self.LBFGS()
         try:
             for i in range(cycle):
-                print(f"cycle:{i}")
+                print(f"Cycle:{i}")
                 self.model.compile(optimizer=adam, metrics=metrics, loss_weights=loss_weights)
                 self.model.train(iterations=adam_every, display_every=10)
                 # Log a list of Adam losses and metrics, which are both lists, one by one

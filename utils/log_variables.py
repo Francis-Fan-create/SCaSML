@@ -21,9 +21,9 @@ def log_variables(func):
                     break
 
         
-        # check if the caller is ScaML or MLP
+        # check if the caller is ScaSML or MLP
         if hasattr(args[0], 'net'):
-            caller_type = "ScaML"
+            caller_type = "ScaSML"
         else:
             caller_type = "MLP"
         
