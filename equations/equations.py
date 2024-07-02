@@ -688,7 +688,7 @@ class Allen_Cahn(Equation):
         result=self.solver.u_solve(3,3,x_t)
         return result
     
-    def geometry(self, t0=0, T=1.5):
+    def geometry(self, t0=0, T=1):
         '''Defines the geometry of the domain, which is a hypercube.
         
         Args:
@@ -852,7 +852,7 @@ class Sine_Gordon(Equation):
         result=self.solver.u_solve(3,3,x_t)
         return result
     
-    def geometry(self, t0=0, T=1.5):
+    def geometry(self, t0=0, T=1):
         '''Defines the geometry of the domain, which is a hypercube.
         
         Args:
