@@ -3,6 +3,12 @@ import numpy as np
 import torch
 
 
+import sys
+import os
+#add the parent directory to the path
+sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..'))
+from solvers.MLP import MLP # use MLP to deal with equations without explicit solutions
+
 class Equation(object):
     '''Equation class for PDEs based on deepxde framework'''
     # all the vectors use rows as index and columns as dimensions
@@ -366,7 +372,7 @@ class Explicit_Solution_Example(Equation):
         self.geomt=timedomain
         return geom
     
-    def generate_data(self, num_domain=2000):
+    def generate_data(self, num_domain=100):
         '''
         Generates data for training the PDE model.
         
@@ -539,7 +545,171 @@ class Explicit_Solution_Example_Rescale(Equation):
         self.geomt = timedomain
         return geom
     
-    def generate_data(self, num_domain=2000):
+    def generate_data(self, num_domain=100):
+        '''Generates data for training the model.
+        
+        Args:
+            num_domain (int): Number of points to sample in the domain.
+        
+        Returns:
+            dde.data.TimePDE: Data object for time-dependent PDE.
+        '''
+        geom = self.geometry()
+        self.terminal_condition()  # Generate terminal condition
+        self.boundary_condition()  # Generate boundary condition
+        data = dde.data.TimePDE(
+            geom,  # Geometry of the boundary condition and terminal condition
+            self.gPDE_loss,  # g_pde residual
+            [self.tc],  # Additional conditions other than PDE loss
+            num_domain=num_domain,  # Sample how many points in the domain
+            num_boundary=0,  # Sample how many points on the boundary
+            num_initial=0,  # Sample how many points for the initial time
+            anchors=self.my_data,  # Enforce terminal points
+            solution=self.exact_solution,  # Incorporate authentic solution to evaluate error metrics
+            num_test=None  # Sample how many points for testing. If None, then the training point will be used.
+        )
+        return data
+    
+class Allen_Cahn(Equation):
+    '''
+    
+    Allen Cahn equation with a double well potential.
+
+    '''
+    def __init__(self, n_input, n_output=1):
+        '''Initializes the equation with input and output dimensions.'''
+        super().__init__(n_input, n_output)
+
+    def PDE_loss(self, x_t, u, z):
+        '''Calculates the PDE loss.
+        
+        Args:
+            x_t (tensor): Input tensor of shape (batch_size, n_input).
+            u (tensor): Solution tensor of shape (batch_size, n_output).
+            z (tensor): Gradient tensor of shape (batch_size, n_input-1).
+        
+        Returns:
+            residual(tensor): Residual tensor of shape (batch_size,n_output).
+        '''
+        # Compute the time derivative of u with respect to the last dimension of x_t
+        du_t = dde.grad.jacobian(u, x_t, i=0, j=self.n_input-1)
+        laplacian = 0
+        for k in range(self.n_input-1):  # Accumulate laplacian
+            laplacian += dde.grad.jacobian(z, x_t, i=k, j=k)
+        # Calculate the residual of the PDE
+        residual = du_t + u - u**3 - 0.5 * laplacian
+        return residual 
+
+    def gPDE_loss(self, x_t, u):
+        '''Calculates the gPDE loss using gPINN.
+        
+        Args:
+            x_t (tensor): Input tensor of shape (batch_size, n_input).
+            u (tensor): Solution tensor of shape (batch_size, n_output).
+        
+        Returns:
+            g_loss(list of ndarray): List of gradient loss tensors, each of shape (batch_size, n_output).
+        '''
+        # Compute the time derivative of u with respect to the last dimension of x_t
+        du_t = dde.grad.jacobian(u, x_t, i=0, j=self.n_input-1)
+        laplacian = 0
+        for k in range(self.n_input-1):  # Accumulate laplacian and divergence using autograd
+            laplacian += dde.grad.hessian(u, x_t, i=k, j=k)
+        # Calculate the residual of the PDE
+        residual = du_t + u - u**3 - 0.5 * laplacian
+        g_loss = []
+        for k in range(self.n_input-1):  # Compute gradient loss for each dimension
+            g_loss.append(0.01 * dde.grad.jacobian(residual, x_t, i=0, j=k))
+        g_loss.append(residual)
+        return g_loss
+
+    def terminal_constraint(self, x_t):
+        '''Defines the terminal constraint for the PDE.
+        
+        Args:
+            x_t (ndarray): Input tensor of shape (batch_size, n_input).
+        
+        Returns:
+            ndarray: Constraint tensor of shape (batch_size,).
+        '''
+        dim = self.n_input-1
+        # Calculate the terminal constraint
+        x=x_t[:,:dim]
+        max_square=np.max(np.square(x),axis=1)
+        result=1/(1+max_square)  
+        return result 
+
+    def mu(self, x_t=0):
+        '''Returns the drift term, mu.
+        
+        Args:
+            x_t (optional): Not used.
+        
+        Returns:
+            float: The drift term.
+        '''
+        return 0
+
+    def sigma(self, x_t=0):
+        '''Returns the volatility term, sigma.
+        
+        Args:
+            x_t (optional): Not used.
+        
+        Returns:
+            float: The volatility term.
+        '''
+        return 1
+
+    def f(self, x_t, u, z):
+        '''Defines the generator term for the PDE.
+        
+        Args:
+            x_t (ndarray): Input tensor of shape (batch_size, n_input).
+            u (ndarray): Solution tensor of shape (batch_size, n_output).
+            z (ndarray): Gradient tensor of shape (batch_size, n_input-1).
+        
+        Returns:
+            ndarray: Generator term tensor of shape (batch_size, n_output).
+        '''
+        result=u-u**3
+        return result
+    
+    def exact_solution(self, x_t):
+        '''Calculates the exact solution of the example.
+        
+        Args:
+            x_t (ndarray): Input tensor of shape (batch_size, n_input).
+        
+        Returns:
+            ndarray: Exact solution tensor of shape (batch_size, n_output).
+        '''
+        solver=MLP(equation=self)
+        solver.set_approx_parameters(3)
+        result=solver.u_solve(3,3,x_t)
+        return result
+    
+    def geometry(self, t0=0, T=1.5):
+        '''Defines the geometry of the domain, which is a hypercube.
+        
+        Args:
+            t0 (float): Initial time.
+            T (float): Terminal time.
+        
+        Returns:
+            dde.geometry.GeometryXTime: Combined spatial and temporal domain.
+        '''
+        self.t0 = t0
+        self.T = T
+        spacedomain = dde.geometry.Hypercube([-0.5] * (self.n_input-1), [0.5] * (self.n_input-1)) #for train
+        # spacedomain = dde.geometry.Hypercube([-0.1] * (self.n_input-1), [0.1] * (self.n_input-1)) #for test
+        timedomain = dde.geometry.TimeDomain(t0, T)
+        geom = dde.geometry.GeometryXTime(spacedomain, timedomain)  # Combine both domains
+        self.geomx = spacedomain
+        self.geomt = timedomain
+        return geom
+    
+    def generate_data(self, num_domain=100):
         '''Generates data for training the model.
         
         Args:
