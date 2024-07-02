@@ -170,12 +170,13 @@ class MLP(object):
         
         # Compute u and z values
         u = np.mean(differences + terminals, axis=1)  # Mean over Monte Carlo samples, shape (batch_size, 1)
-        if (T - t).any() == 0:
-            delta_t = (T - t + 1e-6)[:, np.newaxis]  # Avoid division by zero, shape (batch_size, 1)
-            z = np.sum(differences * W, axis=1) / (MC * delta_t)  # Compute z values, shape (batch_size, dim)
-        else:
-            z = np.sum(differences * W, axis=1) / (MC * (T - t)[:, np.newaxis])  # Compute z values, shape (batch_size, dim)
-        
+        # if (T - t).any() == 0:
+        #     delta_t = (T - t + 1e-6)[:, np.newaxis]  # Avoid division by zero, shape (batch_size, 1)
+        #     z = np.sum(differences * W, axis=1) / (MC * delta_t)  # Compute z values, shape (batch_size, dim)
+        # else:
+        #     z = np.sum(differences * W, axis=1) / (MC * (T - t)[:, np.newaxis])  # Compute z values, shape (batch_size, dim)
+        delta_t = (T - t + 1e-6)[:, np.newaxis]  # Avoid division by zero, shape (batch_size, 1)
+        z = np.sum(differences * W, axis=1) / (MC * delta_t)  # Compute z values, shape (batch_size, dim)        
         # Recursive call for n > 0
         if n <= 0:
             return np.concatenate((u, z), axis=-1)  # Concatenate u and z values, shape (batch_size, dim + 1)
@@ -206,12 +207,13 @@ class MLP(object):
                 y = np.array([f(input_intermediates[:,i,:], simulated_u[:, i, :], simulated_z[:, i, :]) for i in range(MC)])  # Apply generator term function, shape (MC, batch_size, 1)
                 y = y.transpose(1, 0, 2)  # Transpose to shape (batch_size, MC, 1)
                 u += wloc[:, k, q - 1][:, np.newaxis] * np.mean(y, axis=1)  # Update u values
-                if (cloc[:, k, q - 1] - t).any() == 0:
-                    delta_t = (cloc[:, k, q - 1] - t + 1e-6)[:, np.newaxis]  # Avoid division by zero, shape (batch_size, 1)
-                    z += wloc[:, k, q - 1][:, np.newaxis] * np.sum(y * W, axis=1) / (MC * delta_t)  # Update z values
-                else:
-                    z += wloc[:, k, q - 1][:, np.newaxis] * np.sum(y * W, axis=1) / (MC * (cloc[:, k, q - 1] - t)[:, np.newaxis])  # Update z values
-                
+                # if (cloc[:, k, q - 1] - t).any() == 0:
+                #     delta_t = (cloc[:, k, q - 1] - t + 1e-6)[:, np.newaxis]  # Avoid division by zero, shape (batch_size, 1)
+                #     z += wloc[:, k, q - 1][:, np.newaxis] * np.sum(y * W, axis=1) / (MC * delta_t)  # Update z values
+                # else:
+                #     z += wloc[:, k, q - 1][:, np.newaxis] * np.sum(y * W, axis=1) / (MC * (cloc[:, k, q - 1] - t)[:, np.newaxis])  # Update z values
+                delta_t = (cloc[:, k, q - 1] - t + 1e-6)[:, np.newaxis]  # Avoid division by zero, shape (batch_size, 1)
+                z += wloc[:, k, q - 1][:, np.newaxis] * np.sum(y * W, axis=1) / (MC * delta_t)  # Update z values                
                 # Adjust u and z values if l > 0
                 if l:
                     input_intermediates=np.zeros((batch_size,MC,dim+1))
@@ -223,11 +225,13 @@ class MLP(object):
                     y = np.array([f(input_intermediates[:,i,:], simulated_u[:, i, :], simulated_z[:, i, :]) for i in range(MC)])  # Apply generator term function, shape (MC, batch_size, 1)
                     y = y.transpose(1, 0, 2)  # Transpose to shape (batch_size, MC, 1)
                     u -= wloc[:, k, q - 1][:, np.newaxis] * np.mean(y, axis=1)  # Adjust u values
-                    if (cloc[:, k, q - 1] - t).any() == 0:
-                        delta_t = (cloc[:, k, q - 1] - t + 1e-6)[:, np.newaxis]  # Avoid division by zero, shape (batch_size, 1)
-                        z -= wloc[:, k, q - 1][:, np.newaxis] * np.sum(y * W, axis=1) / (MC * delta_t)  # Adjust z values
-                    else:
-                        z -= wloc[:, k, q - 1][:, np.newaxis] * np.sum(y * W, axis=1) / (MC * (cloc[:, k, q - 1] - t)[:, np.newaxis])  # Adjust z values
+                    # if (cloc[:, k, q - 1] - t).any() == 0:
+                    #     delta_t = (cloc[:, k, q - 1] - t + 1e-6)[:, np.newaxis]  # Avoid division by zero, shape (batch_size, 1)
+                    #     z -= wloc[:, k, q - 1][:, np.newaxis] * np.sum(y * W, axis=1) / (MC * delta_t)  # Adjust z values
+                    # else:
+                    #     z -= wloc[:, k, q - 1][:, np.newaxis] * np.sum(y * W, axis=1) / (MC * (cloc[:, k, q - 1] - t)[:, np.newaxis])  # Adjust z values
+                    delta_t = (cloc[:, k, q - 1] - t + 1e-6)[:, np.newaxis]  # Avoid division by zero, shape (batch_size, 1)
+                    z -= wloc[:, k, q - 1][:, np.newaxis] * np.sum(y * W, axis=1) / (MC * delta_t)  # Adjust z values
         return np.concatenate((u, z), axis=-1)  # Concatenate adjusted u and z values, shape (batch_size, dim + 1)
 
     def u_solve(self, n, rho, x_t):

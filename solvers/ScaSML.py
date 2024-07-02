@@ -224,12 +224,13 @@ class ScaSML(object):
         
         # Calculate u and z
         u = np.mean(differences + terminals, axis=1)
-        if (T - t).any() == 0:
-            delta_t = (T - t + 1e-6)[:, np.newaxis]
-            z = np.sum(differences * W, axis=1) / (MC * delta_t)
-        else:
-            z = np.sum(differences * W, axis=1) / (MC * (T - t)[:, np.newaxis])
-        
+        # if (T - t).any() == 0:
+        #     delta_t = (T - t + 1e-6)[:, np.newaxis]
+        #     z = np.sum(differences * W, axis=1) / (MC * delta_t)
+        # else:
+        #     z = np.sum(differences * W, axis=1) / (MC * (T - t)[:, np.newaxis])
+        delta_t = (T - t + 1e-6)[:, np.newaxis]
+        z = np.sum(differences * W, axis=1) / (MC * delta_t)
         # Recursive calculation for n > 0
         if n <= 0:
             return np.concatenate((u, z), axis=-1)
@@ -259,11 +260,13 @@ class ScaSML(object):
                 y = np.array([f(input_intermediates[:, i, :], simulated_u[:, i, :], simulated_z[:, i, :]) for i in range(MC)])
                 y = y.transpose(1, 0, 2)
                 u += wloc[:, k, q - 1][:, np.newaxis] * np.mean(y, axis=1)
-                if (cloc[:, k, q - 1] - t).any() == 0:
-                    delta_t = (cloc[:, k, q - 1] - t + 1e-6)[:, np.newaxis]
-                    z += wloc[:, k, q - 1][:, np.newaxis] * np.sum(y * W, axis=1) / (MC * delta_t)
-                else:
-                    z += wloc[:, k, q - 1][:, np.newaxis] * np.sum(y * W, axis=1) / (MC * (cloc[:, k, q - 1] - t)[:, np.newaxis])
+                # if (cloc[:, k, q - 1] - t).any() == 0:
+                #     delta_t = (cloc[:, k, q - 1] - t + 1e-6)[:, np.newaxis]
+                #     z += wloc[:, k, q - 1][:, np.newaxis] * np.sum(y * W, axis=1) / (MC * delta_t)
+                # else:
+                #     z += wloc[:, k, q - 1][:, np.newaxis] * np.sum(y * W, axis=1) / (MC * (cloc[:, k, q - 1] - t)[:, np.newaxis])
+                delta_t = (cloc[:, k, q - 1] - t + 1e-6)[:, np.newaxis]
+                z += wloc[:, k, q - 1][:, np.newaxis] * np.sum(y * W, axis=1) / (MC * delta_t)                
                 
                 # Adjust u, z based on previous level if l > 0
                 if l:
@@ -277,11 +280,13 @@ class ScaSML(object):
                     y = np.array([f(input_intermediates[:, i, :], simulated_u[:, i, :], simulated_z[:, i, :]) for i in range(MC)])
                     y = y.transpose(1, 0, 2)
                     u -= wloc[:, k, q - 1][:, np.newaxis] * np.mean(y, axis=1)
-                    if (cloc[:, k, q - 1] - t).any() == 0:
-                        delta_t = (cloc[:, k, q - 1] - t + 1e-6)[:, np.newaxis]
-                        z -= wloc[:, k, q - 1][:, np.newaxis] * np.sum(y * W, axis=1) / (MC * delta_t)
-                    else:
-                        z -= wloc[:, k, q - 1][:, np.newaxis] * np.sum(y * W, axis=1) / (MC * (cloc[:, k, q - 1] - t)[:, np.newaxis])
+                    # if (cloc[:, k, q - 1] - t).any() == 0:
+                    #     delta_t = (cloc[:, k, q - 1] - t + 1e-6)[:, np.newaxis]
+                    #     z -= wloc[:, k, q - 1][:, np.newaxis] * np.sum(y * W, axis=1) / (MC * delta_t)
+                    # else:
+                    #     z -= wloc[:, k, q - 1][:, np.newaxis] * np.sum(y * W, axis=1) / (MC * (cloc[:, k, q - 1] - t)[:, np.newaxis])
+                    delta_t = (cloc[:, k, q - 1] - t + 1e-6)[:, np.newaxis]
+                    z -= wloc[:, k, q - 1][:, np.newaxis] * np.sum(y * W, axis=1) / (MC * delta_t)
         return np.concatenate((u, z), axis=-1)
 
     def u_solve(self, n, rho, x_t):
