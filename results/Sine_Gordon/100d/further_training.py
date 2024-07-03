@@ -6,7 +6,7 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..', '..'))
 
 
 # import the required libraries
-from equations.equations import Allen_Cahn
+from equations.equations import Sine_Gordon
 from models.FNN import FNN
 # from optimizers.Adam_LBFGS import Adam_LBFGS
 from optimizers.L_inf import L_inf  
@@ -36,32 +36,32 @@ if device.type == 'cuda':
     gpu_name = torch.cuda.get_device_name()
 
 #initialize wandb
-wandb.init(project="Allen_Cahn", notes="100 d", tags=["Normal Sphere test","Simple Uniform Test","L_inf training"],mode="disabled") #debug mode
-# wandb.init(project="Allen_Cahn", notes="100 d", tags=["Normal Sphere test","Simple Uniform Test","Adam_LBFGS training"],mode="disabled") #debug mode
-# wandb.init(project="Allen_Cahn", notes="100 d", tags=["Normal Sphere test","Simple Uniform Test","L_inf training"]) #working mode
-# wandb.init(project="Allen_Cahn", notes="100 d", tags=["Normal Sphere test","Simple Uniform Test","Adam_LBFGS training"]) #working mode
+wandb.init(project="Sine_Gordon", notes="100 d", tags=["Normal Sphere test","Simple Uniform Test","L_inf training"],mode="disabled") #debug mode
+# wandb.init(project="Sine_Gordon", notes="100 d", tags=["Normal Sphere test","Simple Uniform Test","Adam_LBFGS training"],mode="disabled") #debug mode
+# wandb.init(project="Sine_Gordon", notes="100 d", tags=["Normal Sphere test","Simple Uniform Test","L_inf training"]) #working mode
+# wandb.init(project="Sine_Gordon", notes="100 d", tags=["Normal Sphere test","Simple Uniform Test","Adam_LBFGS training"]) #working mode
 wandb.config.update({"device": device.type}) # record device type
 
 #initialize the equation
-equation=Allen_Cahn(n_input=101,n_output=1)
+equation=Sine_Gordon(n_input=101,n_output=1)
 #check if trained model is already saved
-if os.path.exists(r"results/Allen_Cahn/100d/model_weights_Adam_LBFGS_L_inf.params"):
+if os.path.exists(r"results/Sine_Gordon/100d/model_weights_Adam_LBFGS_L_inf.params"):
     '''To Do: Retrain the model with new data points& Try new methods to reduce errors'''
     #load the model
     net=FNN([101]+[50]*5+[1],equation)
-    net.load_state_dict(torch.load(r"results/Allen_Cahn/100d/model_weights_Adam_LBFGS_L_inf.params",map_location=device)) #the other indexes are left for external resources of weights
+    net.load_state_dict(torch.load(r"results/Sine_Gordon/100d/model_weights_Adam_LBFGS_L_inf.params",map_location=device)) #the other indexes are left for external resources of weights
     trained_net=net
 else:
     data=equation.generate_data()
     #initialize the FNN
     layers=[101]+[50]*5+[1]
     net=FNN(layers,equation)
-    net.load_state_dict(torch.load(r"results/Allen_Cahn/100d/model_weights_Adam_LBFGS.params",map_location=device)) #the other indexes are left for external resources of weights
+    net.load_state_dict(torch.load(r"results/Sine_Gordon/100d/model_weights_Adam_LBFGS.params",map_location=device)) #the other indexes are left for external resources of weights
     #initialize the optimizer
     # optimizer=Adam_LBFGS(101,1,net,data) #Adam-LBFGS optimizer
     optimizer=L_inf(101,1,net,data,equation) #L_inf optimizer
     #train the model
-    trained_model=optimizer.train(r"results/Allen_Cahn/100d/model_weights_Adam_LBFGS_L_inf.params")
+    trained_model=optimizer.train(r"results/Sine_Gordon/100d/model_weights_Adam_LBFGS_L_inf.params")
     trained_net=trained_model.net
 
 
@@ -74,10 +74,10 @@ solver3=ScaSML(equation=equation,net=solver1) #ScaSML object
 
 #run the test for NormalSphere
 test1=NormalSphere(equation,solver1,solver2,solver3)
-rhomax=test1.test(r"results/Allen_Cahn/100d")
+rhomax=test1.test(r"results/Sine_Gordon/100d")
 #run the test for SimpleUniform
 test2=SimpleUniform(equation,solver1,solver2,solver3)
-test2.test(r"results/Allen_Cahn/100d")
+test2.test(r"results/Sine_Gordon/100d")
 
 
 
