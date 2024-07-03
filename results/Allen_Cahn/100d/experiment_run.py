@@ -45,11 +45,11 @@ wandb.config.update({"device": device.type}) # record device type
 #initialize the equation
 equation=Allen_Cahn(n_input=101,n_output=1)
 #check if trained model is already saved
-if os.path.exists(r"results/Allen_Cahn/100d/model_weights_L_inf.params"):
+if os.path.exists(r"results/Allen_Cahn/100d/model_weights_Adam_LBFGS.params"):
     '''To Do: Retrain the model with new data points& Try new methods to reduce errors'''
     #load the model
     net=FNN([101]+[50]*5+[1],equation)
-    net.load_state_dict(torch.load(r"results/Allen_Cahn/100d/model_weights_L_inf.params",map_location=device)) #the other indexes are left for external resources of weights
+    net.load_state_dict(torch.load(r"results/Allen_Cahn/100d/model_weights_Adam_LBFGS.params",map_location=device)) #the other indexes are left for external resources of weights
     trained_net=net
 else:
     data=equation.generate_data()
@@ -60,7 +60,7 @@ else:
     optimizer=Adam_LBFGS(101,1,net,data) #Adam-LBFGS optimizer
     # optimizer=L_inf(101,1,net,data,equation) #L_inf optimizer
     #train the model
-    trained_model=optimizer.train(r"results/Allen_Cahn/100d/model_weights_L_inf.params")
+    trained_model=optimizer.train(r"results/Allen_Cahn/100d/model_weights_Adam_LBFGS.params")
     trained_net=trained_model.net
 
 
