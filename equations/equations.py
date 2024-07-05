@@ -580,7 +580,7 @@ class Allen_Cahn(Equation):
         '''Initializes the equation with input and output dimensions.'''
         super().__init__(n_input, n_output)
         self.solver=MLP(equation=self)
-        self.solver.set_approx_parameters(3)
+        self.solver.set_approx_parameters(4)
 
     def PDE_loss(self, x_t, u, z):
         '''Calculates the PDE loss.
@@ -685,7 +685,7 @@ class Allen_Cahn(Equation):
         Returns:
             ndarray: Exact solution tensor of shape (batch_size, n_output).
         '''
-        result=self.solver.u_solve(3,3,x_t)
+        result=self.solver.u_solve(4,4,x_t)
         return result
     
     def geometry(self, t0=0, T=1):
@@ -745,7 +745,7 @@ class Sine_Gordon(Equation):
         '''Initializes the equation with input and output dimensions.'''
         super().__init__(n_input, n_output)
         self.solver=MLP(equation=self)
-        self.solver.set_approx_parameters(3)
+        self.solver.set_approx_parameters(4)
 
     def PDE_loss(self, x_t, u, z):
         '''Calculates the PDE loss.
@@ -849,7 +849,7 @@ class Sine_Gordon(Equation):
         Returns:
             ndarray: Exact solution tensor of shape (batch_size, n_output).
         '''
-        result=self.solver.u_solve(3,3,x_t)
+        result=self.solver.u_solve(4,4,x_t)
         return result
     
     def geometry(self, t0=0, T=1):
