@@ -16,8 +16,13 @@ without any boundary constraints.
 
 
 
-This PDE has an explicit solution at time $t$:
+Then nonlinear term is given by
+$$
+f(x,t,u,z)=(\sigma u-\frac {1}{d\sigma} -\frac{\sigma}{2})\sum_i z
+$$
 
+
+This PDE has an explicit solution at time $t$:
 $$
 u(x,t)=\frac{\exp(t+\sum\limits_{i=1}^d x_i)}{1+\exp(t+\sum\limits_{i=1}^d x_i)}
 $$

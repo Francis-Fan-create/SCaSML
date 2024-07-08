@@ -15,10 +15,13 @@ $$
 
 without any boundary constraints.
 
+The nonlinear term is given by
+$$
+f(x,t,u,z)=2
+$$
 
 
 This PDE has an explicit solution at time $t$
-
 $$
 u(x,t)=\sum_{i=1}^d x_i+(T-t).
 $$
@@ -30,12 +33,12 @@ which is our target in this section.
 Specifically, we consider the problem for
 
 $$
-d=100, \mu=0,\sigma=0.25, D=[-0.5,0.5]^{100}, s=0, T=0.5
+d=100, \mu=-1/d,\sigma=\sqrt{2}, D=[-0.5,0.5]^{100}, s=0, T=0.5
 $$
 
 and
 
 $$
-d=250,\mu=0, \sigma=0.25, D=[-0.5,0.5]^{250}, s=0, T=0.5
+d=250,\mu=-1/d, \sigma=\sqrt{2}, D=[-0.5,0.5]^{250}, s=0, T=0.5
 $$
 
