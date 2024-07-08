@@ -14,20 +14,24 @@ $$
 
 without any boundary constraints.
 
+The nonlinear term is given by
+$$
+f(x,t,u,z)=u-u^3.
+$$
 
 
-This PDE do not has an explicit solution at time $t$.
+This PDE does not have an explicit solution at time $t$.
 
 
 
 Specifically, we consider the problem for
 
 $$
-d=100, \mu=0,\sigma=0.25, D=[-0.5,0.5]^{100}, s=0, T=1
+d=100, \mu=0,\sigma=\sqrt 2, D=[-0.5,0.5]^{100}, s=0, T=1
 $$
 
 and
 
 $$
-d=250,\mu=0, \sigma=0.25, D=[-0.5,0.5]^{250}, s=0, T=1
+d=250,\mu=0, \sigma=\sqrt 2, D=[-0.5,0.5]^{250}, s=0, T=1
 $$
