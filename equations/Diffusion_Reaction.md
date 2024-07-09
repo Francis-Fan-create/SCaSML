@@ -14,16 +14,20 @@ u(x,0)=h(x):=2\sin(\frac{\pi}{2}x_1),
 $$
 
 and boundary conditions is given by
+
 $$
-u(x,t)=q(x,t):=2\sin(\frac{\pi}{2}x_1)e^{-t},t\in[s,T],x\in\partial D\sub \mathbb{R}^{d-1}.
+u(x,t)=q(x,t):=2\sin(\frac{\pi}{2}x_1)e^{-t},t\in[s,T],x\in\partial D⊂ \mathbb{R}^{d-1}.
 $$
+
 The nonlinear term is given by
+
 $$
 f(x,t,u,z)=-u^2-(\frac{\pi^2}{2}-2)\sin(\frac{\pi}{2}x_1)e^{-t}+4\sin^2(\frac{\pi}{2}x_1)e^{-2t}
 $$
 
 
 This PDE has an explicit solution at time $t$
+
 $$
 u(x,t)=2\sin(\frac{\pi}{2}x_1)e^{-t}.
 $$

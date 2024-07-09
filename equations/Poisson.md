@@ -9,15 +9,18 @@ $$
 whose boundary condition is given by
 
 $$
-u(x,t)=q(x,t)=\sum_{i=1}^d\sin(\frac\pi2 x_i),t\in[s,T],x\in \partial D\sub \mathbb{R}^{d-1}
+u(x,t)=q(x,t)=\sum_{i=1}^d\sin(\frac\pi2 x_i),t\in[s,T],x\in \partial D⊂ \mathbb{R}^{d-1}
 $$
+
 The nonlinear term is given by
+
 $$
 f(x,t,u,z)=-\frac{\pi^2}{4}\sum_{i=1}^{d}\sin(\frac{\pi}{2}x_i)
 $$
 
 
 This PDE has an explicit solution at time $t$
+
 $$
 u(x,t)=\sum_{i=1}^d\sin(\frac\pi2 x_i).
 $$
