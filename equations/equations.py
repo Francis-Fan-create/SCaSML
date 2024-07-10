@@ -572,7 +572,7 @@ class Explicit_Solution_Example_Rescale(Equation):
             x_t (ndarray): Input tensor of shape (batch_size, n_input).
         
         Returns:
-            ndarray: Exact solution tensor of shape (batch_size, n_output).
+            ndarray: Exact solution tensor of shape (batch_size, ).
         '''
         dim = self.n_input-1
         t = x_t[:, -1]
@@ -739,7 +739,7 @@ class Allen_Cahn(Equation):
             x_t (ndarray): Input tensor of shape (batch_size, n_input).
         
         Returns:
-            ndarray: Exact solution tensor of shape (batch_size, n_output).
+            ndarray: Exact solution tensor of shape (batch_size, ).
         '''
         result=self.solver.u_solve(4,4,x_t)
         return result
@@ -902,7 +902,7 @@ class Sine_Gordon(Equation):
             x_t (ndarray): Input tensor of shape (batch_size, n_input).
         
         Returns:
-            ndarray: Exact solution tensor of shape (batch_size, n_output).
+            ndarray: Exact solution tensor of shape (batch_size, ).
         '''
         result=self.solver.u_solve(4,4,x_t)
         return result
@@ -1074,7 +1074,7 @@ class Complicated_HJB(Equation):
         - x_t (ndarray): Input tensor of shape (batch_size, n_input), where n_input includes the time dimension.
         
         Returns:
-        - result (ndarray): An arrary of shape (batch_size, n_output), representing the exact solution.
+        - result (ndarray): An arrary of shape (batch_size, ), representing the exact solution.
         '''
         t = x_t[:, -1]
         x = x_t[:, :-1]
@@ -1200,6 +1200,21 @@ class Diffusion_Reaction(Equation):
         x_1=x_t[:,0] # Extracts the spatial coordinate.
         result=2*np.sin(x_1*np.pi/2) # Computes the initial constraint.
         return result 
+
+    def terminal_constraint(self, x_t):
+        '''
+        Computes the terminal constraint of the PDE for given inputs.
+        
+        Parameters:
+        - x_t (ndarray): Input tensor of shape (batch_size, n_input), where n_input includes the time dimension.
+        
+        Returns:
+        - result (ndarray): An arrary of shape (batch_size,), representing the exact solution.
+        '''
+        x_1=x_t[:,0] # Extracts the spatial coordinate.
+        t=x_t[:,-1] # Extracts the time coordinate.
+        result=2*np.sin(x_1*np.pi/2)*np.exp(-t) # Computes the initial constraint.
+        return result 
     
     def Dirichlet_boundary_constraint(self, x_t):
         '''
@@ -1254,7 +1269,7 @@ class Diffusion_Reaction(Equation):
         '''
         x_1=x_t[:,0,np.newaxis]
         t=x_t[:,-1,np.newaxis]
-        result=-u**2-(torch.pi**2/2-2)*torch.sin(x_1*torch.pi/2)*torch.exp(-t)+4*torch.sin(x_1*torch.pi/2)**2*torch.exp(-2*t)
+        result=-u**2-(np.pi**2/2-2)*np.sin(x_1*torch.pi/2)*np.exp(-t)+4*np.sin(x_1*np.pi/2)**2*np.exp(-2*t)
         return result
     
     def exact_solution(self, x_t):
@@ -1265,7 +1280,7 @@ class Diffusion_Reaction(Equation):
         - x_t (ndarray): Input tensor of shape (batch_size, n_input), where n_input includes the time dimension.
         
         Returns:
-        - result (ndarray): An arrary of shape (batch_size, n_output), representing the exact solution.
+        - result (ndarray): An arrary of shape (batch_size,), representing the exact solution.
         '''
         x_1=x_t[:,0] # Extracts the spatial coordinate.
         t=x_t[:,-1] # Extracts the time coordinate.
@@ -1381,6 +1396,21 @@ class Poisson(Equation):
         g_loss.append(residual) # Adds the residual to the loss.
         return g_loss
     
+    def terminal_constraint(self, x_t):
+        '''
+        Computes the terminal constraint of the PDE for given inputs.
+        
+        Parameters:
+        - x_t (ndarray): Input tensor of shape (batch_size, n_input), where n_input includes the time dimension.
+        
+        Returns:
+        - result (ndarray): An arrary of shape (batch_size, ), representing the exact solution.
+        '''
+        x=x_t[:,:self.n_input-1] # Extracts the spatial coordinates.
+        sin_term=np.sum(np.sin(x*torch.pi/2),axis=1) # Computes the sum of sin terms.
+        result=sin_term
+        return result                      
+    
     def Dirichlet_boundary_constraint(self, x_t):
         '''
         Defines the Dirichlet boundary constraint for the PDE.
@@ -1446,10 +1476,10 @@ class Poisson(Equation):
         - x_t (ndarray): Input tensor of shape (batch_size, n_input), where n_input includes the time dimension.
         
         Returns:
-        - result (ndarray): An arrary of shape (batch_size, n_output), representing the exact solution.
+        - result (ndarray): An arrary of shape (batch_size, ), representing the exact solution.
         '''
         x=x_t[:,:self.n_input-1] # Extracts the spatial coordinates.
-        sin_term=np.sum(np.sin(x*torch.pi/2),axis=1,keepdims=True) # Computes the sum of sin terms.
+        sin_term=np.sum(np.sin(x*torch.pi/2),axis=1) # Computes the sum of sin terms.
         result=sin_term
         return result 
     
@@ -1557,6 +1587,21 @@ class Neumann_Boundary(Equation):
             g_loss.append(0.01*dde.grad.jacobian(residual,x_t,i=0,j=k)) # Computes gradient penalty.
         g_loss.append(residual) # Adds the residual to the loss.
         return g_loss
+
+    def terminal_constraint(self, x_t):
+        '''
+        Computes the terminal constraint of the PDE for given inputs.
+        
+        Parameters:
+        - x_t (ndarray): Input tensor of shape (batch_size, n_input), where n_input includes the time dimension.
+        
+        Returns:
+        - result (ndarray): An arrary of shape (batch_size, ), representing the exact solution.
+        '''
+        x_1=x_t[:,0] # Extracts the spatial coordinate.
+        x_2=x_t[:,1] # Extracts the spatial coordinate.
+        result=np.sin(np.pi/2*x_1)*np.cos(np.pi/2*x_2) # Computes the exact solution.
+        return result
     
     def Neumann_boundary_constraint(self, x_t):
         '''
@@ -1625,7 +1670,7 @@ class Neumann_Boundary(Equation):
         - x_t (ndarray): Input tensor of shape (batch_size, n_input), where n_input includes the time dimension.
         
         Returns:
-        - result (ndarray): An arrary of shape (batch_size, n_output), representing the exact solution.
+        - result (ndarray): An arrary of shape (batch_size, ), representing the exact solution.
         '''
         x_1=x_t[:,0] # Extracts the spatial coordinate.
         x_2=x_t[:,1] # Extracts the spatial coordinate.

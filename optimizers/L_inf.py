@@ -97,7 +97,6 @@ class L_inf(object):
             tensor_boundary_points.requires_grad = True
             prediction_boundary = net(tensor_boundary_points)
             # loss_boundary = torch.mean((prediction_boundary - torch.tensor(eq.terminal_constraint(boundary_points), requires_grad=True)) ** 2) # Need to change based on the problem
-            # loss_boundary = torch.mean((prediction_boundary - torch.tensor(eq.initial_constraint(boundary_points), requires_grad=True)) ** 2) # Need to change based on the problem
             loss_boundary = torch.mean((prediction_boundary - torch.tensor(eq.Dirichlet_boundary_constraint(boundary_points), requires_grad=True)) ** 2) # Need to change based on the problem
             # loss_boundary = torch.mean((prediction_boundary - torch.tensor(eq.Neumann_boundary_constraint(boundary_points), requires_grad=True)) ** 2) # Need to change based on the problem
             grad_boundary = torch.autograd.grad(loss_boundary, tensor_boundary_points)[0]
@@ -119,8 +118,8 @@ class L_inf(object):
         Returns:
             dde.Model: The trained model.
         '''
-        # loss_weights = [1e-5] * (self.n_input - 1) + [1e-2] + [1e-3] # Need to change based on the problem
-        loss_weights = [1e-5] * (self.n_input - 1) + [1e-2] + [1e-3]*2 # Need to change based on the problem
+        loss_weights = [1e-5] * (self.n_input - 1) + [1e-2] + [1e-3] # Need to change based on the problem
+        # loss_weights = [1e-5] * (self.n_input - 1) + [1e-2] + [1e-3]*2 # Need to change based on the problem
         wandb.config.update({ "adam_iterations": adam_every, "loss_weights": loss_weights})
         adam = self.Adam()
         data = self.data
