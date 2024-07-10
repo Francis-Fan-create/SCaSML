@@ -63,13 +63,37 @@ class Equation(object):
             NotImplementedError: This is a placeholder method.
         """
         raise NotImplementedError
-
-    def boundary_constraint(self, x_t):
+    
+    def initial_constraint(self, x_t):
         """
-        Boundary constraint in the PDE.
+        Initial constraint in the PDE.
+        
+        Args:
+            x_t (ndarray): The input data at terminal time, shape (n_samples, n_input).
+            
+        Raises:
+            NotImplementedError: This is a placeholder method.
+        """
+        raise NotImplementedError    
+
+    def Dirichlet_boundary_constraint(self, x_t):
+        """
+        Dirichlet boundary constraint in the PDE.
         
         Args:
             x_t (ndarray): The input data at the boundary, shape (n_samples, n_input).
+            
+        Raises:
+            NotImplementedError: This is a placeholder method.
+        """
+        raise NotImplementedError
+
+    def Neumann_boundary_constraint(self, x_t):
+        """
+        Neumann boundary constraint in the PDE.
+        
+        Args:
+            x_t (ndarray): The input data at terminal time, shape (n_samples, n_input).
             
         Raises:
             NotImplementedError: This is a placeholder method.
@@ -170,7 +194,7 @@ class Equation(object):
             NotImplementedError: This is a placeholder method.
         """
         raise NotImplementedError
-
+        
     def terminal_condition(self):
         """
         Terminal condition of the PDE, using hard constraint.
@@ -194,9 +218,9 @@ class Equation(object):
         else:
             raise NotImplementedError
 
-    def boundary_condition(self):
+    def initial_condition(self):
         """
-        Boundary condition of the PDE, using soft constraint.
+        Initial condition of the PDE, using soft constraint.
         
         Returns:
             dde.icbc.DirichletBC: The boundary condition object.
@@ -204,10 +228,44 @@ class Equation(object):
         Raises:
             NotImplementedError: If the boundary_constraint or geometry method is not implemented.
         """
-        if hasattr(self, 'boundary_constraint') and hasattr(self, 'geometry'):
-            bc = dde.icbc.DirichletBC(self.geometry(), self.boundary_constraint, lambda _, on_boundary: on_boundary)  # need to be enforced on generate_data method
-            self.bc = bc
-            return bc
+        if hasattr(self, 'initial_constraint') and hasattr(self, 'geometry'):
+            ic = dde.icbc.IC(self.geometry(), self.initial_constraint, lambda _, on_initial: on_initial)  # need to be enforced on generate_data method
+            self.ic = ic
+            return ic
+        else:
+            raise NotImplementedError
+
+    def Dirichlet_boundary_condition(self):
+        """
+        Dirichlet boundary condition of the PDE, using soft constraint.
+        
+        Returns:
+            dde.icbc.DirichletBC: The boundary condition object.
+            
+        Raises:
+            NotImplementedError: If the boundary_constraint or geometry method is not implemented.
+        """
+        if hasattr(self, 'Dirichlet_boundary_constraint') and hasattr(self, 'geometry'):
+            D_bc = dde.icbc.DirichletBC(self.geometry(), self.Dirichlet_boundary_constraint, lambda _, on_boundary: on_boundary)  # need to be enforced on generate_data method
+            self.D_bc = D_bc
+            return D_bc
+        else:
+            raise NotImplementedError
+
+    def Neumann_boundary_condition(self):
+        """
+        Neumann boundary condition of the PDE, using soft constraint.
+        
+        Returns:
+            dde.icbc.NeumannBC: The boundary condition object.
+            
+        Raises:
+            NotImplementedError: If the boundary_constraint or geometry method is not implemented.
+        """
+        if hasattr(self, 'Neumann_boundary_constraint') and hasattr(self, 'geometry'):
+            N_bc = dde.icbc.NeumannBC(self.geometry(), self.Neumann_boundary_constraint, lambda _, on_boundary: on_boundary)  # need to be enforced on generate_data method
+            self.N_bc = N_bc
+            return N_bc
         else:
             raise NotImplementedError
     
@@ -384,7 +442,6 @@ class Explicit_Solution_Example(Equation):
         '''
         geom=self.geometry() # Defines the geometry of the domain.
         self.terminal_condition() # Generates terminal condition.
-        self.boundary_condition()  # Generates boundary condition.
         data = dde.data.TimePDE(
                                 geom, # Geometry of the domain.
                                 self.gPDE_loss, # gPDE loss function.
@@ -515,7 +572,7 @@ class Explicit_Solution_Example_Rescale(Equation):
             x_t (ndarray): Input tensor of shape (batch_size, n_input).
         
         Returns:
-            ndarray: Exact solution tensor of shape (batch_size, n_output).
+            ndarray: Exact solution tensor of shape (batch_size, ).
         '''
         dim = self.n_input-1
         t = x_t[:, -1]
@@ -556,7 +613,6 @@ class Explicit_Solution_Example_Rescale(Equation):
         '''
         geom = self.geometry()
         self.terminal_condition()  # Generate terminal condition
-        self.boundary_condition()  # Generate boundary condition
         data = dde.data.TimePDE(
             geom,  # Geometry of the boundary condition and terminal condition
             self.gPDE_loss,  # g_pde residual
@@ -683,7 +739,7 @@ class Allen_Cahn(Equation):
             x_t (ndarray): Input tensor of shape (batch_size, n_input).
         
         Returns:
-            ndarray: Exact solution tensor of shape (batch_size, n_output).
+            ndarray: Exact solution tensor of shape (batch_size, ).
         '''
         result=self.solver.u_solve(4,4,x_t)
         return result
@@ -719,7 +775,6 @@ class Allen_Cahn(Equation):
         '''
         geom = self.geometry()
         self.terminal_condition()  # Generate terminal condition
-        self.boundary_condition()  # Generate boundary condition
         data = dde.data.TimePDE(
             geom,  # Geometry of the boundary condition and terminal condition
             self.gPDE_loss,  # g_pde residual
@@ -847,7 +902,7 @@ class Sine_Gordon(Equation):
             x_t (ndarray): Input tensor of shape (batch_size, n_input).
         
         Returns:
-            ndarray: Exact solution tensor of shape (batch_size, n_output).
+            ndarray: Exact solution tensor of shape (batch_size, ).
         '''
         result=self.solver.u_solve(4,4,x_t)
         return result
@@ -883,7 +938,6 @@ class Sine_Gordon(Equation):
         '''
         geom = self.geometry()
         self.terminal_condition()  # Generate terminal condition
-        self.boundary_condition()  # Generate boundary condition
         data = dde.data.TimePDE(
             geom,  # Geometry of the boundary condition and terminal condition
             self.gPDE_loss,  # g_pde residual
@@ -1020,7 +1074,7 @@ class Complicated_HJB(Equation):
         - x_t (ndarray): Input tensor of shape (batch_size, n_input), where n_input includes the time dimension.
         
         Returns:
-        - result (ndarray): An arrary of shape (batch_size, n_output), representing the exact solution.
+        - result (ndarray): An arrary of shape (batch_size, ), representing the exact solution.
         '''
         t = x_t[:, -1]
         x = x_t[:, :-1]
@@ -1061,7 +1115,6 @@ class Complicated_HJB(Equation):
         '''
         geom=self.geometry() # Defines the geometry of the domain.
         self.terminal_condition() # Generates terminal condition.
-        self.boundary_condition()  # Generates boundary condition.
         data = dde.data.TimePDE(
                                 geom, # Geometry of the domain.
                                 self.gPDE_loss, # gPDE loss function.
@@ -1075,3 +1128,596 @@ class Complicated_HJB(Equation):
                             )
         return data
 
+class Diffusion_Reaction(Equation):
+    '''
+    Diffusion reaction equation.
+    '''
+    def __init__(self, n_input, n_output=1):
+        '''
+        Initializes the PDE example with specified input and output dimensions.
+        
+        Parameters:
+        - n_input (int): The dimension of the input space, including the time dimension.
+        - n_output (int): The dimension of the output space. Defaults to 1.
+        '''
+        super().__init__(n_input, n_output)
+    
+    def PDE_loss(self, x_t,u,z):
+        '''
+        Calculates the PDE loss for given inputs.
+        
+        Parameters:
+        - x_t (tensor): Input tensor of shape (batch_size, n_input), where n_input includes the time dimension.
+        - u (tensor): Output tensor of shape (batch_size, n_output), representing the solution of the PDE.
+        - z (tensor): Tensor of shape (batch_size, n_input-1), representing gradients of u w.r.t. x.
+        
+        Returns:
+        - residual (tensor): The residual of the PDE of shape (batch_size, n_output).
+        '''
+        du_t = dde.grad.jacobian(u,x_t,i=0,j=self.n_input-1) # Computes the time derivative of u.
+        laplacian=0
+        x_1=x_t[:,0,None]
+        t=x_t[:,-1,None]
+        for k in range(self.n_input-1): # Accumulates laplacian and divergence over spatial dimensions.
+            laplacian +=dde.grad.jacobian(z, x_t, i=k, j=k) # Computes the laplacian of z.
+        residual=du_t +(-u**2-(torch.pi**2/2-2)*torch.sin(x_1*torch.pi/2)*torch.exp(-t)+4*torch.sin(x_1*torch.pi/2)**2*torch.exp(-2*t))-laplacian # Computes the residual of the PDE.
+        return residual 
+    
+    def gPDE_loss(self, x_t,u):
+        '''
+        Calculates the generalized PDE loss using the gPINN approach.
+        
+        Parameters:
+        - x_t (tensor): Input tensor of shape (batch_size, n_input), where n_input includes the time dimension.
+        - u (tensor): Output tensor of shape (batch_size, n_output), representing the solution of the PDE.
+        
+        Returns:
+        - g_loss (list of tensor): List of gradients of the residual for gPINN loss, with the last element being the residual itself.
+        '''
+        du_t = dde.grad.jacobian(u,x_t,i=0,j=self.n_input-1) # Computes the time derivative of u.
+        laplacian=0
+        x_1=x_t[:,0,None]
+        t=x_t[:,-1,None]
+        for k in range(self.n_input-1): # Accumulates laplacian and divergence over spatial dimensions.
+            laplacian +=dde.grad.hessian(u, x_t, i=k, j=k) # Computes the laplacian of z.
+        residual=du_t +(-u**2-(torch.pi**2/2-2)*torch.sin(x_1*torch.pi/2)*torch.exp(-t)+4*torch.sin(x_1*torch.pi/2)**2*torch.exp(-2*t))-laplacian # Computes the residual of the PDE.
+        g_loss=[]
+        for k in range(self.n_input-1): # Accumulates gradients of the residual for gPINN loss.
+            g_loss.append(0.01*dde.grad.jacobian(residual,x_t,i=0,j=k)) # Computes gradient penalty.
+        g_loss.append(residual) # Adds the residual to the loss.
+        return g_loss
+    
+    def initial_constraint(self, x_t):
+        '''
+        Defines the initial constraint for the PDE.
+        
+        Parameters:
+        - x_t (ndarray): Input tensor of shape (batch_size, n_input), where n_input includes the time dimension.
+        
+        Returns:
+        - result (ndarray): A 1D tensor of shape (batch_size,), representing the terminal constraint.
+        '''
+        x_1=x_t[:,0] # Extracts the spatial coordinate.
+        result=2*np.sin(x_1*np.pi/2) # Computes the initial constraint.
+        return result 
+
+    def terminal_constraint(self, x_t):
+        '''
+        Computes the terminal constraint of the PDE for given inputs.
+        
+        Parameters:
+        - x_t (ndarray): Input tensor of shape (batch_size, n_input), where n_input includes the time dimension.
+        
+        Returns:
+        - result (ndarray): An arrary of shape (batch_size,), representing the exact solution.
+        '''
+        x_1=x_t[:,0] # Extracts the spatial coordinate.
+        t=x_t[:,-1] # Extracts the time coordinate.
+        result=2*np.sin(x_1*np.pi/2)*np.exp(-t) # Computes the initial constraint.
+        return result 
+    
+    def Dirichlet_boundary_constraint(self, x_t):
+        '''
+        Defines the Dirichlet boundary constraint for the PDE.
+        
+        Parameters:
+        - x_t (ndarray): Input tensor of shape (batch_size, n_input), where n_input includes the time dimension.
+        
+        Returns:
+        - result (ndarray): A 1D tensor of shape (batch_size,), representing the terminal constraint.
+        '''
+        x_1=x_t[:,0] # Extracts the spatial coordinate.
+        t=x_t[:,-1] # Extracts the time coordinate.
+        result=2*np.sin(x_1*np.pi/2)*np.exp(-t) # Computes the initial constraint.
+        return result     
+
+    def mu(self, x_t=0):
+        '''
+        Returns the drift coefficient of the PDE. Here, it's a constant value.
+        
+        Parameters:
+        - x_t (int, optional): Not used in this implementation.
+        
+        Returns:
+        - (float): The drift coefficient.
+        '''
+        return 0
+    
+    def sigma(self, x_t=0):
+        '''
+        Returns the diffusion coefficient of the PDE. Here, it's a constant value.
+        
+        Parameters:
+        - x_t (int, optional): Not used in this implementation.
+        
+        Returns:
+        - (float): The diffusion coefficient.
+        '''
+        return -np.sqrt(2)
+    
+    def f(self, x_t,u,z):
+        '''
+        Defines the generator term for the PDE.
+        
+        Parameters:
+        - x_t (ndarray): Input tensor of shape (batch_size, n_input), where n_input includes the time dimension.
+        - u (ndarray): Output tensor of shape (batch_size, n_output), representing the solution of the PDE.
+        - z (ndarray): Tensor of shape (batch_size, n_input-1), representing gradients.
+        
+        Returns:
+        - result (ndarray): A 2D array of shape (batch_size, n_output), representing the generator term.
+        '''
+        x_1=x_t[:,0,np.newaxis]
+        t=x_t[:,-1,np.newaxis]
+        result=-u**2-(np.pi**2/2-2)*np.sin(x_1*torch.pi/2)*np.exp(-t)+4*np.sin(x_1*np.pi/2)**2*np.exp(-2*t)
+        return result
+    
+    def exact_solution(self, x_t):
+        '''
+        Computes the exact solution of the PDE for given inputs.
+        
+        Parameters:
+        - x_t (ndarray): Input tensor of shape (batch_size, n_input), where n_input includes the time dimension.
+        
+        Returns:
+        - result (ndarray): An arrary of shape (batch_size,), representing the exact solution.
+        '''
+        x_1=x_t[:,0] # Extracts the spatial coordinate.
+        t=x_t[:,-1] # Extracts the time coordinate.
+        result=2*np.sin(x_1*np.pi/2)*np.exp(-t) # Computes the initial constraint.
+        return result 
+    
+    def geometry(self,t0=0,T=0.5):
+        '''
+        Defines the geometry of the domain for the PDE.
+        
+        Parameters:
+        - t0 (float): Initial time.
+        - T (float): Terminal time.
+        
+        Returns:
+        - geom (dde.geometry.GeometryXTime): A GeometryXTime object representing the domain.
+        '''
+        self.t0=t0
+        self.T=T
+        spacedomain = dde.geometry.Hypercube([-0.5]*(self.n_input-1), [0.5]*(self.n_input-1)) # Defines the spatial domain, for train
+        # spacedomain = dde.geometry.Hypercube([-0.1]*(self.n_input-1), [0.1]*(self.n_input-1)) # Defines the spatial domain , for test
+        timedomain = dde.geometry.TimeDomain(t0, T) # Defines the time domain.
+        geom = dde.geometry.GeometryXTime(spacedomain, timedomain) # Combines spatial and time domains.
+        self.geomx=spacedomain
+        self.geomt=timedomain
+        return geom
+    
+    def generate_data(self, num_domain=100,num_initial=100,num_D_boundary=100):
+        '''
+        Generates data for training the PDE model.
+        
+        Parameters:
+        - num_domain (int): Number of points to sample in the domain.
+        - num_initial (int): Number of points to sample at the initial time.
+        - num_D_boundary (int): Number of points to sample on the Dirichlet boundary.
+        
+        Returns:
+        - data (dde.data.TimePDE): A TimePDE object containing the training data.
+        '''
+        geom=self.geometry() # Defines the geometry of the domain.
+        self.initial_condition() # Generates terminal condition.
+        self.Dirichlet_boundary_condition()  # Generates Dirichlet boundary condition.
+        data = dde.data.TimePDE(
+                                geom, # Geometry of the domain.
+                                self.gPDE_loss, # gPDE loss function.
+                                [self.ic,self.D_bc], # Additional conditions.
+                                num_domain=num_domain, # Number of domain points.
+                                num_boundary=num_D_boundary, # Number of boundary points.
+                                num_initial=num_initial,  # Number of initial points.
+                                solution=self.exact_solution,   # Incorporates exact solution for error metrics.
+                                num_test=None # Number of test points.
+                            )
+        return data
+    
+class Poisson(Equation):
+    '''
+    Poisson equation.
+    '''
+    def __init__(self, n_input, n_output=1):
+        '''
+        Initializes the PDE example with specified input and output dimensions.
+        
+        Parameters:
+        - n_input (int): The dimension of the input space, including the time dimension.
+        - n_output (int): The dimension of the output space. Defaults to 1.
+        '''
+        super().__init__(n_input, n_output)
+    
+    def PDE_loss(self, x_t,u,z):
+        '''
+        Calculates the PDE loss for given inputs.
+        
+        Parameters:
+        - x_t (tensor): Input tensor of shape (batch_size, n_input), where n_input includes the time dimension.
+        - u (tensor): Output tensor of shape (batch_size, n_output), representing the solution of the PDE.
+        - z (tensor): Tensor of shape (batch_size, n_input-1), representing gradients of u w.r.t. x.
+        
+        Returns:
+        - residual (tensor): The residual of the PDE of shape (batch_size, n_output).
+        '''
+        du_t = dde.grad.jacobian(u,x_t,i=0,j=self.n_input-1) # Computes the time derivative of u.
+        x=x_t[:,:self.n_input-1] # Extracts the spatial coordinates.
+        laplacian=0
+        sin_term=torch.sum(torch.sin(x*torch.pi/2),dim=1,keepdim=True)
+        nonlin_term=-(torch.pi**2/4)*sin_term
+        for k in range(self.n_input-1): # Accumulates laplacian and divergence over spatial dimensions.
+            laplacian +=dde.grad.jacobian(z, x_t, i=k, j=k) # Computes the laplacian of z.
+        residual=du_t +nonlin_term-laplacian # Computes the residual of the PDE.
+        return residual 
+    
+    def gPDE_loss(self, x_t,u):
+        '''
+        Calculates the generalized PDE loss using the gPINN approach.
+        
+        Parameters:
+        - x_t (tensor): Input tensor of shape (batch_size, n_input), where n_input includes the time dimension.
+        - u (tensor): Output tensor of shape (batch_size, n_output), representing the solution of the PDE.
+        
+        Returns:
+        - g_loss (list of tensor): List of gradients of the residual for gPINN loss, with the last element being the residual itself.
+        '''
+        du_t = dde.grad.jacobian(u,x_t,i=0,j=self.n_input-1) # Computes the time derivative of u.
+        x=x_t[:,:self.n_input-1] # Extracts the spatial coordinates.
+        laplacian=0
+        sin_term=torch.sum(torch.sin(x*torch.pi/2),dim=1,keepdim=True)
+        nonlin_term=-(torch.pi**2/4)*sin_term
+        for k in range(self.n_input-1): # Accumulates laplacian and divergence over spatial dimensions.
+            laplacian +=dde.grad.hessian(u, x_t, i=k, j=k) # Computes the laplacian of z.
+        residual=du_t +nonlin_term-laplacian # Computes the residual of the PDE.
+        g_loss=[]
+        for k in range(self.n_input-1): # Accumulates gradients of the residual for gPINN loss.
+            g_loss.append(0.01*dde.grad.jacobian(residual,x_t,i=0,j=k)) # Computes gradient penalty.
+        g_loss.append(residual) # Adds the residual to the loss.
+        return g_loss
+    
+    def terminal_constraint(self, x_t):
+        '''
+        Computes the terminal constraint of the PDE for given inputs.
+        
+        Parameters:
+        - x_t (ndarray): Input tensor of shape (batch_size, n_input), where n_input includes the time dimension.
+        
+        Returns:
+        - result (ndarray): An arrary of shape (batch_size, ), representing the exact solution.
+        '''
+        x=x_t[:,:self.n_input-1] # Extracts the spatial coordinates.
+        sin_term=np.sum(np.sin(x*torch.pi/2),axis=1) # Computes the sum of sin terms.
+        result=sin_term
+        return result                      
+    
+    def Dirichlet_boundary_constraint(self, x_t):
+        '''
+        Defines the Dirichlet boundary constraint for the PDE.
+        
+        Parameters:
+        - x_t (ndarray): Input tensor of shape (batch_size, n_input), where n_input includes the time dimension.
+        
+        Returns:
+        - result (ndarray): A 1D tensor of shape (batch_size,), representing the terminal constraint.
+        '''
+        x=x_t[:,:self.n_input-1] # Extracts the spatial coordinates.
+        sin_term=np.sum(np.sin(x*np.pi/2),axis=1) # Computes the sum of sin terms.
+        result=sin_term
+        return result     
+
+    def mu(self, x_t=0):
+        '''
+        Returns the drift coefficient of the PDE. Here, it's a constant value.
+        
+        Parameters:
+        - x_t (int, optional): Not used in this implementation.
+        
+        Returns:
+        - (float): The drift coefficient.
+        '''
+        return 0
+    
+    def sigma(self, x_t=0):
+        '''
+        Returns the diffusion coefficient of the PDE. Here, it's a constant value.
+        
+        Parameters:
+        - x_t (int, optional): Not used in this implementation.
+        
+        Returns:
+        - (float): The diffusion coefficient.
+        '''
+        return -np.sqrt(2)
+    
+    def f(self, x_t,u,z):
+        '''
+        Defines the generator term for the PDE.
+        
+        Parameters:
+        - x_t (ndarray): Input tensor of shape (batch_size, n_input), where n_input includes the time dimension.
+        - u (ndarray): Output tensor of shape (batch_size, n_output), representing the solution of the PDE.
+        - z (ndarray): Tensor of shape (batch_size, n_input-1), representing gradients.
+        
+        Returns:
+        - result (ndarray): A 2D array of shape (batch_size, n_output), representing the generator term.
+        '''
+        x=x_t[:,:self.n_input-1] # Extracts the spatial coordinates.
+        sin_term=np.sum(np.sin(x*torch.pi/2),axis=1,keepdims=True)
+        nonlin_term=-(np.pi**2/4)*sin_term
+        result=nonlin_term
+        return result
+    
+    def exact_solution(self, x_t):
+        '''
+        Computes the exact solution of the PDE for given inputs.
+        
+        Parameters:
+        - x_t (ndarray): Input tensor of shape (batch_size, n_input), where n_input includes the time dimension.
+        
+        Returns:
+        - result (ndarray): An arrary of shape (batch_size, ), representing the exact solution.
+        '''
+        x=x_t[:,:self.n_input-1] # Extracts the spatial coordinates.
+        sin_term=np.sum(np.sin(x*torch.pi/2),axis=1) # Computes the sum of sin terms.
+        result=sin_term
+        return result 
+    
+    def geometry(self,t0=0,T=0.5):
+        '''
+        Defines the geometry of the domain for the PDE.
+        
+        Parameters:
+        - t0 (float): Initial time.
+        - T (float): Terminal time.
+        
+        Returns:
+        - geom (dde.geometry.GeometryXTime): A GeometryXTime object representing the domain.
+        '''
+        self.t0=t0
+        self.T=T
+        spacedomain = dde.geometry.Hypercube([-0.5]*(self.n_input-1), [0.5]*(self.n_input-1)) # Defines the spatial domain, for train
+        # spacedomain = dde.geometry.Hypercube([-0.1]*(self.n_input-1), [0.1]*(self.n_input-1)) # Defines the spatial domain , for test
+        timedomain = dde.geometry.TimeDomain(t0, T) # Defines the time domain.
+        geom = dde.geometry.GeometryXTime(spacedomain, timedomain) # Combines spatial and time domains.
+        self.geomx=spacedomain
+        self.geomt=timedomain
+        return geom
+    
+    def generate_data(self, num_domain=100,num_D_boundary=100):
+        '''
+        Generates data for training the PDE model.
+        
+        Parameters:
+        - num_domain (int): Number of points to sample in the domain.
+        - num_D_boundary (int): Number of points to sample on the Dirichlet boundary.
+        
+        Returns:
+        - data (dde.data.TimePDE): A TimePDE object containing the training data.
+        '''
+        geom=self.geometry() # Defines the geometry of the domain.
+        self.Dirichlet_boundary_condition()  # Generates boundary condition.
+        data = dde.data.TimePDE(
+                                geom, # Geometry of the domain.
+                                self.gPDE_loss, # gPDE loss function.
+                                [self.D_bc], # Additional conditions.
+                                num_domain=num_domain, # Number of domain points.
+                                num_boundary=num_D_boundary, # Number of boundary points.
+                                num_initial=0,  # Number of initial points.
+                                solution=self.exact_solution,   # Incorporates exact solution for error metrics.
+                                num_test=None # Number of test points.
+                            )
+        return data
+    
+class Neumann_Boundary(Equation):
+    '''
+    An Equation with Neumann boundary condition.
+    '''
+    def __init__(self, n_input, n_output=1):
+        '''
+        Initializes the PDE example with specified input and output dimensions.
+        
+        Parameters:
+        - n_input (int): The dimension of the input space, including the time dimension.
+        - n_output (int): The dimension of the output space. Defaults to 1.
+        '''
+        super().__init__(n_input, n_output)
+    
+    def PDE_loss(self, x_t,u,z):
+        '''
+        Calculates the PDE loss for given inputs.
+        
+        Parameters:
+        - x_t (tensor): Input tensor of shape (batch_size, n_input), where n_input includes the time dimension.
+        - u (tensor): Output tensor of shape (batch_size, n_output), representing the solution of the PDE.
+        - z (tensor): Tensor of shape (batch_size, n_input-1), representing gradients of u w.r.t. x.
+        
+        Returns:
+        - residual (tensor): The residual of the PDE of shape (batch_size, n_output).
+        '''
+        du_t = dde.grad.jacobian(u,x_t,i=0,j=self.n_input-1) # Computes the time derivative of u.
+        x_1=x_t[:,0,None]
+        x_2=x_t[:,1,None]
+        laplacian=0
+        for k in range(self.n_input-1): # Accumulates laplacian and divergence over spatial dimensions.
+            laplacian +=dde.grad.jacobian(z, x_t, i=k, j=k) # Computes the laplacian of z.
+        residual=du_t +(2*u-(torch.pi**2/2+2)*torch.sin(torch.pi/2*x_1)*torch.cos(torch.pi/2*x_2))-laplacian # Computes the residual of the PDE.
+        return residual 
+    
+    def gPDE_loss(self, x_t,u):
+        '''
+        Calculates the generalized PDE loss using the gPINN approach.
+        
+        Parameters:
+        - x_t (tensor): Input tensor of shape (batch_size, n_input), where n_input includes the time dimension.
+        - u (tensor): Output tensor of shape (batch_size, n_output), representing the solution of the PDE.
+        
+        Returns:
+        - g_loss (list of tensor): List of gradients of the residual for gPINN loss, with the last element being the residual itself.
+        '''
+        du_t = dde.grad.jacobian(u,x_t,i=0,j=self.n_input-1) # Computes the time derivative of u.
+        x_1=x_t[:,0,None]
+        x_2=x_t[:,1,None]
+        laplacian=0
+        for k in range(self.n_input-1): # Accumulates laplacian and divergence over spatial dimensions.
+            laplacian +=dde.grad.hessian(u, x_t, i=k, j=k) # Computes the laplacian of z.
+        residual=du_t +(2*u-(torch.pi**2/2+2)*torch.sin(torch.pi/2*x_1)*torch.cos(torch.pi/2*x_2))-laplacian # Computes the residual of the PDE.
+        g_loss=[]
+        for k in range(self.n_input-1): # Accumulates gradients of the residual for gPINN loss.
+            g_loss.append(0.01*dde.grad.jacobian(residual,x_t,i=0,j=k)) # Computes gradient penalty.
+        g_loss.append(residual) # Adds the residual to the loss.
+        return g_loss
+
+    def terminal_constraint(self, x_t):
+        '''
+        Computes the terminal constraint of the PDE for given inputs.
+        
+        Parameters:
+        - x_t (ndarray): Input tensor of shape (batch_size, n_input), where n_input includes the time dimension.
+        
+        Returns:
+        - result (ndarray): An arrary of shape (batch_size, ), representing the exact solution.
+        '''
+        x_1=x_t[:,0] # Extracts the spatial coordinate.
+        x_2=x_t[:,1] # Extracts the spatial coordinate.
+        result=np.sin(np.pi/2*x_1)*np.cos(np.pi/2*x_2) # Computes the exact solution.
+        return result
+    
+    def Neumann_boundary_constraint(self, x_t):
+        '''
+        Defines the Neumann boundary constraint for the PDE.
+        
+        Parameters:
+        - x_t (ndarray): Input tensor of shape (batch_size, n_input), where n_input includes the time dimension.
+        
+        Returns:
+        - result (ndarray): A 1D tensor of shape (batch_size,), representing the terminal constraint.
+        '''
+        x=x_t[:,:self.n_input-1] # Extracts the spatial coordinates.
+        boundary_normal=self.geomx.boundary_normal(x) # Computes the normal vector to the boundary.
+        dot_tensor=np.zeros_like(boundary_normal) # Initializes the dot product tensor.
+        dot_tensor[:,0]=np.pi/2*np.cos(np.pi/2*x[:,0])*np.cos(np.pi/2*x[:,1]) # Computes the dot product.
+        dot_tensor[:,1]=np.pi/2*np.sin(np.pi/2*x[:,0])*-np.sin(np.pi/2*x[:,1]) # Computes the dot product.
+        result=np.sum(boundary_normal*dot_tensor,axis=1)
+        return result     
+
+    def mu(self, x_t=0):
+        '''
+        Returns the drift coefficient of the PDE. Here, it's a constant value.
+        
+        Parameters:
+        - x_t (int, optional): Not used in this implementation.
+        
+        Returns:
+        - (float): The drift coefficient.
+        '''
+        return 0
+    
+    def sigma(self, x_t=0):
+        '''
+        Returns the diffusion coefficient of the PDE. Here, it's a constant value.
+        
+        Parameters:
+        - x_t (int, optional): Not used in this implementation.
+        
+        Returns:
+        - (float): The diffusion coefficient.
+        '''
+        return -np.sqrt(2)
+    
+    def f(self, x_t,u,z):
+        '''
+        Defines the generator term for the PDE.
+        
+        Parameters:
+        - x_t (ndarray): Input tensor of shape (batch_size, n_input), where n_input includes the time dimension.
+        - u (ndarray): Output tensor of shape (batch_size, n_output), representing the solution of the PDE.
+        - z (ndarray): Tensor of shape (batch_size, n_input-1), representing gradients.
+        
+        Returns:
+        - result (ndarray): A 2D array of shape (batch_size, n_output), representing the generator term.
+        '''
+        x_1=x_t[:,0,np.newaxis]
+        x_2=x_t[:,1,np.newaxis]
+        result=2*u-(np.pi**2/2+2)*np.sin(np.pi/2*x_1)*np.cos(np.pi/2*x_2)
+        return result
+    
+    def exact_solution(self, x_t):
+        '''
+        Computes the exact solution of the PDE for given inputs.
+        
+        Parameters:
+        - x_t (ndarray): Input tensor of shape (batch_size, n_input), where n_input includes the time dimension.
+        
+        Returns:
+        - result (ndarray): An arrary of shape (batch_size, ), representing the exact solution.
+        '''
+        x_1=x_t[:,0] # Extracts the spatial coordinate.
+        x_2=x_t[:,1] # Extracts the spatial coordinate.
+        result=np.sin(np.pi/2*x_1)*np.cos(np.pi/2*x_2) # Computes the exact solution.
+        return result 
+    
+    def geometry(self,t0=0,T=0.5):
+        '''
+        Defines the geometry of the domain for the PDE.
+        
+        Parameters:
+        - t0 (float): Initial time.
+        - T (float): Terminal time.
+        
+        Returns:
+        - geom (dde.geometry.GeometryXTime): A GeometryXTime object representing the domain.
+        '''
+        self.t0=t0
+        self.T=T
+        spacedomain = dde.geometry.Hypercube([-0.5]*(self.n_input-1), [0.5]*(self.n_input-1)) # Defines the spatial domain, for train
+        # spacedomain = dde.geometry.Hypercube([-0.1]*(self.n_input-1), [0.1]*(self.n_input-1)) # Defines the spatial domain , for test
+        timedomain = dde.geometry.TimeDomain(t0, T) # Defines the time domain.
+        geom = dde.geometry.GeometryXTime(spacedomain, timedomain) # Combines spatial and time domains.
+        self.geomx=spacedomain
+        self.geomt=timedomain
+        return geom
+    
+    def generate_data(self, num_domain=100,num_N_boundary=100):
+        '''
+        Generates data for training the PDE model.
+        
+        Parameters:
+        - num_domain (int): Number of points to sample in the domain.
+        - num_N_boundary (int): Number of points to sample on the Neumann boundary.
+        
+        Returns:
+        - data (dde.data.TimePDE): A TimePDE object containing the training data.
+        '''
+        geom=self.geometry() # Defines the geometry of the domain.
+        self.Neumann_boundary_condition()  # Generates boundary condition.
+        data = dde.data.TimePDE(
+                                geom, # Geometry of the domain.
+                                self.gPDE_loss, # gPDE loss function.
+                                [self.N_bc], # Additional conditions.
+                                num_domain=num_domain, # Number of domain points.
+                                num_boundary=num_N_boundary, # Number of boundary points.
+                                solution=self.exact_solution,   # Incorporates exact solution for error metrics.
+                                num_test=None # Number of test points.
+                            )
+        return data

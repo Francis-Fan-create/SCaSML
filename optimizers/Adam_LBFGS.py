@@ -81,7 +81,8 @@ class Adam_LBFGS(object):
             dde.Model: The trained model.
         '''
         # Interleaved training of Adam and LBFGS
-        loss_weights = [1e-3] * (self.n_input - 1) + [1] + [1e-2]
+        loss_weights = [1e-3] * (self.n_input - 1) + [1] + [1e-2] # Need to change based on the problem
+        # loss_weights = [1e-3] * (self.n_input - 1) + [1] + [1e-2]*2 # Need to change based on the problem
         wandb.config.update({"cycle": cycle, "adam_every": adam_every, "lbfgs_every": lbfgs_every, "loss_weights": loss_weights})  # Record hyperparameters
         adam = self.Adam()
         lbfgs = self.LBFGS()
