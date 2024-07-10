@@ -173,6 +173,27 @@ class NormalSphere(object):
         wandb.log({"Error Distribution": wandb.Image(f"{save_path}/Absolute_Error_Distribution.png")})
 
         plt.figure()
+        # collect all absolute errors
+        errors = [errors1.flatten(), errors2.flatten(), errors3.flatten()]
+        # Calculate means and standard deviations
+        means = [np.mean(e) for e in errors]
+        stds = [np.std(e) for e in errors]
+        # Define labels
+        labels = ['PINN_l1', 'MLP_l1', 'ScaSML_l1']
+        x_pos = range(len(labels))
+        # Create an error bar plot
+        plt.errorbar(x_pos, means, yerr=stds, capsize=5, capthick=2, ecolor='black',  marker='s', markersize=7, mfc='red', mec='black')
+        plt.xticks(x_pos, labels, rotation=45)
+        # Add a title and labels
+        plt.title('Absolute Error Distribution')
+        plt.ylabel('Absolute Error Value')
+        plt.tight_layout()
+        # Show the plot
+        plt.savefig(f"{save_path}/Absolute_Error_Distribution_errorbar.png")
+        # Upload the plot to wandb
+        wandb.log({"Error Distribution": wandb.Image(f"{save_path}/Absolute_Error_Distribution_errorbar.png")})
+
+        plt.figure()
         #collect all relative errors
         rel_errors = [rel_error1.flatten(), rel_error2.flatten(), rel_error3.flatten()]
         # Create a boxplot
@@ -186,6 +207,29 @@ class NormalSphere(object):
         plt.savefig(f"{save_path}/Relative_Error_Distribution.png")
         # Upload the plot to wandb
         wandb.log({"Relative Error Distribution": wandb.Image(f"{save_path}/Relative_Error_Distribution.png")})
+
+        plt.figure()
+        # Collect all relative errors
+        rel_errors = [rel_error1.flatten(), rel_error2.flatten(), rel_error3.flatten()]
+        # Calculate means and standard deviations for each group
+        means = [np.mean(errors) for errors in rel_errors]
+        stds = [np.std(errors) for errors in rel_errors]
+        # Define labels for each group
+        labels = ['PINN_l1', 'MLP_l1', 'ScaSML_l1']
+        x_pos = range(len(labels))
+        # Create an error bar plot
+        plt.errorbar(x_pos, means, yerr=stds, capsize=5, capthick=2, ecolor='black',  marker='s', markersize=7, mfc='red', mec='black')
+        # Set the x-ticks to use the labels and rotate them for better readability
+        plt.xticks(x_pos, labels, rotation=45)
+        # Add a title and labels to the plot
+        plt.title('Relative Error Distribution')
+        plt.ylabel('Relative Error Value')
+        # Adjust layout for better display
+        plt.tight_layout()
+        # Save the plot to a file
+        plt.savefig(f"{save_path}/Relative_Error_Distribution_errorbar.png")
+        # Upload the plot to wandb
+        wandb.log({"Relative Error Distribution": wandb.Image(f"{save_path}/Relative_Error_Distribution_errorbar.png")})    
 
         #find the global minimum and maximum relative error
         vmin = min(np.min(rel_error1), np.min(rel_error2), np.min(rel_error3))
