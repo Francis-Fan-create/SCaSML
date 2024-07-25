@@ -125,24 +125,24 @@ class NormalSphere(object):
                 sol3 = self.solver3.u_solve(n, rhomax, xt_values)  # sol3: ndarray, shape: (n_samples,), dtype: float
                 time3 += time.time() - start
 
-                # # Compute the average error and relative error
-                # errors1[i, j] += np.mean(np.abs(sol1 - exact_sol))
-                # errors2[i, j] += np.mean(np.abs(sol2 - exact_sol))
-                # errors3[i, j] += np.mean(np.abs(sol3 - exact_sol))
-                # rel_error1[i, j] += np.mean(np.abs(sol1 - exact_sol) / (np.abs(exact_sol)+1e-6))
-                # rel_error2[i, j] += np.mean(np.abs(sol2 - exact_sol) / (np.abs(exact_sol)+1e-6))
-                # rel_error3[i, j] += np.mean(np.abs(sol3 - exact_sol) / (np.abs(exact_sol)+1e-6))
-                # # Compute the average absolute value of the real solution
-                # real_sol_abs[i, j] = np.mean(np.abs(exact_sol))  
-                # Compute the maximum error and relative error
-                errors1[i, j] = np.max(np.abs(sol1 - exact_sol))
-                errors2[i, j] = np.max(np.abs(sol2 - exact_sol))
-                errors3[i, j] = np.max(np.abs(sol3 - exact_sol))
-                rel_error1[i, j] = np.max(np.abs(sol1 - exact_sol) / (np.abs(exact_sol)+1e-6))
-                rel_error2[i, j] = np.max(np.abs(sol2 - exact_sol) / (np.abs(exact_sol)+1e-6))
-                rel_error3[i, j] = np.max(np.abs(sol3 - exact_sol) / (np.abs(exact_sol)+1e-6))
-                # Compute the maximum absolute value of the real solution
-                real_sol_abs[i, j] = np.max(np.abs(exact_sol))
+                # Compute the average error and relative error
+                errors1[i, j] += np.mean(np.abs(sol1 - exact_sol))
+                errors2[i, j] += np.mean(np.abs(sol2 - exact_sol))
+                errors3[i, j] += np.mean(np.abs(sol3 - exact_sol))
+                rel_error1[i, j] += np.mean(np.abs(sol1 - exact_sol) / (np.abs(exact_sol)+1e-6))
+                rel_error2[i, j] += np.mean(np.abs(sol2 - exact_sol) / (np.abs(exact_sol)+1e-6))
+                rel_error3[i, j] += np.mean(np.abs(sol3 - exact_sol) / (np.abs(exact_sol)+1e-6))
+                # Compute the average absolute value of the real solution
+                real_sol_abs[i, j] = np.mean(np.abs(exact_sol))  
+                # # Compute the maximum error and relative error
+                # errors1[i, j] = np.max(np.abs(sol1 - exact_sol))
+                # errors2[i, j] = np.max(np.abs(sol2 - exact_sol))
+                # errors3[i, j] = np.max(np.abs(sol3 - exact_sol))
+                # rel_error1[i, j] = np.max(np.abs(sol1 - exact_sol) / (np.abs(exact_sol)+1e-6))
+                # rel_error2[i, j] = np.max(np.abs(sol2 - exact_sol) / (np.abs(exact_sol)+1e-6))
+                # rel_error3[i, j] = np.max(np.abs(sol3 - exact_sol) / (np.abs(exact_sol)+1e-6))
+                # # Compute the maximum absolute value of the real solution
+                # real_sol_abs[i, j] = np.max(np.abs(exact_sol))
 
         #stop the profiler
         profiler.disable()
