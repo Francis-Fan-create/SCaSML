@@ -155,7 +155,7 @@ class MLP(object):
         # Generate Monte Carlo samples for backward Euler
         W = np.sqrt(T - t)[:, np.newaxis, np.newaxis] * np.random.normal(size=(batch_size, MC, dim))  # Brownian increments, shape (batch_size, MC, dim)
         X = np.repeat(x.reshape(x.shape[0], 1, x.shape[1]), MC, axis=1)  # Replicated spatial coordinates, shape (batch_size, MC, dim)
-        disturbed_X = X + sigma * W  # Disturbed spatial coordinates, shape (batch_size, MC, dim)
+        disturbed_X = X + mu*(T-t)[:, np.newaxis, np.newaxis]+ sigma * W  # Disturbed spatial coordinates, shape (batch_size, MC, dim)
         
         # Initialize arrays for terminal and difference values
         terminals = np.zeros((batch_size, MC, 1))  # Terminal values, shape (batch_size, MC, 1)

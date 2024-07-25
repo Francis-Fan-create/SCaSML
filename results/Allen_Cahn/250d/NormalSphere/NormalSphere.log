@@ -1,12 +1,13 @@
-Total time for PINN: 10.885835409164429 seconds
-Total time for MLP: 39.17322540283203 seconds
-Total time for ScaSML: 1336.4109783172607 seconds
-PINN rel l1, rho=2-> min: 0.009300361377448552 max: 0.9824052716612287 mean: 0.35448763450397985
-MLP rel l1, rho=2-> min: 0.0 max: 0.07373344754622584 mean: 0.034153786056652494
-ScaSML rel l1, rho=2-> min: 0.0 max: 1.5478150823317933 mean: 0.5213849506754413
-Real Solution-> min: 0.008202054021587434 max: 0.5 mean: 0.02333892783393832
-PINN l1, rho=2-> min: 8.213119891250904e-05 max: 0.4912036182358861 mean: 0.014563986590286463
-MLP l1, rho=2-> min: 0.0 max: 0.0017561019843051707 mean: 0.0004808104365646969
-ScaSML l1, rho=2-> min: 0.0 max: 0.014155990848981646 mean: 0.006210767777116949
-PINN l1 - ScaSML l1,rho=2-> positve count: 404 negative count: 596 positive sum: 12.08913390063282 negative sum: -3.7359150874633036
-MLP l1- ScaSML l1,rho=2-> positve count: 3 negative count: 897 positive sum: 0.00033613001357135565 negative sum: -5.730293470565824
+Total time for PINN: 9.028015851974487 seconds
+Total time for MLP: 35.500603437423706 seconds
+Total time for ScaSML: 1121.2461574077606 seconds
+PINN rel l1, rho=2-> min: 0.03125316573570223 max: 0.9824052716612288 mean: 0.3763120642173078
+MLP rel l1, rho=2-> min: 0.0 max: 0.18804234953340535 mean: 0.09476357314020531
+ScaSML rel l1, rho=2-> min: 0.0 max: 1.6308165824818188 mean: 0.5861961482214504
+Real Solution-> min: 0.008399973243247963 max: 0.5 mean: 0.023814782030917157
+PINN l1, rho=2-> min: 0.0002838161845689028 max: 0.4912036182358861 mean: 0.01503826434579754
+MLP l1, rho=2-> min: 0.0 max: 0.007533271051337068 mean: 0.0013802966018130567
+ScaSML l1, rho=2-> min: 0.0 max: 0.015560018800516006 mean: 0.007247095078731979
+PINN l1 - ScaSML l1,rho=2-> positve count: 377 negative count: 623 positive sum: 11.818464688478395 negative sum: -4.02729542141283
+MLP l1- ScaSML l1,rho=2-> positve count: 14 negative count: 886 positive sum: 0.011804189659582631 negative sum: -5.878602666578503
+PINN l1 - MLP l1,rho=2-> positve count: 903 negative count: 97 positive sum: 13.689972892514655 negative sum: -0.03200514853016733

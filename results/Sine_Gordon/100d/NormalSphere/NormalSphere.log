@@ -1,12 +1,13 @@
-Total time for PINN: 11.571204423904419 seconds
-Total time for MLP: 24.101523876190186 seconds
-Total time for ScaSML: 1323.2186698913574 seconds
-PINN rel l1, rho=2-> min: 0.1650018940286206 max: 0.966026169689928 mean: 0.49095424304035357
-MLP rel l1, rho=2-> min: 0.0 max: 0.08671066045362742 mean: 0.04599442385937216
-ScaSML rel l1, rho=2-> min: 0.0 max: 1.211554030021898 mean: 0.41155990556743655
-Real Solution-> min: 0.02035542408645078 max: 0.5 mean: 0.04703872344432843
-PINN l1, rho=2-> min: 0.0033694749575845866 max: 0.4830140508711338 mean: 0.030052774315462237
-MLP l1, rho=2-> min: 0.0 max: 0.005464883095833147 mean: 0.001607181795943257
-ScaSML l1, rho=2-> min: 0.0 max: 0.02817105709953473 mean: 0.012229826898454203
-PINN l1 - ScaSML l1,rho=2-> positve count: 553 negative count: 447 positive sum: 21.930139734096013 negative sum: -4.1071923170879785
-MLP l1- ScaSML l1,rho=2-> positve count: 11 negative count: 889 positive sum: 0.0044367855398275025 negative sum: -10.627081888050773
+Total time for PINN: 7.560919284820557 seconds
+Total time for MLP: 20.269635677337646 seconds
+Total time for ScaSML: 849.5788726806641 seconds
+PINN rel l1, rho=2-> min: 0.2006165585209057 max: 0.9660261696899282 mean: 0.5172446219174285
+MLP rel l1, rho=2-> min: 0.0 max: 0.3201140311529406 mean: 0.13591037968388628
+ScaSML rel l1, rho=2-> min: 0.0 max: 1.3247442555304179 mean: 0.5100131527722392
+Real Solution-> min: 0.021249063795961733 max: 0.5 mean: 0.04881408317823009
+PINN l1, rho=2-> min: 0.004263114667095537 max: 0.4830140508711338 mean: 0.031828134049363896
+MLP l1, rho=2-> min: 0.0 max: 0.023715004022712274 mean: 0.00483869436148128
+ScaSML l1, rho=2-> min: 0.0 max: 0.03506200593218889 mean: 0.016036412847892877
+PINN l1 - ScaSML l1,rho=2-> positve count: 503 negative count: 497 positive sum: 20.71618943274538 negative sum: -4.924468231274366
+MLP l1- ScaSML l1,rho=2-> positve count: 21 negative count: 879 positive sum: 0.04014760744281401 negative sum: -11.23786609385441
+PINN l1 - MLP l1,rho=2-> positve count: 1000 negative count: 0 positive sum: 26.989439687882612 negative sum: 0.0

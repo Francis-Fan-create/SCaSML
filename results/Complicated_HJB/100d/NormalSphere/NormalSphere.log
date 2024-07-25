@@ -1,12 +1,13 @@
-Total time for PINN: 3.1961495876312256 seconds
-Total time for MLP: 49.384833574295044 seconds
-Total time for ScaSML: 387.3383581638336 seconds
-PINN rel l1, rho=2-> min: 0.033635572564519135 max: 88095.27486562729 mean: 90.61373667928142
-MLP rel l1, rho=2-> min: 0.0 max: 3743.6831805091647 mean: 17.158851390914325
-ScaSML rel l1, rho=2-> min: 0.0 max: 2287.9805487298277 mean: 16.31182484427997
-Real Solution-> min: 0.0 max: 5.00706660403445 mean: 2.029913120691818
-PINN l1, rho=2-> min: 0.003737319476074692 max: 5.0774483331803415 mean: 2.0266372632944583
-MLP l1, rho=2-> min: 0.0 max: 5.301375595612365 mean: 2.573514299294988
-ScaSML l1, rho=2-> min: 0.0 max: 4.927772692318553 mean: 2.582615058656215
-PINN l1 - ScaSML l1,rho=2-> positve count: 353 negative count: 647 positive sum: 445.2341771790815 negative sum: -1001.2119725408384
-MLP l1- ScaSML l1,rho=2-> positve count: 431 negative count: 557 positive sum: 153.20510296699177 negative sum: -162.30586232821864
+Total time for PINN: 0.9929299354553223 seconds
+Total time for MLP: 14.040217399597168 seconds
+Total time for ScaSML: 127.2844729423523 seconds
+PINN rel l1, rho=2-> min: 0.03363660252351122 max: 88095.38930654526 mean: 162.28103249085592
+MLP rel l1, rho=2-> min: 0.0 max: 205936.78785529605 mean: 659.90375757233
+ScaSML rel l1, rho=2-> min: 0.0 max: 128272.75211849404 mean: 610.9141615948168
+Real Solution-> min: 0.0 max: 17.890463733957386 mean: 6.281865168999761
+PINN l1, rho=2-> min: 0.0037374339169926607 max: 17.988394013903616 mean: 6.297009892431139
+MLP l1, rho=2-> min: 0.0 max: 25.21370438694756 mean: 8.06787453316269
+ScaSML l1, rho=2-> min: 0.0 max: 22.314325934665654 mean: 8.184741485622032
+PINN l1 - ScaSML l1,rho=2-> positve count: 368 negative count: 632 positive sum: 1413.7176855527075 negative sum: -3301.449278743602
+MLP l1- ScaSML l1,rho=2-> positve count: 433 negative count: 555 positive sum: 702.6327921620546 negative sum: -819.4997446213973
+PINN l1 - MLP l1,rho=2-> positve count: 365 negative count: 635 positive sum: 1462.120178748231 negative sum: -3232.9848194797823

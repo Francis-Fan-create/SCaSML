@@ -125,14 +125,25 @@ class NormalSphere(object):
                 sol3 = self.solver3.u_solve(n, rhomax, xt_values)  # sol3: ndarray, shape: (n_samples,), dtype: float
                 time3 += time.time() - start
 
-                # Compute the average error and relative error
-                errors1[i, j] += np.mean(np.abs(sol1 - exact_sol))
-                errors2[i, j] += np.mean(np.abs(sol2 - exact_sol))
-                errors3[i, j] += np.mean(np.abs(sol3 - exact_sol))
-                rel_error1[i, j] += np.mean(np.abs(sol1 - exact_sol) / (np.abs(exact_sol)+1e-6))
-                rel_error2[i, j] += np.mean(np.abs(sol2 - exact_sol) / (np.abs(exact_sol)+1e-6))
-                rel_error3[i, j] += np.mean(np.abs(sol3 - exact_sol) / (np.abs(exact_sol)+1e-6))
-                real_sol_abs[i, j] = np.mean(np.abs(exact_sol))  # Compute the absolute value of the real solution
+                # # Compute the average error and relative error
+                # errors1[i, j] += np.mean(np.abs(sol1 - exact_sol))
+                # errors2[i, j] += np.mean(np.abs(sol2 - exact_sol))
+                # errors3[i, j] += np.mean(np.abs(sol3 - exact_sol))
+                # rel_error1[i, j] += np.mean(np.abs(sol1 - exact_sol) / (np.abs(exact_sol)+1e-6))
+                # rel_error2[i, j] += np.mean(np.abs(sol2 - exact_sol) / (np.abs(exact_sol)+1e-6))
+                # rel_error3[i, j] += np.mean(np.abs(sol3 - exact_sol) / (np.abs(exact_sol)+1e-6))
+                # # Compute the average absolute value of the real solution
+                # real_sol_abs[i, j] = np.mean(np.abs(exact_sol))  
+                # Compute the maximum error and relative error
+                errors1[i, j] = np.max(np.abs(sol1 - exact_sol))
+                errors2[i, j] = np.max(np.abs(sol2 - exact_sol))
+                errors3[i, j] = np.max(np.abs(sol3 - exact_sol))
+                rel_error1[i, j] = np.max(np.abs(sol1 - exact_sol) / (np.abs(exact_sol)+1e-6))
+                rel_error2[i, j] = np.max(np.abs(sol2 - exact_sol) / (np.abs(exact_sol)+1e-6))
+                rel_error3[i, j] = np.max(np.abs(sol3 - exact_sol) / (np.abs(exact_sol)+1e-6))
+                # Compute the maximum absolute value of the real solution
+                real_sol_abs[i, j] = np.max(np.abs(exact_sol))
+
         #stop the profiler
         profiler.disable()
         #save the profiler results
@@ -151,9 +162,10 @@ class NormalSphere(object):
         print(f"Total time for MLP: {time2} seconds")
         print(f"Total time for ScaSML: {time3} seconds")
         wandb.log({"Total time for PINN": time1, "Total time for MLP": time2, "Total time for ScaSML": time3})
-        # compute |errors1|-|errors3|,|errrors2|-|errors3|
+        # compute |errors1|-|errors3|,|errrors2|-|errors3|,|errors1|-|errors2|
         errors_13=errors1-errors3
         errors_23=errors2-errors3
+        errors_12=errors1-errors2
         
         plt.figure()
         # collect all absolute errors
@@ -271,8 +283,8 @@ class NormalSphere(object):
         print(f"ScaSML rel l1, rho={rhomax}->","min:",np.min(rel_error3),"max:",np.max(rel_error3),"mean:",np.mean(rel_error3))
          
         # Find the global minimum and maximum error
-        vmin = min(np.min(errors1), np.min(errors2), np.min(errors3), np.min(errors_13), np.min(errors_23),np.min(real_sol_abs))
-        vmax = max(np.max(errors1), np.max(errors2), np.max(errors3), np.max(errors_13), np.max(errors_23),np.max(real_sol_abs))
+        vmin = min(np.min(errors1), np.min(errors2), np.min(errors3), np.min(errors_13), np.min(errors_23),np.min(errors_12),np.min(real_sol_abs))
+        vmax = max(np.max(errors1), np.max(errors2), np.max(errors3), np.max(errors_13), np.max(errors_23),np.max(errors_12),np.max(real_sol_abs))
         # Create a TwoSlopeNorm object
         norm =TwoSlopeNorm(vmin=vmin, vcenter=0, vmax=vmax)
         # Plot the real solution
@@ -340,20 +352,35 @@ class NormalSphere(object):
         plt.savefig(f"{save_path}/MLP_ScaSML_l1_rho={rhomax}.png")
         # Upload the plot to wandb
         wandb.log({"MLP l1 - ScaSML l1": wandb.Image(f"{save_path}/MLP_ScaSML_l1_rho={rhomax}.png")} )
+
+        plt.figure()
+        plt.imshow(errors_12, extent=[0, self.radius, self.t0, self.T], aspect='auto', cmap='RdBu_r',norm=norm)
+        plt.colorbar()
+        plt.title("PINN l1 - MLP l1, rho={:d}".format(rhomax))
+        plt.xlabel("distance from origin")
+        plt.ylabel("time")
+        plt.savefig(f"{save_path}/PINN_MLP_l1_rho={rhomax}.png")
+        # Upload the plot to wandb
+        wandb.log({"PINN l1 - MLP l1": wandb.Image(f"{save_path}/PINN_MLP_l1_rho={rhomax}.png")} )
+
         # Calculate the sums of positive and negative differences
         positive_sum_13 = np.sum(errors_13[errors_13 > 0])
         negative_sum_13 = np.sum(errors_13[errors_13 < 0])
         positive_sum_23 = np.sum(errors_23[errors_23 > 0])
         negative_sum_23 = np.sum(errors_23[errors_23 < 0])
+        postive_sum_12 = np.sum(errors_12[errors_12 > 0])
+        negative_sum_12 = np.sum(errors_12[errors_12 < 0])
         # Display the positive count, negative count, positive sum, and negative sum of the difference of the errors
         print(f'PINN l1 - ScaSML l1,rho={rhomax}->','positve count:',np.sum(errors_13>0),'negative count:',np.sum(errors_13<0), 'positive sum:', positive_sum_13, 'negative sum:', negative_sum_13)
         print(f'MLP l1- ScaSML l1,rho={rhomax}->','positve count:',np.sum(errors_23>0),'negative count:',np.sum(errors_23<0), 'positive sum:', positive_sum_23, 'negative sum:', negative_sum_23)
+        print(f'PINN l1 - MLP l1,rho={rhomax}->','positve count:',np.sum(errors_12>0),'negative count:',np.sum(errors_12<0), 'positive sum:', postive_sum_12, 'negative sum:', negative_sum_12)
         # Log the results to wandb
         wandb.log({f"mean of PINN l1,rho={rhomax}": np.mean(errors1), f"mean of MLP l1,rho={rhomax}": np.mean(errors2), f"mean of ScaSML l1,rho={rhomax}": np.mean(errors3)})
         wandb.log({f"min of PINN l1,rho={rhomax}": np.min(errors1), f"min of MLP l1,rho={rhomax}": np.min(errors2), f"min of ScaSML l1,rho={rhomax}": np.min(errors3)})
         wandb.log({f"max of PINN l1,rho={rhomax}": np.max(errors1), f"max of MLP l1,rho={rhomax}": np.max(errors2), f"max of ScaSML l1,rho={rhomax}": np.max(errors3)})
         wandb.log({f"positive count of PINN l1 - ScaSML l1,rho={rhomax}": np.sum(errors_13>0), f"negative count of PINN l1 - ScaSML l1,rho={rhomax}": np.sum(errors_13<0), f"positive sum of PINN l1 - ScaSML l1,rho={rhomax}": positive_sum_13, f"negative sum of PINN l1 - ScaSML l1,rho={rhomax}": negative_sum_13})
         wandb.log({f"positive count of MLP l1 - ScaSML l1,rho={rhomax}": np.sum(errors_23>0), f"negative count of MLP l1 - ScaSML l1,rho={rhomax}": np.sum(errors_23<0), f"positive sum of MLP l1 - ScaSML l1,rho={rhomax}": positive_sum_23, f"negative sum of MLP l1 - ScaSML l1,rho={rhomax}": negative_sum_23})
+        wandb.log({f"positive count of PINN l1 - MLP l1,rho={rhomax}": np.sum(errors_12>0), f"negative count of PINN l1 - MLP l1,rho={rhomax}": np.sum(errors_12<0), f"positive sum of PINN l1 - MLP l1,rho={rhomax}": postive_sum_12, f"negative sum of PINN l1 - MLP l1,rho={rhomax}": negative_sum_12})
         # reset stdout and stderr
         sys.stdout=self.stdout
         sys.stderr=self.stderr

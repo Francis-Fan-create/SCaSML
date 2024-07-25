@@ -209,7 +209,7 @@ class ScaSML(object):
         # Monte Carlo simulation
         W = np.sqrt(T - t)[:, np.newaxis, np.newaxis] * np.random.normal(size=(batch_size, MC, dim))
         X = np.repeat(x.reshape(x.shape[0], 1, x.shape[1]), MC, axis=1)
-        disturbed_X = X + sigma * W  # Disturbed spatial coordinates, shape (batch_size, MC, dim)
+        disturbed_X = X + mu*(T-t)[:, np.newaxis, np.newaxis]+ sigma * W  # Disturbed spatial coordinates, shape (batch_size, MC, dim)
         
         # Initialize arrays for terminal and difference calculations
         terminals = np.zeros((batch_size, MC, 1))
