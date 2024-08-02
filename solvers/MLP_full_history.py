@@ -73,6 +73,7 @@ class MLP_full_history(object):
             ndarray: The concatenated u and z values for each sample in the batch, shape (batch_size, 1+n_input-1).
                      Here, u is the approximate solution of the PDE at the given coordinates, and z is the associated spatial gradient.
         '''
+        # Set alpha=1/2, beta=1/6
         # Extract model parameters and functions
         Mf, Mg = self.Mf, self.Mg
         T = self.T  # Terminal time
@@ -118,7 +119,10 @@ class MLP_full_history(object):
         # Recursive computation for n > 0
         for l in range(n):
             MC = int(Mf[rho - 1, n - l - 1])  # Number of Monte Carlo samples, scalar
-            sampled_time_steps = np.random.uniform(0, (T-t)[:,np.newaxis], size=(batch_size, MC)).reshape((batch_size,MC,1))  # Sample time steps, shape (batch_size, MC)
+            # Sample a random variable tau in (0,1) with density rho(s) = 1/(2*sqrt(s))
+            tau = np.random.uniform(0, 1, size=(batch_size, MC)) ** 2
+            # Multiply tau by (T-t)
+            sampled_time_steps = (tau * (T-t)[:, np.newaxis]).reshape((batch_size, MC, 1))  # Sample time steps, shape (batch_size, MC)
             X = np.repeat(x.reshape(x.shape[0], 1, x.shape[1]), MC, axis=1)  # Replicated spatial coordinates, shape (batch_size, MC, dim)
             W = np.zeros((batch_size, MC, dim))  # Initialize Brownian increments, shape (batch_size, MC, dim)
             simulated = np.zeros((batch_size, MC, dim + 1))  # Initialize array for simulated values, shape (batch_size, MC, dim + 1)
@@ -137,9 +141,9 @@ class MLP_full_history(object):
             simulated_u, simulated_z = simulated[:, :, 0].reshape(batch_size, MC, 1), simulated[:, :, 1:]  # Extract u and z values, shapes (batch_size, MC, 1) and (batch_size, MC, dim)
             y = np.array([f(input_intermediates[:,i,:], simulated_u[:, i, :], simulated_z[:, i, :]) for i in range(MC)])  # Apply generator term function, shape (MC, batch_size, 1)
             y = y.transpose(1, 0, 2)  # Transpose to shape (batch_size, MC, 1)
-            u += (T-t)[:,np.newaxis]* np.mean(y, axis=1)  # Update u values
+            u += 2*(T-t)[:,np.newaxis]* np.mean(np.sqrt(tau)[:,:,np.newaxis]*y, axis=1)  # Update u values
             delta_t = (sampled_time_steps + 1e-6)  # Avoid division by zero, shape (batch_size, 1)
-            z += (T-t)[:,np.newaxis] * np.mean((y * W / (delta_t)),axis=1)  # Update z values                
+            z += 2*(T-t)[:,np.newaxis] * np.mean((np.sqrt(tau)[:,:,np.newaxis]*y * W / (delta_t)),axis=1)  # Update z values                
             # Adjust u and z values if l > 0
             if l:
                 input_intermediates=np.zeros((batch_size,MC,dim+1))
@@ -150,9 +154,9 @@ class MLP_full_history(object):
                 simulated_u, simulated_z = simulated[:, :, 0].reshape(batch_size, MC, 1), simulated[:, :, 1:]  # Extract u and z values, shapes (batch_size, MC, 1) and (batch_size, MC, dim)
                 y = np.array([f(input_intermediates[:,i,:], simulated_u[:, i, :], simulated_z[:, i, :]) for i in range(MC)])  # Apply generator term function, shape (MC, batch_size, 1)
                 y = y.transpose(1, 0, 2)  # Transpose to shape (batch_size, MC, 1)
-                u -= (T-t)[:,np.newaxis]* np.mean(y, axis=1)  # Update u values
+                u -= 2*(T-t)[:,np.newaxis]* np.mean(np.sqrt(tau)[:,:,np.newaxis]*y, axis=1)  # Update u values
                 delta_t = (sampled_time_steps + 1e-6)  # Avoid division by zero, shape (batch_size, 1)
-                z -= (T-t)[:,np.newaxis] * np.mean((y * W / (delta_t)),axis=1)  # Update z values  
+                z -= 2*(T-t)[:,np.newaxis] * np.mean((np.sqrt(tau)[:,:,np.newaxis]*y * W / (delta_t)),axis=1)  # Update z values  
         return np.concatenate((u, z), axis=-1)  # Concatenate adjusted u and z values, shape (batch_size, dim + 1)
 
     def u_solve(self, n, rho, x_t):
