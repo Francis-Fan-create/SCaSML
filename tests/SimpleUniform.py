@@ -142,6 +142,12 @@ class SimpleUniform(object):
         # compute |errors1|-|errors3|,|errrors2|-|errors3|
         errors_13=errors1-errors3
         errors_23=errors2-errors3
+        # Compute log10 of the errors
+        errors1 = np.log10(errors1 + 1e-12)
+        errors2 = np.log10(errors2 + 1e-12)
+        errors3 = np.log10(errors3 + 1e-12)
+        # Compute log10 of real solution
+        real_sol_abs = np.log10(real_sol_abs + 1e-12)
         
         plt.figure()
         # collect all absolute errors
@@ -149,7 +155,7 @@ class SimpleUniform(object):
         errors = [errors1.flatten(), errors2.flatten(), errors3.flatten()]
         # Create a boxplot
         # plt.boxplot(errors, labels=['PINN_l1', 'MLP_l1', 'ScaSML_l1', 'PINN_l1 - ScaSML_l1', 'MLP_l1 - ScaSML_l1'])
-        plt.boxplot(errors, labels=['PINN_l1', 'MLP_l1', 'ScaSML_l1'])
+        plt.boxplot(errors, labels=['log10_PINN_l1', 'log10_MLP_l1', 'log10_ScaSML_l1'])
         plt.xticks(rotation=45)
         # Add a title and labels
         plt.title('Absolute Error Distribution')
@@ -167,7 +173,7 @@ class SimpleUniform(object):
         means = [np.mean(e) for e in errors]
         stds = [np.std(e) for e in errors]
         # Define labels
-        labels = ['PINN_l1', 'MLP_l1', 'ScaSML_l1']
+        labels=['log10_PINN_l1', 'log10_MLP_l1', 'log10_ScaSML_l1']
         x_pos = range(len(labels))
         # Create an error bar plot
         plt.errorbar(x_pos, means, yerr=stds, capsize=5, capthick=2, ecolor='black',  marker='s', markersize=7, mfc='red', mec='black')
@@ -229,16 +235,16 @@ class SimpleUniform(object):
         print(f"ScaSML rel l1, rho={rhomax}->","min:",np.min(rel_error3),"max:",np.max(rel_error3),"mean:",np.mean(rel_error3))
          
         
-        print("Real Solution->","min:",np.min(real_sol_abs),"max:",np.max(real_sol_abs),"mean:",np.mean(real_sol_abs))
+        print("log10 Real Solution->","min:",np.min(real_sol_abs),"max:",np.max(real_sol_abs),"mean:",np.mean(real_sol_abs))
         
        
-        print(f"PINN l1, rho={rhomax}->","min:",np.min(errors1),"max:",np.max(errors1),"mean:",np.mean(errors1))
+        print(f"log10 PINN l1, rho={rhomax}->","min:",np.min(errors1),"max:",np.max(errors1),"mean:",np.mean(errors1))
 
         
-        print(f"MLP l1, rho={rhomax}->","min:",np.min(errors2),"max:",np.max(errors2),"mean:",np.mean(errors2))
+        print(f"log10 MLP l1, rho={rhomax}->","min:",np.min(errors2),"max:",np.max(errors2),"mean:",np.mean(errors2))
 
        
-        print(f"ScaSML l1, rho={rhomax}->","min:",np.min(errors3),"max:",np.max(errors3),"mean:",np.mean(errors3))
+        print(f"log10 ScaSML l1, rho={rhomax}->","min:",np.min(errors3),"max:",np.max(errors3),"mean:",np.mean(errors3))
 
 
         # Calculate the sums of positive and negative differences
