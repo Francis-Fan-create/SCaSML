@@ -8,7 +8,7 @@ Addressing high-dimensional PDEs has long been challenging due to the 'curse of 
 
 We train Physics-Informed Neural Networks (PINNs) to provide initial solution estimates, whose errors, governed by a new PDE, are corrected via Monte Carlo solvers using the Feynman-Kac and Elworthy-Bismut-Li formulae. We prove SCaSML's rate improvement for two state-of-the-art solvers, quadrature multilevel Picard and full-history multilevel Picard. 
 
-Numerical experiments on various high-dimensional PDEs, including the Hamilton-Jacobi-Bellman and Neumann-Boundary equations, etc., confirm our theoretical results in terms of accuracy. This method advances fields like economics, finance, operations research, and physics by comprehensively considering all involved elements as agents, assets, and resources.
+Numerical experiments on various high-dimensional PDEs, including the Hamilton-Jacobi-Bellman and Diffusion-Reaction equations, etc., confirm our theoretical results in terms of accuracy. This method advances fields like economics, finance, operations research, and physics by comprehensively considering all involved elements as agents, assets, and resources.
 
 ## Installation
 
@@ -90,43 +90,6 @@ Zexi Fan: 2200010816@stu.pku.edu.cn
 Yan Sun: yansun414@gmail.com
 
 Yiping Lu: yiping.lu@northwestern.edu
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

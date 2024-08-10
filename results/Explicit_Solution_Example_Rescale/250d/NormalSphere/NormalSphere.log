@@ -1,13 +1,13 @@
-Total time for PINN: 2.1735646724700928 seconds
-Total time for MLP: 68.30714893341064 seconds
-Total time for ScaSML: 320.1605520248413 seconds
-PINN rel l1, rho=2-> min: 0.9656671562804701 max: 0.9955033680340769 mean: 0.9801494186175446
-MLP rel l1, rho=2-> min: 0.0 max: 0.24615725885109427 mean: 0.11331399516513992
-ScaSML rel l1, rho=2-> min: 0.0 max: 0.2450578116988398 mean: 0.1115057990044446
-Real Solution-> min: 0.49824862658020197 max: 0.6239207259241847 mean: 0.5617984899919779
-PINN l1, rho=2-> min: 0.48502990363242565 max: 0.6160831541154489 mean: 0.5506551776121856
-MLP l1, rho=2-> min: 0.0 max: 0.12280455316720179 mean: 0.06060492309678946
-ScaSML l1, rho=2-> min: 0.0 max: 0.12218060570668826 mean: 0.05963861327561757
-PINN l1 - ScaSML l1,rho=2-> positve count: 1000 negative count: 0 positive sum: 491.016564336568 negative sum: 0.0
-MLP l1- ScaSML l1,rho=2-> positve count: 848 negative count: 52 positive sum: 0.9762861259995415 negative sum: -0.009976304827661016
-PINN l1 - MLP l1,rho=2-> positve count: 1000 negative count: 0 positive sum: 490.05025451539615 negative sum: 0.0
+Total time for PINN: 3.2607052326202393 seconds
+Total time for MLP: 92.96480703353882 seconds
+Total time for ScaSML: 452.60718417167664 seconds
+PINN rel l1, rho=2-> min: 0.9796374808474244 max: 1.1258370287807298 mean: 1.0255192626871956
+MLP rel l1, rho=2-> min: 0.0 max: 0.2633029313322297 mean: 0.1178969857273038
+ScaSML rel l1, rho=2-> min: 0.0 max: 0.28979367591605365 mean: 0.12571254500697188
+Real Solution-> min: 0.5 max: 0.6451019492042864 mean: 0.5704122683106427
+PINN l1, rho=2-> min: 0.4899311773478985 max: 0.6932974670595753 mean: 0.577746427576354
+MLP l1, rho=2-> min: 0.0 max: 0.1269448296429413 mean: 0.06254647418763382
+ScaSML l1, rho=2-> min: 0.0 max: 0.14396255960297732 mean: 0.06721812576206586
+PINN l1 - ScaSML l1,rho=2-> positve count: 1000 negative count: 0 positive sum: 510.5283018142881 negative sum: 0.0
+MLP l1- ScaSML l1,rho=2-> positve count: 0 negative count: 900 positive sum: 0.0 negative sum: -4.671651574432026
+PINN l1 - MLP l1,rho=2-> positve count: 1000 negative count: 0 positive sum: 515.1999533887201 negative sum: 0.0
