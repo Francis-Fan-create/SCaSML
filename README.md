@@ -50,7 +50,7 @@ python results/(your equation)/(certain dimension)/experiment_run.py
 ```
 
 9. View your results in the `results/(your equation)/(certain dimension)/` folder and on wandb
-10. (Optional) Repeat steps 6-9 after the weights of `experiment_run.py` are generated to get further trained weights using L_inf training. 
+10. (Optional) Repeat steps 6-9 for `further_training.py` after the weights of `experiment_run.py` are generated to get further trained weights using L_inf training. 
 10. Replace `results/` by `results_full_history/` to replace the quadrature MLP solver by the full_history MLP solver.
 11. **Caveat:** We highly recommend users run 6-11 steps under debug mode since some parameters are dependent on the equation itself and might need to be changed. However, we have put enough annotation on these lines, which can be easily fixed. (This feature will be fixed in the following versions.)
 12. If you still have problems, please submit it to **Issues**.
