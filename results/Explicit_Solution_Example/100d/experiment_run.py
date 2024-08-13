@@ -12,6 +12,7 @@ from models.FNN import FNN
 from optimizers.L_inf import L_inf  
 from tests.NormalSphere import NormalSphere
 from tests.SimpleUniform import SimpleUniform
+from tests.ConvergenceRate import ConvergenceRate
 from solvers.MLP import MLP
 from solvers.ScaSML import ScaSML
 import numpy as np
@@ -75,7 +76,9 @@ rhomax=test1.test(r"results/Explicit_Solution_Example/100d")
 #run the test for SimpleUniform
 test2=SimpleUniform(equation,solver1,solver2,solver3)
 test2.test(r"results/Explicit_Solution_Example/100d")
-
+#run the test for ConvergenceRate
+test3=ConvergenceRate(equation,solver1,solver2,solver3)
+test3.test(r"results/Explicit_Solution_Example/100d")
 
 
 #finish wandb
