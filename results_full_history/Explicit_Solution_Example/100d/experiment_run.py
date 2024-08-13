@@ -79,7 +79,7 @@ test2.test(r"results_full_history/Explicit_Solution_Example/100d")
 #run the test for ConvergenceRate
 test3=ConvergenceRate(equation,solver1,solver2,solver3)
 test3.test(r"results_full_history/Explicit_Solution_Example/100d")
-
+    
 
 
 #finish wandb

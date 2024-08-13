@@ -233,7 +233,7 @@ class ScaSML(object):
         z = np.sum(differences * W, axis=1) / (MC * delta_t)
         # Recursive calculation for n > 0
         if n <= 0:
-            return np.concatenate((u, z), axis=-1)
+            return np.concatenate((u, z), axis=-1)+self.net(torch.tensor(x_t, dtype=torch.float32)).detach().cpu().numpy()
         for l in range(n):
             q = int(Q[rho - 1, n - l - 1])  # Number of quadrature points
             d = cloc[:, :q, q - 1] - np.concatenate((t[:, np.newaxis], cloc[:, :q - 1, q - 1]), axis=1)  # Time step, shape (batch_size, q)

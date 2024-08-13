@@ -175,7 +175,7 @@ class ScaSML_full_history(object):
         z = np.sum(differences * W, axis=1) / (MC * delta_t)  # Compute z values, shape (batch_size, dim)        
         # Recursive call for n > 0
         if n <= 0:
-            return np.concatenate((u, z), axis=-1)  # Concatenate u and z values, shape (batch_size, dim + 1)
+            return np.concatenate((u, z), axis=-1)+self.net(torch.tensor(x_t, dtype=torch.float32)).detach().cpu().numpy()  # Concatenate u and z values, shape (batch_size, dim + 1)
         
         # Recursive computation for n > 0
         for l in range(n):
