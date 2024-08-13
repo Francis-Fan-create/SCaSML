@@ -233,7 +233,15 @@ class ScaSML(object):
         z = np.sum(differences * W, axis=1) / (MC * delta_t)
         # Recursive calculation for n > 0
         if n <= 0:
-            return np.concatenate((u, z), axis=-1)+self.net(torch.tensor(x_t, dtype=torch.float32)).detach().cpu().numpy()
+            # Convert the network output to numpy array
+            u_hat = self.net(torch.tensor(x_t, dtype=torch.float32)).detach().cpu().numpy()
+            tensor_x_t = torch.tensor(x_t, requires_grad=True).float()
+            tensor_u_hat=self.net(tensor_x_t)
+            # Compute the gradient of the network output with respect to inputs
+            tensor_grad_u_hat_x = torch.autograd.grad(tensor_u_hat, tensor_x_t, grad_outputs=torch.ones_like(tensor_u_hat), retain_graph=True, create_graph=True)[0][:, :-1]
+            grad_u_hat_x = tensor_grad_u_hat_x.detach().cpu().numpy()    
+            initial_value= np.concatenate((u_hat, grad_u_hat_x), axis=-1)        
+            return np.concatenate((u, z), axis=-1)+initial_value 
         for l in range(n):
             q = int(Q[rho - 1, n - l - 1])  # Number of quadrature points
             d = cloc[:, :q, q - 1] - np.concatenate((t[:, np.newaxis], cloc[:, :q - 1, q - 1]), axis=1)  # Time step, shape (batch_size, q)
