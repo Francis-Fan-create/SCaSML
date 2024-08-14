@@ -29,6 +29,7 @@ class ScaSML(object):
         net.eval()
         self.net = net
         # Note: A potential way to accelerate the inference process is to use a discretized version of the Laplacian.
+        self.evaluation_counter=0 # Number of evaluations
      
     def f(self, x_t, u_breve, z_breve):
         '''
@@ -43,6 +44,8 @@ class ScaSML(object):
             ndarray: The output of the generator function of shape (batch_size,).
         '''
         eq = self.equation
+        batch_size=x_t.shape[0]
+        self.evaluation_counter+=batch_size
         # Convert input data to PyTorch tensor with gradient tracking
         tensor_x_t = torch.tensor(x_t, requires_grad=True).float()
         # Forward pass through the network
@@ -77,6 +80,8 @@ class ScaSML(object):
             ndarray: The output of the terminal constraint function of shape (batch_size,).
         '''
         eq = self.equation
+        batch_size=x_t.shape[0]
+        self.evaluation_counter+=batch_size
         # Convert input data to PyTorch tensor
         tensor_x_t = torch.tensor(x_t, requires_grad=True).float()
         # tensor_x_t[:, -1] = self.T
@@ -232,7 +237,7 @@ class ScaSML(object):
         delta_t = (T - t + 1e-6)[:, np.newaxis]
         z = np.sum(differences * W, axis=1) / (MC * delta_t)
         # Recursive calculation for n > 0
-        if n <= 0:
+        if n == 0:
             # Convert the network output to numpy array
             u_hat = self.net(torch.tensor(x_t, dtype=torch.float32)).detach().cpu().numpy()
             tensor_x_t = torch.tensor(x_t, requires_grad=True).float()
@@ -242,6 +247,8 @@ class ScaSML(object):
             grad_u_hat_x = tensor_grad_u_hat_x.detach().cpu().numpy()    
             initial_value= np.concatenate((u_hat, grad_u_hat_x), axis=-1)        
             return np.concatenate((u, z), axis=-1)+initial_value 
+        elif n <0:
+            return np.concatenate((u, z), axis=-1)
         for l in range(n):
             q = int(Q[rho - 1, n - l - 1])  # Number of quadrature points
             d = cloc[:, :q, q - 1] - np.concatenate((t[:, np.newaxis], cloc[:, :q - 1, q - 1]), axis=1)  # Time step, shape (batch_size, q)

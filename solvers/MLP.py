@@ -18,14 +18,47 @@ class MLP(object):
         self.equation = equation
         self.sigma = equation.sigma  # Volatility parameter from the equation
         self.mu = equation.mu  # Drift parameter from the equation
-        self.f = equation.f  # Source term function of the equation
-        self.g = equation.g  # Terminal condition function of the equation
+        # self.f = equation.f  # Source term function of the equation
+        # self.g = equation.g  # Terminal condition function of the equation
         equation.geometry()  # Initialize the geometry related parameters in the equation
         self.T = equation.T  # Terminal time
         self.t0 = equation.t0  # Initial time
         self.n_input = equation.n_input  # Number of input features
         self.n_output = equation.n_output  # Number of output features
+        self.evaluation_counter=0 # Number of evaluations
 
+    def f(self, x_t, u_breve, z_breve):
+        '''
+        Generator function of ScaSML, representing the light and large version.
+        
+        Parameters:
+            x_t (ndarray): Input data of shape (batch_size, n_input).
+            u_breve (ndarray): approximated u_ture-u_hat.
+            z_breve (ndarray): approximated gradient of u_breve.
+        
+        Returns:
+            ndarray: The output of the generator function of shape (batch_size,).
+        '''
+        batch_size=x_t.shape[0]
+        self.evaluation_counter+=batch_size
+        eq = self.equation
+        return eq.f(x_t, u_breve, z_breve)
+    
+    def g(self, x_t):
+        '''
+        Terminal constraint function of ScaSML.
+        
+        Parameters:
+            x_t (ndarray): Input data of shape (batch_size, n_input).
+        
+        Returns:
+            ndarray: The output of the terminal constraint function of shape (batch_size,).
+        '''
+        batch_size=x_t.shape[0]
+        self.evaluation_counter+=batch_size
+        eq = self.equation
+        return eq.g(x_t)
+    
     def inverse_gamma(self, gamma_input):
         '''
         Compute the inverse of the gamma function for the given input.

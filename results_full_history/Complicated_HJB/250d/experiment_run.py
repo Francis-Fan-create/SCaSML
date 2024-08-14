@@ -12,6 +12,7 @@ from optimizers.Adam_LBFGS import Adam_LBFGS
 # from optimizers.L_inf import L_inf  
 from tests.NormalSphere import NormalSphere
 from tests.SimpleUniform import SimpleUniform
+from tests.ConvergenceRate import ConvergenceRate
 from solvers.MLP_full_history  import MLP_full_history as MLP
 from solvers.ScaSML_full_history  import ScaSML_full_history as ScaSML
 import numpy as np
@@ -69,12 +70,15 @@ solver2=MLP(equation=equation) #Multilevel Picard object
 solver3=ScaSML(equation=equation,net=solver1) #ScaSML object
 
 
-#run the test for NormalSphere
-test1=NormalSphere(equation,solver1,solver2,solver3)
-rhomax=test1.test(r"results_full_history/Complicated_HJB/250d")
-#run the test for SimpleUniform
-test2=SimpleUniform(equation,solver1,solver2,solver3)
-test2.test(r"results_full_history/Complicated_HJB/250d")
+# #run the test for NormalSphere
+# test1=NormalSphere(equation,solver1,solver2,solver3)
+# rhomax=test1.test(r"results_full_history/Complicated_HJB/250d")
+# #run the test for SimpleUniform
+# test2=SimpleUniform(equation,solver1,solver2,solver3)
+# test2.test(r"results_full_history/Complicated_HJB/250d")
+#run the test for ConvergenceRate
+test3=ConvergenceRate(equation,solver1,solver2,solver3)
+test3.test(r"results_full_history/Complicated_HJB/250d")
 
 
 
