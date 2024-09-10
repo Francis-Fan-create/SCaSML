@@ -16,7 +16,7 @@ class Adam_LBFGS(object):
         n_output (int): Number of output features.
         model (dde.Model): The deepxde model that wraps around the neural network and the dataset.
     '''
-    def __init__(self, n_input, n_output, net, data):
+    def __init__(self, n_input, n_output, net, data, equation):
         '''Initializes the Adam_LBFGS optimizer with the network, data, and dimensions.
         
         Args:
@@ -24,6 +24,7 @@ class Adam_LBFGS(object):
             n_output (int): Number of output features.
             net (torch.nn.Module): The neural network model to be optimized.
             data (dde.data.Data): The dataset used for training the model.
+            equation (object): The differential equation object to be solved.
         '''
         # Initialize the optimizer parameters
         self.net = net
@@ -31,6 +32,7 @@ class Adam_LBFGS(object):
         self.n_input = n_input
         self.n_output = n_output
         self.model = dde.Model(data, net)
+        self.equation = equation
         # We do not need to initialize wandb here, as it is already initialized in the main script
 
     def Adam(self, lr=1e-2, weight_decay=1e-4, gamma=0.9):
@@ -80,9 +82,12 @@ class Adam_LBFGS(object):
         Returns:
             dde.Model: The trained model.
         '''
+        eq= self.equation
         # Interleaved training of Adam and LBFGS
-        loss_weights = [1e-3] * (self.n_input - 1) + [1] + [1e-2] # Need to change based on the problem
-        # loss_weights = [1e-3] * (self.n_input - 1) + [1] + [1e-2]*2 # Need to change based on the problem
+        if eq.__class__.__name__ == "Complicated_HJB" or "Explicit_Solution_Example":
+            loss_weights = [1e-3] * (self.n_input - 1) + [1] + [1e-2] 
+        elif eq.__class__.__name__ == "Neumann_Boundary":
+            loss_weights = [1e-3] * (self.n_input - 1) + [1] + [1e-2]*2
         wandb.config.update({"cycle": cycle, "adam_every": adam_every, "lbfgs_every": lbfgs_every, "loss_weights": loss_weights})  # Record hyperparameters
         adam = self.Adam()
         lbfgs = self.LBFGS()

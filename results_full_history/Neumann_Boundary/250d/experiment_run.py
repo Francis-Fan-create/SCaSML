@@ -9,7 +9,6 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..', '..'))
 from equations.equations import Neumann_Boundary
 from models.FNN import FNN
 from optimizers.Adam_LBFGS import Adam_LBFGS
-# from optimizers.L_inf import L_inf  
 from tests.NormalSphere import NormalSphere
 from tests.SimpleUniform import SimpleUniform
 from tests.ConvergenceRate import ConvergenceRate
@@ -37,8 +36,8 @@ if device.type == 'cuda':
     gpu_name = torch.cuda.get_device_name()
 
 #initialize wandb
-wandb.init(project="Neumann_Boundary", notes="250 d", tags=["Normal Sphere test","Simple Uniform Test","Adam_LBFGS training"],mode="disabled") #debug mode
-# wandb.init(project="Neumann_Boundary", notes="250 d", tags=["Normal Sphere test","Simple Uniform Test","Adam_LBFGS training"]) #working mode
+wandb.init(project="Neumann_Boundary", notes="250 d", tags=["Adam_LBFGS training"],mode="disabled") #debug mode
+# wandb.init(project="Neumann_Boundary", notes="250 d", tags=["Adam_LBFGS training"]) #working mode
 wandb.config.update({"device": device.type}) # record device type
 
 #initialize the equation
@@ -56,8 +55,7 @@ else:
     layers=[251]+[50]*5+[1]
     net=FNN(layers,equation)
     #initialize the optimizer
-    optimizer=Adam_LBFGS(251,1,net,data) #Adam-LBFGS optimizer
-    # optimizer=L_inf(251,1,net,data,equation) #L_inf optimizer
+    optimizer=Adam_LBFGS(251,1,net,data,equation) #Adam-LBFGS optimizer
     #train the model
     trained_model=optimizer.train(r"results_full_history/Neumann_Boundary/250d/model_weights_Adam_LBFGS.params")
     trained_net=trained_model.net
@@ -70,12 +68,12 @@ solver2=MLP(equation=equation) #Multilevel Picard object
 solver3=ScaSML(equation=equation,net=solver1) #ScaSML object
 
 
-# #run the test for NormalSphere
-# test1=NormalSphere(equation,solver1,solver2,solver3)
-# rhomax=test1.test(r"results_full_history/Neumann_Boundary/250d")
-# #run the test for SimpleUniform
-# test2=SimpleUniform(equation,solver1,solver2,solver3)
-# test2.test(r"results_full_history/Neumann_Boundary/250d")
+#run the test for NormalSphere
+test1=NormalSphere(equation,solver1,solver2,solver3)
+rhomax=test1.test(r"results_full_history/Neumann_Boundary/250d")
+#run the test for SimpleUniform
+test2=SimpleUniform(equation,solver1,solver2,solver3)
+test2.test(r"results_full_history/Neumann_Boundary/250d")
 #run the test for ConvergenceRate
 test3=ConvergenceRate(equation,solver1,solver2,solver3)
 test3.test(r"results_full_history/Neumann_Boundary/250d")
