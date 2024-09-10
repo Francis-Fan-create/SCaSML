@@ -45,7 +45,7 @@ class ConvergenceRate(object):
         self.t0 = equation.t0  # equation.t0: float
         self.T = equation.T  # equation.T: float
 
-    def test(self, save_path, rhomax=4, n_samples=5000):
+    def test(self, save_path, rhomax=5, n_samples=500):
         '''
         Compares solvers on different distances on the sphere.
 
@@ -214,6 +214,13 @@ class ConvergenceRate(object):
             plt.scatter(np.log10(evaluation_number_array2 + epsilon), slope_1_4_mlp, marker='x')
             plt.scatter(np.log10(evaluation_number_array3 + epsilon), slope_1_2_scasml, marker='x')
             plt.scatter(np.log10(evaluation_number_array3 + epsilon), slope_1_4_scasml, marker='x')
+            for i in range(len(evaluation_number_array3)):
+                plt.annotate(i + 2, (np.log10(evaluation_number_array3[i] + epsilon), np.log10(np.array(errors3_array)[i] + epsilon)), textcoords="offset points", xytext=(0,10), ha='center')
+                plt.annotate(i + 2, (np.log10(evaluation_number_array3[i] + epsilon), slope_1_2_scasml[i]), textcoords="offset points", xytext=(0,10), ha='center')
+                plt.annotate(i + 2, (np.log10(evaluation_number_array3[i] + epsilon), slope_1_4_scasml[i]), textcoords="offset points", xytext=(0,10), ha='center')
+                plt.annotate(i + 2, (np.log10(evaluation_number_array2[i] + epsilon), np.log10(np.array(errors2_array)[i] + epsilon)), textcoords="offset points", xytext=(0,10), ha='center')
+                plt.annotate(i + 2, (np.log10(evaluation_number_array2[i] + epsilon), slope_1_2_mlp[i]), textcoords="offset points", xytext=(0,10), ha='center')
+                plt.annotate(i + 2, (np.log10(evaluation_number_array2[i] + epsilon), slope_1_4_mlp[i]), textcoords="offset points", xytext=(0,10), ha='center')
             plt.title(f'MLP and ScaSML - Convergence Rate {random_method}')
             plt.xlabel('log10(evaluation_number)')
             plt.ylabel('log10(error)')
