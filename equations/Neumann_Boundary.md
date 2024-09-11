@@ -15,7 +15,7 @@ $$
 The nonlinear term is given by
 
 $$
-f(x,t,u,z)=2u-(\frac{\pi^2}{2}+2)\sin(\frac{\pi}{2}x_1)\cos(\frac{\pi}{2}x_2)
+F(u,z)(x,t)=2u-(\frac{\pi^2}{2}+2)\sin(\frac{\pi}{2}x_1)\cos(\frac{\pi}{2}x_2)
 $$
 
 

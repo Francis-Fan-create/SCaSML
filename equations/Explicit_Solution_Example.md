@@ -18,7 +18,7 @@ without any boundary constraints.
 
 Then nonlinear term is given by
 $$
-f(x,t,u,z)=(\sigma u-\frac {1}{d\sigma} -\frac{\sigma}{2})\sum_i z
+F(u,z)(x,t)=(\sigma u-\frac {1}{d\sigma} -\frac{\sigma}{2})\sum_i z
 $$
 
 

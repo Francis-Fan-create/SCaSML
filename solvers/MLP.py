@@ -27,14 +27,14 @@ class MLP(object):
         self.n_output = equation.n_output  # Number of output features
         self.evaluation_counter=0 # Number of evaluations
 
-    def f(self, x_t, u_breve, z_breve):
+    def f(self, x_t, u, z):
         '''
         Generator function of ScaSML, representing the light and large version.
         
         Parameters:
             x_t (ndarray): Input data of shape (batch_size, n_input).
-            u_breve (ndarray): approximated u_ture-u_hat.
-            z_breve (ndarray): approximated gradient of u_breve.
+            u (ndarray): u_ture.
+            z (ndarray): gradient of u_true.
         
         Returns:
             ndarray: The output of the generator function of shape (batch_size,).
@@ -42,7 +42,7 @@ class MLP(object):
         batch_size=x_t.shape[0]
         self.evaluation_counter+=batch_size
         eq = self.equation
-        return eq.f(x_t, u_breve, z_breve)
+        return eq.f(x_t, u, z)
     
     def g(self, x_t):
         '''

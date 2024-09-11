@@ -11,7 +11,7 @@ dependencies:
   - pip
   - pip:
     - wandb==0.16.5
-    - deepxde=1.11.1
+    - deepxde==1.11.1
 
 # activate the environment:
 

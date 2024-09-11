@@ -1,13 +1,13 @@
-Total time for PINN: 2.8143222332000732 seconds
-Total time for MLP: 53.655308961868286 seconds
-Total time for ScaSML: 487.99556183815 seconds
+Total time for PINN: 7.040254592895508 seconds
+Total time for MLP: 61.87081694602966 seconds
+Total time for ScaSML: 720.9508488178253 seconds
 PINN rel l1, rho=2-> min: 0.0009437461992773369 max: 14273.840760314564 mean: 273.91204551542137
 MLP rel l1, rho=2-> min: 0.0 max: 20.85776726714677 mean: 0.8134723659518966
-ScaSML rel l1, rho=2-> min: 0.0 max: 2.698082236437072 mean: 0.40925658509468293
+ScaSML rel l1, rho=2-> min: 0.0 max: 2.698082236437072 mean: 0.40925658509468266
 Real Solution-> min: 0.37730091290895373 max: 0.7032591171969139 mean: 0.5354787296074235
 PINN l1, rho=2-> min: 0.0005369937887411691 max: 0.42382248221612195 mean: 0.2748360894253406
 MLP l1, rho=2-> min: 0.0 max: 0.300650697077823 mean: 0.09366947902221935
 ScaSML l1, rho=2-> min: 0.0 max: 0.1818841762476306 mean: 0.06826612226588322
-PINN l1 - ScaSML l1,rho=2-> positve count: 901 negative count: 99 positive sum: 211.30547342030255 negative sum: -4.735506260845112
-MLP l1- ScaSML l1,rho=2-> positve count: 800 negative count: 100 positive sum: 25.899908891501973 negative sum: -0.49655213516582986
+PINN l1 - ScaSML l1,rho=2-> positve count: 901 negative count: 99 positive sum: 211.30547342030255 negative sum: -4.73550626084511
+MLP l1- ScaSML l1,rho=2-> positve count: 800 negative count: 100 positive sum: 25.899908891501973 negative sum: -0.49655213516582997
 PINN l1 - MLP l1,rho=2-> positve count: 868 negative count: 132 positive sum: 192.02952332508158 negative sum: -10.862912921960278

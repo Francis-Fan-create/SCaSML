@@ -17,7 +17,7 @@ without any boundary constraints.
 
 The nonlinear term is given by
 $$
-f(x,t,u,z)=2
+F(u,z)(x,t)=2
 $$
 
 
