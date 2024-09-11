@@ -19,10 +19,11 @@ git clone https://github.com/francis-fan-create/scasml.git
 cd scasml
 ```
 
-2. Install the required dependencies:
+2. Create and activate the conda environment:
 
 ```bash
-pip install -r requirements.txt
+conda env create -f environment.yml
+conda activate myenv
 ```
 
 ## Usage
