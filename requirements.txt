@@ -1,7 +1,0 @@
-numpy
-deepxde
-matplotlib
-scipy
-torch
-wandb
-# Use: pip install -r requirements.txt

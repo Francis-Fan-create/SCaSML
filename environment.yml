@@ -1,0 +1,23 @@
+name: myenv
+channels:
+  - defaults
+dependencies:
+  - python=3.10.8
+  - numpy=1.23.5
+  - deepxde=1.11.1
+  - matplotlib=3.7.1
+  - scipy=1.10.1
+  - pytorch=2.3.0
+  - pip
+  - pip:
+    - wandb==0.16.5
+
+# activate the environment:
+
+# conda env create -f environment.yml
+# conda activate myenv
+
+# verify the environment:
+
+# python --version
+# pip list
