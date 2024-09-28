@@ -68,12 +68,12 @@ solver2=MLP(equation=equation) #Multilevel Picard object
 solver3=ScaSML(equation=equation,net=solver1) #ScaSML object
 
 
-#run the test for NormalSphere
-test1=NormalSphere(equation,solver1,solver2,solver3)
-rhomax=test1.test(r"results_full_history/Neumann_Boundary/100d")
-#run the test for SimpleUniform
-test2=SimpleUniform(equation,solver1,solver2,solver3)
-test2.test(r"results_full_history/Neumann_Boundary/100d")
+# #run the test for NormalSphere
+# test1=NormalSphere(equation,solver1,solver2,solver3)
+# rhomax=test1.test(r"results_full_history/Neumann_Boundary/100d")
+# #run the test for SimpleUniform
+# test2=SimpleUniform(equation,solver1,solver2,solver3)
+# test2.test(r"results_full_history/Neumann_Boundary/100d")
 #run the test for ConvergenceRate
 test3=ConvergenceRate(equation,solver1,solver2,solver3)
 test3.test(r"results_full_history/Neumann_Boundary/100d")
