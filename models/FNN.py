@@ -28,7 +28,7 @@ class FNN(nn.Module):
         self.regularizer = None
         # we do not need to initialize wandb here, as it is already initialized in the main script
         wandb.config.update({"layers": layers})  # record hyperparameters
-        wandb.watch(self.net, log="all", log_freq=60)  # watch the FNN model
+        # wandb.watch(self.net, log="all", log_freq=60)  # watch the FNN model
 
     def forward(self, x_t):
         '''Performs a forward pass through the FNN.

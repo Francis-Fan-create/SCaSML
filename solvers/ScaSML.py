@@ -44,8 +44,9 @@ class ScaSML(object):
             ndarray: The output of the generator function of shape (batch_size,).
         '''
         eq = self.equation
-        batch_size=x_t.shape[0]
-        self.evaluation_counter+=batch_size
+        # batch_size=x_t.shape[0]
+        # self.evaluation_counter+=batch_size
+        self.evaluation_counter+=1
         # Convert input data to PyTorch tensor with gradient tracking
         tensor_x_t = torch.tensor(x_t, requires_grad=True).float()
         # Forward pass through the network
@@ -80,8 +81,9 @@ class ScaSML(object):
             ndarray: The output of the terminal constraint function of shape (batch_size,).
         '''
         eq = self.equation
-        batch_size=x_t.shape[0]
-        self.evaluation_counter+=batch_size
+        # batch_size=x_t.shape[0]
+        # self.evaluation_counter+=batch_size
+        self.evaluation_counter+=1
         # Convert input data to PyTorch tensor
         tensor_x_t = torch.tensor(x_t, requires_grad=True).float()
         # tensor_x_t[:, -1] = self.T

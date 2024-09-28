@@ -39,8 +39,9 @@ class MLP(object):
         Returns:
             ndarray: The output of the generator function of shape (batch_size,).
         '''
-        batch_size=x_t.shape[0]
-        self.evaluation_counter+=batch_size
+        # batch_size=x_t.shape[0]
+        # self.evaluation_counter+=batch_size
+        self.evaluation_counter+= 1
         eq = self.equation
         return eq.f(x_t, u, z)
     
@@ -54,8 +55,9 @@ class MLP(object):
         Returns:
             ndarray: The output of the terminal constraint function of shape (batch_size,).
         '''
-        batch_size=x_t.shape[0]
-        self.evaluation_counter+=batch_size
+        # batch_size=x_t.shape[0]
+        # self.evaluation_counter+=batch_size
+        self.evaluation_counter+= 1
         eq = self.equation
         return eq.g(x_t)
     
