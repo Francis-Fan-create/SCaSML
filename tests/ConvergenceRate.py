@@ -11,7 +11,7 @@ import copy
 
 class ConvergenceRate(object):
     '''
-    Simple Uniform test in high dimensions.
+    Convergence Rate test in high dimensions.
 
     Attributes:
     equation (object): An object representing the equation to solve.
