@@ -95,7 +95,7 @@ class SimpleUniform(object):
         time1, time2, time3 = 0, 0, 0  # time1, time2, time3: float, initialized to 0 for timing each solver
 
         # Compute the errors
-        xt_values = geom.random_points(n_samples,random="Hammersley")  # xt_values: ndarray, shape: (n_samples, self.dim + 1), dtype: float
+        xt_values = geom.random_points(n_samples,random="LHS")  # xt_values: ndarray, shape: (n_samples, self.dim + 1), dtype: float
         exact_sol = eq.exact_solution(xt_values)  # exact_sol: ndarray, shape: (n_samples,), dtype: float
 
         # Measure the time for solver1
