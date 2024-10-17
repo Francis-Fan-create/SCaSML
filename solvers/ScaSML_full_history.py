@@ -56,19 +56,14 @@ class ScaSML_full_history(object):
         # Compute the gradient of the network output with respect to inputs
         tensor_grad_u_hat_x = torch.autograd.grad(tensor_u_hat, tensor_x_t, grad_outputs=torch.ones_like(tensor_u_hat), retain_graph=True, create_graph=True)[0][:, :-1]
         grad_u_hat_x = tensor_grad_u_hat_x.detach().cpu().numpy()
-        # epsilon=eq.PDE_loss(tensor_x_t,tensor_u_hat,tensor_grad_u_hat_x).detach().cpu().numpy()
+        epsilon=eq.PDE_loss(tensor_x_t,tensor_u_hat,tensor_grad_u_hat_x).detach().cpu().numpy()
         # Calculate the values for the generator function
         '''TO DO: should we multiply z_breve with sigma(x_t) or not?'''
         '''Personally, I think we should, since the W in the algorithm is not multiplied by sigma.'''
         val1 = eq.f(x_t, u_breve + u_hat, eq.sigma(x_t) * (grad_u_hat_x+ z_breve))
         val2 = eq.f(x_t, u_hat, eq.sigma(x_t) * grad_u_hat_x)
-        # Return the difference between val1 and val2 (light version, which does not include epsilon here)
-        # if np.abs(val1 - val2).any() > 0.5:
-        #     print(f'f:{val1 - val2}')
-        # if np.abs(epsilon).any() > 0.5:
-        #     print(f'epsilon:{epsilon}')
-        return val1 - val2
-        # return val1-val2-epsilon #large version
+        # return val1 - val2
+        return val1-val2+epsilon #large version
     
     def g(self, x_t):
         '''
