@@ -8,6 +8,8 @@ import os
 import cProfile
 import shutil
 import copy
+from optimizers.Adam_LBFGS import Adam_LBFGS
+from optimizers.L_inf import L_inf
 
 class ConvergenceRate(object):
     '''
@@ -16,216 +18,168 @@ class ConvergenceRate(object):
     Attributes:
     equation (object): An object representing the equation to solve.
     dim (int): The dimension of the input space minus one.
-    solver1 (object): A PyTorch model for the PINN network.
+    solver1 (object): A jax Gaussian Process model.
     solver2 (object): An object for the MLP solver.
     solver3 (object): An object for the ScaSML solver.
     t0 (float): The initial time.
     T (float): The final time.
     '''
-    def __init__(self, equation, solver1, solver2, solver3):
+    def __init__(self, equation, solver1, solver2, solver3, is_train):
         '''
-        Initializes the normal spheres with given solvers and equation.
+        Initializes the converge rate test with given solvers and equation.
 
         Parameters:
         equation (object): The equation object containing problem specifics.
-        solver1 (object): The PINN network solver.
+        solver1 (object): The PINN solver.
         solver2 (object): The MLP solver object.
         solver3 (object): The ScaSML solver object.
         '''
         #save original stdout and stderr
         self.stdout=sys.stdout
         self.stderr=sys.stderr
-        # Initialize the normal spheres
+        # Initialize the parameters
         self.equation = equation
         self.dim = equation.n_input - 1  # equation.n_input: int
-        solver1.eval()  # Set the PINN network to evaluation mode
         self.solver1 = solver1
         self.solver2 = solver2
         self.solver3 = solver3
         self.t0 = equation.t0  # equation.t0: float
         self.T = equation.T  # equation.T: float
+        self.is_train = is_train
 
-    def test(self, save_path, rhomax=5, n_samples=5):
+    def test(self, save_path, rhomax=2, train_sizes_domain=[10, 20, 30, 40, 50, 60, 70, 80, 90, 100], train_sizes_boundary=[10, 20, 30, 40, 50, 60, 70, 80, 90, 100]):
         '''
-        Compares solvers on different distances on the sphere.
-
+        Compares solvers on different training iterations.
+    
         Parameters:
         save_path (str): The path to save the results.
-        rhomax (int): The maximum value of rho for approximation parameters.
-        n_samples (int): The number of samples for testing.
-
+        opt1 (object): The first optimizer object.
+        opt2 (object): The second optimizer object.
+        rhomax (int): The fixed value of rho for approximation parameters.
+        train_sizes_domain (list): The list of training sizes for the domain.
+        train_sizes_boundary (list): The list of training sizes for the boundary.
         '''
-        #initialize the profiler
+        # Initialize the profiler
         profiler = cProfile.Profile()
-        profiler.enable()      
-        # create the save path if it does not exist
+        profiler.enable()
+        is_train = self.is_train
+        # Create the save path if it does not exist
         class_name = self.__class__.__name__
         new_path = f"{save_path}/{class_name}"
         if not os.path.exists(new_path):
             os.makedirs(new_path)
         save_path = new_path
-        directory=f'{save_path}/callbacks'
+        directory = f'{save_path}/callbacks'
+    
         # Delete former callbacks
         if os.path.exists(directory):
-            # iterate over the files in the directory
             for filename in os.listdir(directory):
                 file_path = os.path.join(directory, filename)
                 try:
-                    # if it is a file or a link, delete it
                     if os.path.isfile(file_path) or os.path.islink(file_path):
                         os.unlink(file_path)
-                    # if it is a directory, delete it
                     elif os.path.isdir(file_path):
                         shutil.rmtree(file_path)
                 except Exception as e:
                     print(f'Failed to delete {file_path}. Reason: {e}')
+    
         # Set the approximation parameters
         eq = self.equation
-        eq_name = eq.__class__.__name__
-        eq_dim=eq.n_input-1
-        geom=eq.geometry()
-        random_methods = ["Halton", "LHS", "pseudo", "Hammersley"]
-        for random_method in random_methods:
-            evaluation_number_list1, evaluation_number_list2, evaluation_number_list3 = [], [], []  # evaluation_number_list1, evaluation_number_list2, evaluation_number_list3: list, initialized to empty list for timing each solver
-            errors1_list, errors2_list, errors3_list = [], [], []  # errors1_list, errors2_list, errors3_list: list, initialized to empty list for storing errors
-            for rho_ in range(2,rhomax+1):# at least two layers
-                n=rho_
-                self.solver2.set_approx_parameters(rho_)
-                self.solver3.set_approx_parameters(rho_)
-                errors1 = np.zeros(n_samples)  # errors1: ndarray, shape: (n_samples,), dtype: float
-                errors2 = np.zeros(n_samples)  # errors2: ndarray, shape: (n_samples,), dtype: float
-                errors3 = np.zeros(n_samples)  # errors3: ndarray, shape: (n_samples,), dtype: float
-                evaluation_number1, evaluation_number2, evaluation_number3 = 0, 0, 0  # evaluation_number1, evaluation_number2, evaluation_number3: float, initialized to 0 for timing each solver
-
-                # Compute the errors
-                xt_values = geom.random_points(n_samples,random=random_method)  # xt_values: ndarray, shape: (n_samples, self.dim + 1), dtype: float
-                exact_sol = eq.exact_solution(xt_values)  # exact_sol: ndarray, shape: (n_samples,), dtype: float
-
-                # Measure the evaluation_number for solver1
-                sol1 = self.solver1(torch.tensor(xt_values, dtype=torch.float32)).detach().cpu().numpy()[:, 0]  # sol1: ndarray, shape: (n_samples,), dtype: float
-                evaluation_number1 += xt_values.shape[0]
-                evaluation_number_list1.append(evaluation_number1)
-
-                # Measure the evaluation_number for solver2
-                sol2 = self.solver2.u_solve(n, rho_, xt_values)  # sol2: ndarray, shape: (n_samples,), dtype: float
-                evaluation_number2 += self.solver2.evaluation_counter
-                evaluation_number_list2.append(evaluation_number2)
-
-                # Measure the evaluation_number for solver3
-                sol3 = self.solver3.u_solve(n, rho_, xt_values)  # sol3: ndarray, shape: (n_samples,), dtype: float
-                evaluation_number3 += self.solver3.evaluation_counter
-                evaluation_number_list3.append(evaluation_number3)
-
-                # Compute the errors
-                errors1=np.abs(sol1 - exact_sol)
-                errors2=np.abs(sol2 - exact_sol)
-                errors3=np.abs(sol3 - exact_sol)
-
-                # Compute the mean errors
-                errors1_list.append(np.mean(errors1))
-                errors2_list.append(np.mean(errors2))
-                errors3_list.append(np.mean(errors3))
+        list_len = len(train_sizes_domain)
+        error1_list = []
+        # error2_list = []
+        error3_list = []
+    
+        # Generate test data (fixed)
+        xt_values_domain, xt_values_boundary = eq.generate_test_data(500, 100 , random='LHS')
+        xt_values = np.concatenate((xt_values_domain, xt_values_boundary), axis=0)
+        exact_sol = eq.exact_solution(xt_values)
+    
+        if is_train:
+            for j in range(list_len):
+                domain_size_j = train_sizes_domain[j]
+                boundary_size_j = train_sizes_boundary[j]
+                #train the model
+                data = eq.generate_data(domain_size_j, boundary_size_j)
+                opt1 = Adam_LBFGS(eq.n_input,1, self.solver1, data, eq)
+                trained_model1=opt1.train(f"{save_path}/model_weights_Adam_LBFGS.params")
+                trained_net1= trained_model1.net
+                opt2 = L_inf(eq.n_input,1, trained_net1, data, eq)
+                trained_model2=opt2.train(f"{save_path}/model_weights_L_inf.params")
+                trained_net2= trained_model2.net
+                self.solver1 = trained_net2
+                self.solver3.PINN = trained_net2
+                # Predict with solver1
+                sol1 = self.solver1(torch.tensor(xt_values, dtype=torch.float32)).detach().clone().numpy()[:, 0]
             
-            epsilon = 1e-10
-            # Convert lists to arrays
-            evaluation_number_array1 = np.array(evaluation_number_list1)  # evaluation_number_array1: ndarray, shape: (rhomax,), dtype: float
-            evaluation_number_array2 = np.array(evaluation_number_list2)  # evaluation_number_array2: ndarray, shape: (rhomax,), dtype: float
-            evaluation_number_array3 = np.array(evaluation_number_list3)  # evaluation_number_array3: ndarray, shape: (rhomax,), dtype: float
-            errors1_array = np.array(errors1_list)  # errors1_array: ndarray, shape: (rhomax,), dtype: float
-            errors2_array = np.array(errors2_list)  # errors2_array: ndarray, shape: (rhomax,), dtype: float
-            errors3_array = np.array(errors3_list)  # errors3_array: ndarray, shape: (rhomax,), dtype: float
+                # # Solve with solver2 (baseline solver)
+                # sol2 = self.solver2.u_solve(rhomax, rhomax, xt_values)
+            
+                # Solve with solver3 using the trained solver1
+                sol3 = self.solver3.u_solve(rhomax, rhomax, xt_values)
+            
+                # Compute errors
+                errors1 = np.linalg.norm(sol1 - exact_sol)
+                # errors2 = np.linalg.norm(sol2 - exact_sol)
+                errors3 = np.linalg.norm(sol3 - exact_sol)
+            
+                error_value1 = errors1 / np.linalg.norm(exact_sol)
+                # error_value2 = errors2 / np.linalg.norm(exact_sol)
+                error_value3 = errors3 / np.linalg.norm(exact_sol)
 
+                error1_list.append(error_value1)
+                # error2_list.append(error_value2)
+                error3_list.append(error_value3)
             
-            
-            # Plot the convergence rate for PINN
+            # Plot error ratios
             plt.figure()
-            plt.plot(np.log10(evaluation_number_array1 + epsilon), np.log10(np.array(errors1_array) + epsilon), label='PINN')
-            slope_1_2 = -1/2 * (np.log10(evaluation_number_array1+epsilon)-np.log10(evaluation_number_array1[0]+epsilon)) + np.log10(errors1_array[0] + epsilon)
-            slope_1_4 = -1/4 * (np.log10(evaluation_number_array1+epsilon)-np.log10(evaluation_number_array1[0]+epsilon)) + np.log10(errors1_array[0] + epsilon)
-            plt.plot(np.log10(evaluation_number_array1 + epsilon), slope_1_2, label='slope=-1/2')
-            plt.plot(np.log10(evaluation_number_array1 + epsilon), slope_1_4, label='slope=-1/4')
-            plt.scatter(np.log10(evaluation_number_array1 + epsilon), np.log10(np.array(errors1_array) + epsilon), marker='x')
-            plt.scatter(np.log10(evaluation_number_array1 + epsilon), slope_1_2, marker='x')
-            plt.scatter(np.log10(evaluation_number_array1 + epsilon), slope_1_4, marker='x')
-            for i in range(len(evaluation_number_array1)):
-                plt.annotate(i + 2, (np.log10(evaluation_number_array1[i] + epsilon), np.log10(np.array(errors1_array)[i] + epsilon)), textcoords="offset points", xytext=(0,10), ha='center')
-                plt.annotate(i + 2, (np.log10(evaluation_number_array1[i] + epsilon), slope_1_2[i]), textcoords="offset points", xytext=(0,10), ha='center')
-                plt.annotate(i + 2, (np.log10(evaluation_number_array1[i] + epsilon), slope_1_4[i]), textcoords="offset points", xytext=(0,10), ha='center')
-            plt.title(f'PINN - Convergence Rate {random_method}')
-            plt.xlabel('log10(evaluation_number)')
-            plt.ylabel('log10(error)')
-            plt.legend()
-            plt.savefig(f'{save_path}/PINN_convergence_rate_{random_method}.png')
-            wandb.log({f'PINN_convergence_rate_{random_method}': plt})
+            epsilon = 1e-10  # To avoid log(0)
+
+            domain_sizes = np.array(train_sizes_domain)
+            boundary_sizes = np.array(train_sizes_boundary)
+            train_sizes = domain_sizes + boundary_sizes
+            error1_array = np.array(error1_list)
+            # error2_array = np.array(error2_list)
+            error3_array = np.array(error3_list)
+
+            plt.plot(train_sizes, error1_array, marker='x', linestyle='-', label='PINN')
+            # plt.plot(train_sizes, error2_array, marker='x', linestyle='-', label='MLP')
+            plt.plot(train_sizes, error3_array, marker='x', linestyle='-', label='ScaSML')
             
-            # Plot the convergence rate for MLP
-            plt.figure()
-            plt.plot(np.log10(evaluation_number_array2 + epsilon), np.log10(np.array(errors2_array) + epsilon), label='MLP')
-            slope_1_2_mlp = -1/2 * (np.log10(evaluation_number_array2+epsilon)-np.log10(evaluation_number_array2[0]+epsilon)) + np.log10(errors2_array[0] + epsilon)
-            slope_1_4_mlp = -1/4 * (np.log10(evaluation_number_array2+epsilon)-np.log10(evaluation_number_array2[0]+epsilon)) + np.log10(errors2_array[0] + epsilon)
-            plt.plot(np.log10(evaluation_number_array2 + epsilon), slope_1_2_mlp, label='MLP slope=-1/2')
-            plt.plot(np.log10(evaluation_number_array2 + epsilon), slope_1_4_mlp, label='MLP slope=-1/4')
-            plt.scatter(np.log10(evaluation_number_array2 + epsilon), np.log10(np.array(errors2_array) + epsilon), marker='x')
-            plt.scatter(np.log10(evaluation_number_array2 + epsilon), slope_1_2_mlp, marker='x')
-            plt.scatter(np.log10(evaluation_number_array2 + epsilon), slope_1_4_mlp, marker='x')
-            for i in range(len(evaluation_number_array2)):
-                plt.annotate(i + 2, (np.log10(evaluation_number_array2[i] + epsilon), np.log10(np.array(errors2_array)[i] + epsilon)), textcoords="offset points", xytext=(0,10), ha='center')
-                plt.annotate(i + 2, (np.log10(evaluation_number_array2[i] + epsilon), slope_1_2_mlp[i]), textcoords="offset points", xytext=(0,10), ha='center')
-                plt.annotate(i + 2, (np.log10(evaluation_number_array2[i] + epsilon), slope_1_4_mlp[i]), textcoords="offset points", xytext=(0,10), ha='center')
-            plt.title(f'MLP - Convergence Rate {random_method}')
-            plt.xlabel('log10(evaluation_number)')
-            plt.ylabel('log10(error)')
-            plt.legend()
-            plt.savefig(f'{save_path}/MLP_convergence_rate_{random_method}.png')
-            wandb.log({f"MLP_convergence_rate": plt})
+            # Fit lines to compute slopes
+            log_GN_steps = np.log10(train_sizes + epsilon)
+            log_error1 = np.log10(error1_array+ epsilon)
+            # log_error2 = np.log10(error2_array+ epsilon)
+            log_error3 = np.log10(error3_array+ epsilon) 
+            slope1, intercept1 = np.polyfit(log_GN_steps, log_error1, 1)
+            # slope2, intercept2 = np.polyfit(log_GN_steps, log_error2, 1)
+            slope3, intercept3 = np.polyfit(log_GN_steps, log_error3, 1)
+            fitted_line1 = 10 ** (intercept1 + slope1 * log_GN_steps)
+            # fitted_line2 = 10 ** (intercept2 + slope2 * log_GN_steps)
+            fitted_line3 = 10 ** (intercept3 + slope3 * log_GN_steps)
             
-            # Plot the convergence rate for ScaSML
-            plt.figure()
-            plt.plot(np.log10(evaluation_number_array3 + epsilon), np.log10(np.array(errors3_array) + epsilon), label='ScaSML')
-            slope_1_2_scasml = -1/2 * (np.log10(evaluation_number_array3+epsilon)-np.log10(evaluation_number_array3[0]+epsilon)) + np.log10(errors3_array[0] + epsilon)
-            slope_1_4_scasml = -1/4 * (np.log10(evaluation_number_array3+epsilon)-np.log10(evaluation_number_array3[0]+epsilon)) + np.log10(errors3_array[0] + epsilon)
-            plt.plot(np.log10(evaluation_number_array3 + epsilon), slope_1_2_scasml, label='ScaSML slope=-1/2')
-            plt.plot(np.log10(evaluation_number_array3 + epsilon), slope_1_4_scasml, label='ScaSML slope=-1/4')
-            plt.scatter(np.log10(evaluation_number_array3 + epsilon), np.log10(np.array(errors3_array) + epsilon), marker='x')
-            plt.scatter(np.log10(evaluation_number_array3 + epsilon), slope_1_2_scasml, marker='x')
-            plt.scatter(np.log10(evaluation_number_array3 + epsilon), slope_1_4_scasml, marker='x')
-            for i in range(len(evaluation_number_array3)):
-                plt.annotate(i + 2, (np.log10(evaluation_number_array3[i] + epsilon), np.log10(np.array(errors3_array)[i] + epsilon)), textcoords="offset points", xytext=(0,10), ha='center')
-                plt.annotate(i + 2, (np.log10(evaluation_number_array3[i] + epsilon), slope_1_2_scasml[i]), textcoords="offset points", xytext=(0,10), ha='center')
-                plt.annotate(i + 2, (np.log10(evaluation_number_array3[i] + epsilon), slope_1_4_scasml[i]), textcoords="offset points", xytext=(0,10), ha='center')
-            plt.title(f'ScaSML - Convergence Rate {random_method}')
-            plt.xlabel('log10(evaluation_number)')
-            plt.ylabel('log10(error)')
+            plt.plot(train_sizes, fitted_line1, linestyle='--', label=f'PINN: slope={slope1:.2f}')
+            # plt.plot(train_sizes, fitted_line2, linestyle='--', label=f'MLP: slope={slope2:.2f}')
+            plt.plot(train_sizes, fitted_line3, linestyle='--', label=f'SCaSML: slope={slope3:.2f}')
+
+            plt.yscale('log')
+
             plt.legend()
-            plt.savefig(f'{save_path}/ScaSML_convergence_rate_{random_method}.png')
-            wandb.log({f"ScaSML_convergence_rate_{random_method}": plt})
+            plt.grid(True, which="both", ls="--", linewidth=0.5)
             
-            # Plot MLP and ScaSML convergence rates on the same plot
-            plt.figure()
-            plt.plot(np.log10(evaluation_number_array2 + epsilon), np.log10(np.array(errors2_array) + epsilon), label='MLP')
-            plt.plot(np.log10(evaluation_number_array3 + epsilon), np.log10(np.array(errors3_array) + epsilon), label='ScaSML')
-            plt.plot(np.log10(evaluation_number_array2 + epsilon), slope_1_2_mlp, label='MLP slope=-1/2')
-            plt.plot(np.log10(evaluation_number_array2 + epsilon), slope_1_4_mlp, label='MLP slope=-1/4')
-            plt.plot(np.log10(evaluation_number_array3 + epsilon), slope_1_2_scasml, label='ScaSML slope=-1/2')
-            plt.plot(np.log10(evaluation_number_array3 + epsilon), slope_1_4_scasml, label='ScaSML slope=-1/4')
-            plt.scatter(np.log10(evaluation_number_array2 + epsilon), np.log10(np.array(errors2_array) + epsilon), marker='x')
-            plt.scatter(np.log10(evaluation_number_array3 + epsilon), np.log10(np.array(errors3_array) + epsilon), marker='x')
-            plt.scatter(np.log10(evaluation_number_array2 + epsilon), slope_1_2_mlp, marker='x')
-            plt.scatter(np.log10(evaluation_number_array2 + epsilon), slope_1_4_mlp, marker='x')
-            plt.scatter(np.log10(evaluation_number_array3 + epsilon), slope_1_2_scasml, marker='x')
-            plt.scatter(np.log10(evaluation_number_array3 + epsilon), slope_1_4_scasml, marker='x')
-            for i in range(len(evaluation_number_array3)):
-                plt.annotate(i + 2, (np.log10(evaluation_number_array3[i] + epsilon), np.log10(np.array(errors3_array)[i] + epsilon)), textcoords="offset points", xytext=(0,10), ha='center')
-                plt.annotate(i + 2, (np.log10(evaluation_number_array3[i] + epsilon), slope_1_2_scasml[i]), textcoords="offset points", xytext=(0,10), ha='center')
-                plt.annotate(i + 2, (np.log10(evaluation_number_array3[i] + epsilon), slope_1_4_scasml[i]), textcoords="offset points", xytext=(0,10), ha='center')
-                plt.annotate(i + 2, (np.log10(evaluation_number_array2[i] + epsilon), np.log10(np.array(errors2_array)[i] + epsilon)), textcoords="offset points", xytext=(0,10), ha='center')
-                plt.annotate(i + 2, (np.log10(evaluation_number_array2[i] + epsilon), slope_1_2_mlp[i]), textcoords="offset points", xytext=(0,10), ha='center')
-                plt.annotate(i + 2, (np.log10(evaluation_number_array2[i] + epsilon), slope_1_4_mlp[i]), textcoords="offset points", xytext=(0,10), ha='center')
-            plt.title(f'MLP and ScaSML - Convergence Rate {random_method}')
-            plt.xlabel('log10(evaluation_number)')
-            plt.ylabel('log10(error)')
-            plt.legend()
-            plt.savefig(f'{save_path}/MLP_ScaSML_convergence_rate_{random_method}.png')
-            wandb.log({f"MLP_ScaSML_convergence_rate_{random_method}": plt})
+            plt.xlabel('Training Size')
+            plt.ylabel('Mean Relative L2 Error on Test Set')
+            plt.title('ConvergenceRate Verification')
+
+            plt.tight_layout()
+            
+            plt.savefig(f'{save_path}/ConvergenceRate_Verification.png')
+            plt.close()
         
-        return rhomax
+            # Disable the profiler and print stats
+            profiler.disable()
+            profiler.print_stats(sort='cumtime')
+            is_train = False
+            return rhomax
+        else:
+            print("Please delete the model weights and run the test again.")

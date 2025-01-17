@@ -8,7 +8,7 @@ Addressing high-dimensional PDEs has long been challenging due to the 'curse of 
 
 We train Physics-Informed Neural Networks (PINNs) to provide initial solution estimates, whose errors, governed by a new PDE, are corrected via Monte Carlo solvers using the Feynman-Kac and Elworthy-Bismut-Li formulae. We prove SCaSML's rate improvement for two state-of-the-art solvers, quadrature multilevel Picard and full-history multilevel Picard. 
 
-Numerical experiments on various high-dimensional PDEs, including the Hamilton-Jacobi-Bellman and Diffusion-Reaction equations, etc., confirm our theoretical results in terms of accuracy. This method advances fields like economics, finance, operations research, and physics by comprehensively considering all involved elements as agents, assets, and resources.
+Numerical experiments on various high-dimensional PDEs, including the Hamilton-Jacobi-Bellman and gradient dependent nonlinear equations, etc., confirm our theoretical results in terms of accuracy. This method advances fields like economics, finance, operations research, and physics by comprehensively considering all involved elements as agents, assets, and resources.
 
 ## Installation
 
@@ -19,18 +19,17 @@ git clone https://github.com/francis-fan-create/scasml.git
 cd scasml
 ```
 
-2. Create and activate the conda environment:
+2. Pip install related repos:
 
 ```bash
-conda env create -f environment.yml
-conda activate myenv
+pip install -r requirements.txt
 ```
 
 ## Usage
 
 To set up a new SCaSML solver for specific equations, follow these steps:
 
-1. Configure your equation in `equations/equations.py` using the `Explicit_Solution_Example` class as a guide.
+1. Configure your equation in `equations/equations.py` using the `Grad_Dependent_Nonlinear` class as a guide.
 
 2. In the `models/` directory, create a new `.py` file and define your network structure, taking `FNN.py` as an example. Ensure to set the `self.regularizer` parameter.
 
@@ -38,7 +37,7 @@ To set up a new SCaSML solver for specific equations, follow these steps:
 
 4. To use test methods other than `tests/NormalSphere.py`, create a new one in the `tests/` directory using the `NormalSphere.py` format.
 
-5. Copy `experiment_run.py` (Adam_LBFGS training) from `results/Explicit_Solution_Example/(certain dimension)/` to `results/(your equation)/(certain dimension)/`, replacing all "Explicit_Solution_Example" with your equation's name.
+5. Copy `experiment_run.py` (Adam_LBFGS training) from `results/Grad_Dependent_Nonlinear/(certain dimension)/` to `results/(your equation)/(certain dimension)/`, replacing all "Grad_Dependent_Nonlinear" with your equation's name.
 
 6. Review beginning lines to enable or disable wandb online logging.
 
@@ -49,8 +48,9 @@ python results/(your equation)/(certain dimension)/experiment_run.py
 ```
 
 9. View your results in the `results/(your equation)/(certain dimension)/` folder and on wandb
-10. (Optional) Repeat steps 6-9 for `further_training.py` after the weights of `experiment_run.py` are generated to get further trained weights using L_inf training. 
+
 10. Replace `results/` by `results_full_history/` to replace the quadrature MLP solver by the full_history MLP solver.
+    
 11. If you still have problems, please submit it to **Issues**.
 
 ## Project Structure
@@ -59,7 +59,8 @@ python results/(your equation)/(certain dimension)/experiment_run.py
 - `models/`: Neural network model definitions
 - `optimizers/`: Custom optimization algorithms
 - `tests/`: Test methods for evaluating the solver
-- `results/`: Experiment results and wandb keys
+- `results/`: Experiment results for quadrature MLP
+- `result_full_history/`: Experiment results for full history MLP
 - `solvers/`: Implementation of SCaSML and other solvers
 
 ## Contributing

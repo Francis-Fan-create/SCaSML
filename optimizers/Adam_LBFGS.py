@@ -69,7 +69,7 @@ class Adam_LBFGS(object):
         wandb.config.update({"LBFGS lr": lr, "LBFGS max_iter": max_iter, "LBFGS tolerance_change": tolerance_change, "LBFGS tolerance_grad": tolerance_grad})  # Record hyperparameters
         return lbfgs
 
-    def train(self, save_path, cycle=11, adam_every=500, lbfgs_every=10, metrics=["l2 relative error", "mse"]):
+    def train(self, save_path, cycle=10, adam_every=500, lbfgs_every=10, metrics=["l2 relative error", "mse"]):
         '''Trains the model using an interleaved strategy of Adam and LBFGS optimizers.
         
         Args:
@@ -84,7 +84,7 @@ class Adam_LBFGS(object):
         '''
         eq= self.equation
         # Interleaved training of Adam and LBFGS
-        if eq.__class__.__name__ == "Complicated_HJB" or "Explicit_Solution_Example":
+        if eq.__class__.__name__ == "Linear_HJB" or "Grad_Dependent_Nonlinear":
             loss_weights = [1e-3] * (self.n_input - 1) + [1] + [1e-2] 
         elif eq.__class__.__name__ == "Neumann_Boundary":
             loss_weights = [1e-3] * (self.n_input - 1) + [1] + [1e-2]*2

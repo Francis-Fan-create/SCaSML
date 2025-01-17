@@ -6,7 +6,7 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..', '..'))
 
 
 # import the required libraries
-from equations.equations import Neumann_Boundary
+from equations.equations import Grad_Dependent_Nonlinear
 from models.FNN import FNN
 from optimizers.Adam_LBFGS import Adam_LBFGS 
 from optimizers.L_inf import L_inf
@@ -37,18 +37,18 @@ if device.type == 'cuda':
     gpu_name = torch.cuda.get_device_name()
 
 #initialize wandb
-wandb.init(project="Neumann_Boundary", notes="100 d", tags=["Adam_LBFGS training","L_inf_training"],mode="disabled") #debug mode
-# wandb.init(project="Neumann_Boundary", notes="100 d", tags=["Adam_LBFGS training","L_inf_training"]) #working mode
+wandb.init(project="Grad_Dependent_Nonlinear", notes="100 d", tags=["Adam_LBFGS training","L_inf_training"],mode="disabled") #debug mode
+# wandb.init(project="Grad_Dependent_Nonlinear", notes="100 d", tags=["Adam_LBFGS training","L_inf_training"]) #working mode
 wandb.config.update({"device": device.type}) # record device type
 
 #initialize the equation
-equation=Neumann_Boundary(n_input=101,n_output=1)
+equation=Grad_Dependent_Nonlinear(n_input=101,n_output=1)
 #check if trained model is already saved
-if os.path.exists(r"results/Neumann_Boundary/100d/model_weights_L_inf.params"):
+if os.path.exists(r"results/Grad_Dependent_Nonlinear/100d/model_weights_L_inf.params"):
     '''To Do: Retrain the model with new data points& Try new methods to reduce errors'''
     #load the model
     net=FNN([101]+[50]*5+[1],equation)
-    net.load_state_dict(torch.load(r"results/Neumann_Boundary/100d/model_weights_L_inf.params",map_location=device)) #the other indexes are left for external resources of weights
+    net.load_state_dict(torch.load(r"results/Grad_Dependent_Nonlinear/100d/model_weights_L_inf.params",map_location=device)) #the other indexes are left for external resources of weights
     trained_net=net
     is_train = False
 else:
@@ -67,13 +67,13 @@ solver3=ScaSML(equation=equation,net=solver1) #ScaSML object
 
 #run the test for NormalSphere
 test1=NormalSphere(equation,solver1,solver2,solver3, is_train)
-rhomax=test1.test(r"results/Neumann_Boundary/100d")
+rhomax=test1.test(r"results/Grad_Dependent_Nonlinear/100d")
 #run the test for SimpleUniform
 test2=SimpleUniform(equation,solver1,solver2,solver3,is_train)
-test2.test(r"results/Neumann_Boundary/100d")
+test2.test(r"results/Grad_Dependent_Nonlinear/100d")
 #run the test for ConvergenceRate
 test3=ConvergenceRate(equation,solver1,solver2,solver3, is_train)
-test3.test(r"results/Neumann_Boundary/100d")
+test3.test(r"results/Grad_Dependent_Nonlinear/100d")
 
 
 #finish wandb

@@ -1,20 +1,18 @@
-import torch
-import numpy as np
-import deepxde as dde
-import torch.nn as nn
+import jax.numpy as jnp
+from jax import random
 from scipy.special import lambertw
-from utils.log_variables import log_variables
+import torch
 
-class ScaSML(object):
+class ScaSML:
     '''Multilevel Picard Iteration calibrated PINN for high dimensional semilinear PDE'''
-    #all the vectors uses rows as index and columns as dimensions
-    def __init__(self, equation, net):
+
+    def __init__(self, equation, PINN):
         '''
         Initialize the ScaSML parameters.
-        
+
         Parameters:
             equation (Equation): An object representing the equation to be solved.
-            net (torch.nn.Module): A PyTorch neural network model for approximating the solution.
+            PINN (GaussianProcess Solver): An object of Gaussian Process Solver for PDE.
         '''
         # Initialize ScaSML parameters from the equation
         self.equation = equation
@@ -25,12 +23,10 @@ class ScaSML(object):
         self.t0 = equation.t0
         self.n_input = equation.n_input
         self.n_output = equation.n_output
-        # Set the network to evaluation mode
-        net.eval()
-        self.net = net
-        # Note: A potential way to accelerate the inference process is to use a discretized version of the Laplacian.
-        self.evaluation_counter=0 # Number of evaluations
-     
+        self.PINN = PINN.eval()
+        self.evaluation_counter = 0  # Number of evaluations
+        self.key = random.PRNGKey(0)  # Random key for JAX
+
     def f(self, x_t, u_breve, z_breve):
         '''
         Generator function of ScaSML, representing the light and large version.
@@ -47,23 +43,14 @@ class ScaSML(object):
         # batch_size=x_t.shape[0]
         # self.evaluation_counter+=batch_size
         self.evaluation_counter+=1
-        # Convert input data to PyTorch tensor with gradient tracking
-        tensor_x_t = torch.tensor(x_t, requires_grad=True).float()
-        # Forward pass through the network
-        tensor_u_hat = self.net(tensor_x_t) 
-        # Convert the network output to numpy array
-        u_hat = tensor_u_hat.detach().cpu().numpy()
-        # Compute the gradient of the network output with respect to inputs
-        tensor_grad_u_hat_x = torch.autograd.grad(tensor_u_hat, tensor_x_t, grad_outputs=torch.ones_like(tensor_u_hat), retain_graph=True, create_graph=True)[0][:, :-1]
-        grad_u_hat_x = tensor_grad_u_hat_x.detach().cpu().numpy()
-        epsilon=eq.PDE_loss(tensor_x_t,tensor_u_hat,tensor_grad_u_hat_x).detach().cpu().numpy()
+        tensor_x_t = torch.tensor(x_t, requires_grad=True)
+        u_hat = tensor_x_t.detach().clone().numpy()
+        tensor_grad_u_hat_x = torch.autograd.grad(u_hat, tensor_x_t, grad_outputs=torch.ones_like(u_hat), retain_graph=True, create_graph=True)[0][:,:-1]
+        grad_u_hat_x = tensor_grad_u_hat_x.detach().clone().numpy()
         # Calculate the values for the generator function
-        '''TO DO: should we multiply z_breve with sigma(x_t) or not?'''
-        '''Personally, I think we should, since the W in the algorithm is not multiplied by sigma.'''
-        val1 = eq.f(x_t, u_breve + u_hat, eq.sigma(x_t) * (grad_u_hat_x+ z_breve))
+        val1 = eq.f(x_t, u_breve + u_hat, eq.sigma(x_t) * (grad_u_hat_x)+ z_breve)
         val2 = eq.f(x_t, u_hat, eq.sigma(x_t) * grad_u_hat_x)
-        # return val1 - val2
-        return val1-val2+epsilon #large version
+        return val1 - val2 #light version
     
     def g(self, x_t):
         '''
@@ -79,248 +66,240 @@ class ScaSML(object):
         # batch_size=x_t.shape[0]
         # self.evaluation_counter+=batch_size
         self.evaluation_counter+=1
-        # Convert input data to PyTorch tensor
-        tensor_x_t = torch.tensor(x_t, requires_grad=True).float()
+        tensor_x_t = torch.tensor(x_t, requires_grad=True)
+        u_hat = tensor_x_t.detach().clone().numpy()
         # tensor_x_t[:, -1] = self.T
-        # Compute the network output and convert it to numpy array
-        u_hat = self.net(tensor_x_t).detach().cpu().numpy()
         # Calculate the result of the terminal constraint function
-        result = eq.g(x_t) - u_hat[:, 0]
+        result = eq.g(x_t) - u_hat
         # if np.abs(result).any() > 0.5:
         #     print(f'g:{result}')
-        return result
+        return result[:,0]
     
     def inverse_gamma(self, gamma_input):
         '''
-        Computes the inverse of the gamma function for a given input.
+        Compute the inverse of the gamma function for the given input.
         
-        Parameters:
-            gamma_input (ndarray): Input array of shape (any,).
-        
+        Args:
+            gamma_input (array): Input values for which to compute the inverse gamma function, shape (n,).
+                
         Returns:
-            ndarray: The computed inverse gamma values of shape (any,).
+            array: The computed inverse gamma values, shape (n,).
         '''
-        # inverse gamma function
-        c = 0.036534 # avoid singularity
-        L = np.log((gamma_input+c) / np.sqrt(2 * np.pi)) 
-        return np.real(L / lambertw(L / np.e) + 0.5) # inverse gamma function
-    
+        c = 0.036534  # Constant to avoid singularity
+        L = jnp.log((gamma_input + c) / jnp.sqrt(2 * jnp.pi))  # Logarithm part of the inverse gamma function
+        return jnp.real(L / jnp.real(lambertw(L / jnp.e)) + 0.5)  # Compute and return the real part
+
     def lgwt(self, N, a, b):
         '''
         Computes the Legendre-Gauss nodes and weights for numerical integration.
         
-        Parameters:
-            N (int): Number of nodes.
-            a (float): Lower bound of the interval.
-            b (float): Upper bound of the interval.
-        
+        Args:
+            N (int): The number of nodes and weights to compute.
+            a (float): The lower bound of the integration interval.
+            b (float): The upper bound of the integration interval.
+                
         Returns:
-            tuple: Two ndarrays, the first of shape (N,) containing the nodes, and the second of shape (N,) containing the weights.
+            tuple: A tuple containing two arrays. The first array contains the nodes (shape: (N,)),
+                and the second array contains the weights (shape: (N,)).
         '''
-        # Legendre-Gauss nodes and weights
-        N -= 1 # truncation number
-        N1, N2 = N+1, N+2 # number of nodes and weights
-        xu = np.linspace(-1, 1, N1).reshape(1,-1) # uniform on [-1, 1], and transpose to row vector
-        y = np.cos((2 * np.arange(0, N+1, 1)+ 1) * np.pi / (2 * N + 2))+(0.27/N1) * np.sin(np.pi * xu * N / N2) # initial guess
-        L = np.zeros((N1, N2)) # Legendre-Gauss Vandermonde Matrix
-        Lp = np.zeros((N1, N2)) # Derivative of Legendre-Gauss Vandermonde Matrix
-        y0 = 2 
-        # compute the zeros of the N+1 Legendre Polynomial
-        # using the recursion relation and the Newton-Raphson method
-        while np.max(np.abs(y-y0)) > 2.2204e-16: # iterate until new points are uniformly within epsilon of old points
-            L[:, 0] = 1 
-            Lp[:, 0] = 0
-            L[:, 1] = y 
-            Lp[:, 1] = 1
-            for k in range(2, N1+1):
-                L[:, k] = ((2 * k -1)* y * L[:,k-1]-(k-1)*L[:, k-2]) / k
-            Lp = (N2) * (L[:, N1-1]-y * L[:, N2-1])/(1-y * y)
+        N -= 1  # Adjust N for zero-based indexing
+        N1, N2 = N + 1, N + 2  # Adjusted counts for nodes and weights
+        xu = jnp.linspace(-1, 1, N1).reshape(1, -1)  # Initial uniform nodes on [-1, 1], reshaped to row vector
+        # Initial guess for nodes using cosine transformation and correction term
+        y = jnp.cos((2 * jnp.arange(0, N + 1, 1) + 1) * jnp.pi / (2 * N + 2)) + (0.27 / N1) * jnp.sin(jnp.pi * xu * N / N2)
+        L = jnp.zeros((N1, N2))  # Initialize Legendre-Gauss Vandermonde Matrix
+        Lp = jnp.zeros((N1, N2))  # Initialize derivative of LG Vandermonde Matrix
+        y0 = 2  # Initial value for iteration comparison
+        # Iterative computation using Newton-Raphson method
+        eps = 2.2204e-16
+        iteration = 0
+        max_iter = 100
+        while jnp.max(jnp.abs(y - y0)) > eps and iteration < max_iter:
+            L = L.at[:, 0].set(1)
+            Lp = Lp.at[:, 0].set(0)
+            L = L.at[:, 1].set(y[0,0])
+            Lp = Lp.at[:, 1].set(1)
+            for k in range(2, N1 + 1):
+                L = L.at[:, k].set((((2 * k - 1) * y * L[:, k - 1] - (k - 1) * L[:, k - 2]) / k)[0])
+            Lp = (N2) * (L[:, N1 - 1] - y * L[:, N2 - 1]) / (1 - y * y)
             y0 = y
-            y = y0 - L[:, N2-1] / Lp
-        x = (a * (1-y) + b * (1+y)) / 2 # linear map from [-1, 1] to [a, b]
-        w = (b-a) / ((1-y*y) * Lp * Lp) * N2 * N2 / (N1 * N1) # compute weights
+            y = y0 - L[:, N2 - 1] / Lp
+            iteration += 1
+        x = (a * (1 - y) + b * (1 + y)) / 2  # Map nodes to [a, b]
+        w = (b - a) / ((1 - y * y) * (Lp * Lp)) * (N2 * N2) / (N1 * N1)  # Compute weights
         return x[0], w[0]
 
     def approx_parameters(self, rhomax):
         '''
-        Approximates parameters for the MLP based on the maximum level of refinement.
+        Approximates parameters for the multilevel Picard iteration.
         
-        Parameters:
+        Args:
             rhomax (int): Maximum level of refinement.
-        
+                
         Returns:
-            tuple: Five ndarrays, Mf of shape (rhomax, rhomax), Mg of shape (rhomax, rhomax+1), Q of shape (rhomax, rhomax), c of shape (qmax, qmax), and w of shape (qmax, qmax), where qmax is the maximum number of quadrature points across all levels.
+            tuple: A tuple containing matrices for forward Euler steps (Mf), backward Euler steps (Mg),
+                number of quadrature points (Q), quadrature points (c), and quadrature weights (w).
         '''
-        # approximate parameters for the MLP
-        levels = list(range(1, rhomax+1)) # level list
-        Q = np.zeros((rhomax, rhomax)) # number of quadrature points
-        Mf = np.zeros((rhomax, rhomax)) # number of forward Euler steps
-        Mg = np.zeros((rhomax, rhomax+1)) # number of backward Euler steps
-        for rho in range(1, rhomax+1):
-            for k in range(1, levels[rho-1]+1):
-                Q[rho-1][k-1] = round(self.inverse_gamma(rho ** (k/2))) # inverse gamma function
-                Mf[rho-1][k-1] = round(rho ** (k/2)) # forward Euler steps
-                Mg[rho-1][k-1] = round(rho ** (k-1)) # backward Euler steps
-            Mg[rho-1][rho] = rho ** rho # backward Euler steps
-        qmax = int(np.max(Q)) # maximum number of quadrature points
-        c = np.zeros((qmax, qmax)) # quadrature points
-        w = np.zeros((qmax, qmax)) # quadrature weights
-        for k in range(1, qmax+1):
-            ctemp, wtemp = self.lgwt(k, 0, self.T) # Legendre-Gauss nodes and weights
-            c[:, k-1] = np.concatenate([ctemp[::-1], np.zeros(qmax-k)]) # quadrature points
-            w[:, k-1] = np.concatenate([wtemp[::-1], np.zeros(qmax-k)]) # quadrature weights
+        levels = list(range(1, rhomax + 1))  # Level list
+        Q = jnp.zeros((rhomax, rhomax), dtype=int)  # Initialize matrix for number of quadrature points
+        Mf = jnp.zeros((rhomax, rhomax), dtype=int)  # Initialize matrix for forward Euler steps
+        Mg = jnp.zeros((rhomax, rhomax + 1), dtype=int)  # Initialize matrix for backward Euler steps
+        for rho in range(1, rhomax + 1):
+            for k in range(1, levels[rho - 1] + 1):
+                Q = Q.at[rho - 1, k - 1].set(int(jnp.round(self.inverse_gamma(rho ** (k / 2)))))
+                Mf = Mf.at[rho - 1, k - 1].set(int(jnp.round(rho ** (k / 2))))
+                Mg = Mg.at[rho - 1, k - 1].set(int(jnp.round(rho ** (k - 1))))
+            Mg = Mg.at[rho - 1, rho].set(rho ** rho)
+        qmax = int(jnp.max(Q))
+        c = jnp.zeros((qmax, qmax))
+        w = jnp.zeros((qmax, qmax))
+        for k in range(1, qmax + 1):
+            ctemp, wtemp = self.lgwt(k, 0, self.T)
+            c = c.at[:, k - 1].set(jnp.concatenate([ctemp[::-1], jnp.zeros(qmax - k)]))
+            w =   w.at[:, k - 1].set(jnp.concatenate([wtemp[::-1], jnp.zeros(qmax - k)]))
         return Mf, Mg, Q, c, w
-    def set_approx_parameters(self, rhomax):
-        '''
-        Sets the approximation parameters based on the maximum level of refinement.
-        
-        Parameters:
-            rhomax (int): Maximum level of refinement.
-        '''
-        # set the approximation parameters
-        self.Mf, self.Mg, self.Q, self.c, self.w = self.approx_parameters(rhomax)
-        
-    # @log_variables
+
     def uz_solve(self, n, rho, x_t):
         '''
-        Approximate the solution of the PDE, return the ndarray of u(x_t) and z(x_t) batchwisely.
-        
+        Approximate the solution of the PDE, return u(x_t) and z(x_t).
+
         Parameters:
-            n (int): The index of summands in quadratic sum.
-            rho (int): The current level.
-            x_t (ndarray): A batch of spatial-temporal coordinates, shape (batch_size, n_input).
-            
+            n (int): Current level.
+            rho (int): Number of quadrature points.
+            x_t (array): Spatial-temporal coordinates, shape (batch_size, n_input).
+
         Returns:
-            ndarray: The concatenated u and z values, shape (batch_size, 1+n_input-1).
+            array: Concatenated u and z values.
         '''
-        # Extract model parameters and dimensions
+        self.Mf, self.Mg, self.Q, self.c, self.w = self.approx_parameters(rho)  # Set approximation parameters
         Mf, Mg, Q, c, w = self.Mf, self.Mg, self.Q, self.c, self.w
-        T = self.T  # Terminal time
-        dim = self.n_input - 1  # Spatial dimensions
-        batch_size = x_t.shape[0]  # Batch size
-        sigma = self.sigma(x_t)  # Volatility, shape (batch_size, dim)
-        mu= self.mu(x_t) # drift
-        x = x_t[:, :-1]  # Spatial coordinates, shape (batch_size, dim)
-        t = x_t[:, -1]  # Temporal coordinates, shape (batch_size,)
-        f = self.f  # Generator term
-        g = self.g  # Terminal constraint
-        cloc = (T - t)[:, np.newaxis, np.newaxis] * c[np.newaxis, :] / T + t[:, np.newaxis, np.newaxis]  # Local time, shape (batch_size, 1, 1)
-        wloc = (T - t)[:, np.newaxis, np.newaxis] * w[np.newaxis, :] / T  # Local weights, shape (batch_size, 1, 1)
-        MC = int(Mg[rho - 1, n])  # Number of Monte Carlo samples for backward Euler
-        
+        eq = self.equation
+        T = self.T
+        dim = self.n_input - 1
+        batch_size = x_t.shape[0]
+        sigma = self.sigma(x_t)
+        mu = self.mu(x_t)
+        x = x_t[:, :-1]
+        t = x_t[:, -1]
+        f = self.f
+        g = self.g
+
+        cloc = (T - t)[:, jnp.newaxis, jnp.newaxis] * c[jnp.newaxis, :] / T + t[:, jnp.newaxis, jnp.newaxis]  # Local time, shape (batch_size, 1, 1)
+        wloc = (T - t)[:, jnp.newaxis, jnp.newaxis] * w[jnp.newaxis, :] / T  # Local weights, shape (batch_size, 1, 1)
+
+        MC = int(Mg[rho - 1, n])
+
+        self.key, subkey = random.split(self.key)
+        W_random = random.normal(subkey, shape=(batch_size, MC, dim))
         # Monte Carlo simulation
-        W = np.sqrt(T - t)[:, np.newaxis, np.newaxis] * np.random.normal(size=(batch_size, MC, dim))
-        X = np.repeat(x.reshape(x.shape[0], 1, x.shape[1]), MC, axis=1)
-        disturbed_X = X + mu*(T-t)[:, np.newaxis, np.newaxis]+ sigma * W  # Disturbed spatial coordinates, shape (batch_size, MC, dim)
-        
-        # Initialize arrays for terminal and difference calculations
-        terminals = np.zeros((batch_size, MC, 1))
-        differences = np.zeros((batch_size, MC, 1))
-        
-        # Calculate terminals and differences
-        for i in range(MC):
-            input_terminal = np.concatenate((X[:, i, :], np.full((batch_size, 1), T)), axis=1)
-            disturbed_input_terminal = np.concatenate((disturbed_X[:, i, :], np.full((batch_size, 1), T)), axis=1)
-            terminals[:, i, :] = g(input_terminal)[:, np.newaxis]
-            differences[:, i, :] = (g(disturbed_input_terminal) - g(input_terminal))[:, np.newaxis]
-        
-        # Calculate u and z
-        u = np.mean(differences + terminals, axis=1)
-        # if (T - t).any() == 0:
-        #     delta_t = (T - t + 1e-6)[:, np.newaxis]
-        #     z = np.sum(differences * W, axis=1) / (MC * delta_t)
-        # else:
-        #     z = np.sum(differences * W, axis=1) / (MC * (T - t)[:, np.newaxis])
-        delta_t = (T - t + 1e-6)[:, np.newaxis]
-        z = np.sum(differences * W, axis=1) / (MC * delta_t)
-        # Recursive calculation for n > 0
+        W = jnp.sqrt(T - t)[:, jnp.newaxis, jnp.newaxis] * W_random
+        self.evaluation_counter+=MC
+        X = jnp.repeat(x.reshape(x.shape[0], 1, x.shape[1]), MC, axis=1)
+        disturbed_X = X + mu*(T-t)[:, jnp.newaxis, jnp.newaxis]+ sigma * W  # Disturbed spatial coordinates, shape (batch_size, MC, dim)
+
+        input_terminal = jnp.concatenate((X, jnp.full((batch_size, MC, 1), T)), axis=2)
+        disturbed_input_terminal = jnp.concatenate((disturbed_X, jnp.full((batch_size, MC, 1), T)), axis=2)
+
+        input_terminal_flat = input_terminal.reshape(-1, self.n_input)
+        disturbed_input_terminal_flat = disturbed_input_terminal.reshape(-1, self.n_input)
+
+        terminals_flat = g(input_terminal_flat)
+        differences_flat = g(disturbed_input_terminal_flat) - terminals_flat
+
+        terminals = terminals_flat.reshape(batch_size, MC, 1)
+        differences = differences_flat.reshape(batch_size, MC, 1)
+
+        u = jnp.mean(differences + terminals, axis=1)
+        delta_t = (T - t + 1e-6)[:, jnp.newaxis]
+        z = jnp.sum(differences * W, axis=1) / (MC * delta_t)
+        cated_uz = jnp.concatenate((u, z), axis=-1)
+
+        # Recursive call for n > 0
         if n == 0:
-            # Convert the network output to numpy array
-            u_hat = self.net(torch.tensor(x_t, dtype=torch.float32)).detach().cpu().numpy()
-            tensor_x_t = torch.tensor(x_t, requires_grad=True).float()
-            tensor_u_hat=self.net(tensor_x_t)
-            # Compute the gradient of the network output with respect to inputs
-            tensor_grad_u_hat_x = torch.autograd.grad(tensor_u_hat, tensor_x_t, grad_outputs=torch.ones_like(tensor_u_hat), retain_graph=True, create_graph=True)[0][:, :-1]
-            grad_u_hat_x = tensor_grad_u_hat_x.detach().cpu().numpy()    
-            initial_value= np.concatenate((u_hat, grad_u_hat_x), axis=-1)        
-            return np.concatenate((u, z), axis=-1)+initial_value 
-        elif n <0:
-            return np.concatenate((u, z), axis=-1)
+            batch_size=x_t.shape[0]
+            tensor_x_t = torch.tensor(x_t, requires_grad=True)
+            u_hat = tensor_x_t.detach().clone().numpy()
+            tensor_grad_u_hat_x = torch.autograd.grad(u_hat, tensor_x_t, grad_outputs=torch.ones_like(u_hat), retain_graph=True, create_graph=True)[0][:,:-1]
+            grad_u_hat_x = tensor_grad_u_hat_x.detach().clone().numpy() 
+            initial_value= jnp.concatenate((u_hat, sigma* grad_u_hat_x), axis=-1)        
+            return initial_value 
+        elif n < 0:
+            return jnp.zeros_like(cated_uz)  # Return zeros if n < 0
+
         for l in range(n):
-            q = int(Q[rho - 1, n - l - 1])  # Number of quadrature points
-            d = cloc[:, :q, q - 1] - np.concatenate((t[:, np.newaxis], cloc[:, :q - 1, q - 1]), axis=1)  # Time step, shape (batch_size, q)
+            q = int(Q[rho - 1, n - l - 1])
+            d = cloc[:, :q, q-1] - jnp.concatenate((t[:, jnp.newaxis], cloc[:, :q - 1, q-1]), axis=1)
             MC = int(Mf[rho - 1, n - l - 1])
-            X = np.repeat(x.reshape(x.shape[0], 1, x.shape[1]), MC, axis=1)
-            W = np.zeros((batch_size, MC, dim))
-            simulated = np.zeros((batch_size, MC, dim + 1))
-            
-            # Simulate and calculate u, z for each quadrature point
+            X = jnp.repeat(x[:, jnp.newaxis, :], MC, axis=1)
+            W = jnp.zeros((batch_size, MC, dim))
+
             for k in range(q):
-                dW = np.sqrt(d[:, k])[:, np.newaxis, np.newaxis] * np.random.normal(size=(batch_size, MC, dim))
+                self.key, subkey = random.split(self.key)
+                dW_random = random.normal(subkey, shape=(batch_size, MC, dim))
+                dW = jnp.sqrt(d[:, k])[:, jnp.newaxis, jnp.newaxis] * dW_random
+                self.evaluation_counter += MC * dim
                 W += dW
-                X += mu*(d[:, k])[:,np.newaxis,np.newaxis]+sigma * dW
+                X += mu * d[:, k][:, jnp.newaxis, jnp.newaxis] + sigma * dW
+
                 co_solver_l = lambda X_t: self.uz_solve(n=l, rho=rho, x_t=X_t)
                 co_solver_l_minus_1 = lambda X_t: self.uz_solve(n=l - 1, rho=rho, x_t=X_t)
-                input_intermediates = np.zeros((batch_size, MC, dim + 1))
-                
-                for i in range(MC):
-                    input_intermediate = np.concatenate((X[:, i, :], cloc[:, k, q - 1][:, np.newaxis]), axis=1)
-                    simulated[:, i, :] = co_solver_l(input_intermediate)
-                    input_intermediates[:, i, :] = input_intermediate
-                
-                simulated_u, simulated_z = simulated[:, :, 0].reshape(batch_size, MC, 1), simulated[:, :, 1:]
-                y = np.array([f(input_intermediates[:, i, :], simulated_u[:, i, :], simulated_z[:, i, :]) for i in range(MC)])
-                y = y.transpose(1, 0, 2)
-                u += wloc[:, k, q - 1][:, np.newaxis] * np.mean(y, axis=1)
-                # if (cloc[:, k, q - 1] - t).any() == 0:
-                #     delta_t = (cloc[:, k, q - 1] - t + 1e-6)[:, np.newaxis]
-                #     z += wloc[:, k, q - 1][:, np.newaxis] * np.sum(y * W, axis=1) / (MC * delta_t)
-                # else:
-                #     z += wloc[:, k, q - 1][:, np.newaxis] * np.sum(y * W, axis=1) / (MC * (cloc[:, k, q - 1] - t)[:, np.newaxis])
-                delta_t = (cloc[:, k, q - 1] - t + 1e-6)[:, np.newaxis]
-                z += wloc[:, k, q - 1][:, np.newaxis] * np.sum(y * W, axis=1) / (MC * delta_t)                
-                
-                # Adjust u, z based on previous level if l > 0
-                if l:
-                    input_intermediates = np.zeros((batch_size, MC, dim + 1))
-                    for i in range(MC):
-                        input_intermediate = np.concatenate((X[:, i, :], cloc[:, k, q - 1][:, np.newaxis]), axis=1)
-                        simulated[:, i, :] = co_solver_l_minus_1(input_intermediate)
-                        input_intermediates[:, i, :] = input_intermediate
-                    
-                    simulated_u, simulated_z = simulated[:, :, 0].reshape(batch_size, MC, 1), simulated[:, :, 1:]
-                    y = np.array([f(input_intermediates[:, i, :], simulated_u[:, i, :], simulated_z[:, i, :]) for i in range(MC)])
-                    y = y.transpose(1, 0, 2)
-                    u -= wloc[:, k, q - 1][:, np.newaxis] * np.mean(y, axis=1)
-                    # if (cloc[:, k, q - 1] - t).any() == 0:
-                    #     delta_t = (cloc[:, k, q - 1] - t + 1e-6)[:, np.newaxis]
-                    #     z -= wloc[:, k, q - 1][:, np.newaxis] * np.sum(y * W, axis=1) / (MC * delta_t)
-                    # else:
-                    #     z -= wloc[:, k, q - 1][:, np.newaxis] * np.sum(y * W, axis=1) / (MC * (cloc[:, k, q - 1] - t)[:, np.newaxis])
-                    delta_t = (cloc[:, k, q - 1] - t + 1e-6)[:, np.newaxis]
-                    z -= wloc[:, k, q - 1][:, np.newaxis] * np.sum(y * W, axis=1) / (MC * delta_t)
-        return np.concatenate((u, z), axis=-1)
+
+                input_intermediates = jnp.concatenate((X, jnp.repeat(cloc[:, k, q - 1][:, jnp.newaxis,jnp.newaxis],MC,axis=1)), axis=2)
+                input_intermediates_flat = input_intermediates.reshape(-1, self.n_input)
+
+                simulated_flat = co_solver_l(input_intermediates_flat)
+                simulated = simulated_flat.reshape(batch_size, MC, -1)
+                simulated_u = simulated[:, :, 0].reshape(batch_size, MC, 1)
+                simulated_z = simulated[:, :, 1:]
+
+                simulated_u_flat = simulated_u.reshape(-1, 1)
+                simulated_z_flat = simulated_z.reshape(-1, dim)
+                y_flat = f(input_intermediates_flat, simulated_u_flat, simulated_z_flat)
+                y = y_flat.reshape(batch_size, MC, 1)
+
+                u += wloc[:, k, q - 1][:, jnp.newaxis] * jnp.mean(y, axis=1)
+                delta_t = (cloc[:, k, q - 1] - t + 1e-6)[:, jnp.newaxis]
+                z += wloc[:, k, q - 1][:, jnp.newaxis] * jnp.sum(y * W, axis=1) / (MC * delta_t) 
+
+                if l :
+                    input_intermediates = jnp.concatenate((X, jnp.repeat(cloc[:, k, q-1][:, jnp.newaxis, jnp.newaxis],MC,axis=1)), axis=2)
+                    input_intermediates_flat = input_intermediates.reshape(-1, self.n_input)
+
+                    simulated_flat = co_solver_l_minus_1(input_intermediates_flat)
+                    simulated = simulated_flat.reshape(batch_size, MC, -1)
+                    simulated_u = simulated[:, :, 0].reshape(batch_size, MC, 1)
+                    simulated_z = simulated[:, :, 1:]
+
+                    simulated_u_flat = simulated_u.reshape(-1, 1)
+                    simulated_z_flat = simulated_z.reshape(-1, dim)
+                    y_flat = f(input_intermediates_flat, simulated_u_flat, simulated_z_flat)
+                    y = y_flat.reshape(batch_size, MC, 1)
+
+                    u -= wloc[:, k, q - 1][:, jnp.newaxis] * jnp.mean(y, axis=1)
+                    delta_t = (cloc[:, k, q - 1] - t + 1e-6)[:, jnp.newaxis]
+                    z -= wloc[:, k, q - 1][:, jnp.newaxis] * jnp.sum(y * W, axis=1) / (MC * delta_t)
+        output_uz = jnp.concatenate((u, z), axis=-1)
+        uncertainty = self.equation.uncertainty
+        # Clip output_uz to avoid large values
+        return jnp.clip(output_uz, -uncertainty, uncertainty)
 
     def u_solve(self, n, rho, x_t):
         '''
-        Approximate the solution of the PDE, return the ndarray of u(x_t) only.
-        
+        Approximate the solution of the PDE, return u(x_t) only.
+
         Parameters:
-            n (int): The number of backward Euler samples needed.
-            rho (int): The current level.
-            x_t (ndarray): A batch of spatial-temporal coordinates, shape (batch_size, n_input).
-            
+            n (int): Index of summands in quadratic sum.
+            rho (int): Current level.
+            x_t (array): Spatial-temporal coordinates.
+
         Returns:
-            ndarray: The u values, shape (batch_size,1).
+            array: u values.
         '''
+        eq = self.equation
         # Calculate u_breve and z_breve using uz_solve
         u_breve_z_breve = self.uz_solve(n, rho, x_t)
-        u_breve, z_breve = u_breve_z_breve[:, 0], u_breve_z_breve[:, 1:]
+        u_breve = u_breve_z_breve[:, 0][:, jnp.newaxis]
         
-        # Convert x_t to tensor and calculate u_hat using the neural network
-        tensor_x_t = torch.tensor(x_t, requires_grad=True).float()
-        u_hat = self.net(tensor_x_t).detach().cpu().numpy()[:, 0]
+        u_hat = self.PINN.predict(x_t)
         
-        # Calculate and return the final u value
-        u = u_breve + u_hat
-        return u
+        return u_hat + u_breve

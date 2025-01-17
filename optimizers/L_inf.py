@@ -96,7 +96,7 @@ class L_inf(object):
             tensor_domain_points[:, -1] = torch.clamp(tensor_domain_points[:, -1], eq.t0, eq.T)
             tensor_boundary_points.requires_grad = True
             prediction_boundary = net(tensor_boundary_points)
-            if eq.__class__.__name__ == "Complicated_HJB" or "Explicit_Solution_Example":
+            if eq.__class__.__name__ == "Linear_HJB" or "Grad_Dependent_Nonlinear":
                 loss_boundary = torch.mean((prediction_boundary - torch.tensor(eq.terminal_constraint(boundary_points), requires_grad=True)) ** 2)
             elif eq.__class__.__name__ == "Neummann_Boundary":
                 loss_boundary = torch.mean((prediction_boundary - torch.tensor(eq.Neumann_boundary_constraint(boundary_points), requires_grad=True)) ** 2)
@@ -104,9 +104,9 @@ class L_inf(object):
             grad_boundary = torch.autograd.grad(loss_boundary, tensor_boundary_points)[0]
             tensor_boundary_points = tensor_boundary_points.detach() + eta * torch.sign(grad_boundary.detach())
             tensor_boundary_points[:, -1] = torch.clamp(tensor_boundary_points[:, -1], eq.t0, eq.T)
-        return tensor_domain_points.detach().cpu().numpy(), tensor_boundary_points.detach().cpu().numpy()
+        return tensor_domain_points.detach().clone().numpy(), tensor_boundary_points.detach().clone().numpy()
     
-    def train(self, save_path, cycle=1, domain_anchors=100, boundary_anchors=100, adam_every=5000, metrics=["l2 relative error", "mse"]):
+    def train(self, save_path, cycle=2, domain_anchors=100, boundary_anchors=100, adam_every=5000, metrics=["l2 relative error", "mse"]):
         '''Trains the model using an interleaved training strategy of Adam and LBFGS optimizers.
         
         Args:
@@ -122,7 +122,7 @@ class L_inf(object):
         '''
         eq = self.equation
         # Interleaved training of Adam and LBFGS
-        if eq.__class__.__name__ == "Complicated_HJB" or "Explicit_Solution_Example":
+        if eq.__class__.__name__ == "Linear_HJB" or "Grad_Dependent_Nonlinear":
             loss_weights = [1e-3] * (self.n_input - 1) + [1] + [1e-2] 
         elif eq.__class__.__name__ == "Neumann_Boundary":
             loss_weights = [1e-3] * (self.n_input - 1) + [1] + [1e-2]*2
