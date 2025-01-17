@@ -69,7 +69,7 @@ class Adam_LBFGS(object):
         wandb.config.update({"LBFGS lr": lr, "LBFGS max_iter": max_iter, "LBFGS tolerance_change": tolerance_change, "LBFGS tolerance_grad": tolerance_grad})  # Record hyperparameters
         return lbfgs
 
-    def train(self, save_path, cycle=10, adam_every=500, lbfgs_every=10, metrics=["l2 relative error", "mse"]):
+    def train(self, save_path, cycle=4, adam_every=100, lbfgs_every=10, metrics=["l2 relative error", "mse"]):
         '''Trains the model using an interleaved strategy of Adam and LBFGS optimizers.
         
         Args:

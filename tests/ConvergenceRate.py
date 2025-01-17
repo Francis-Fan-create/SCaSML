@@ -47,7 +47,7 @@ class ConvergenceRate(object):
         self.T = equation.T  # equation.T: float
         self.is_train = is_train
 
-    def test(self, save_path, rhomax=2, train_sizes_domain=[10, 20, 30, 40, 50, 60, 70, 80, 90, 100], train_sizes_boundary=[10, 20, 30, 40, 50, 60, 70, 80, 90, 100]):
+    def test(self, save_path, rhomax=2, train_sizes_domain=[10, 20, 30, 40, 50, 60, 70, 80, 90, 100]):
         '''
         Compares solvers on different training iterations.
     
@@ -57,7 +57,6 @@ class ConvergenceRate(object):
         opt2 (object): The second optimizer object.
         rhomax (int): The fixed value of rho for approximation parameters.
         train_sizes_domain (list): The list of training sizes for the domain.
-        train_sizes_boundary (list): The list of training sizes for the boundary.
         '''
         # Initialize the profiler
         profiler = cProfile.Profile()
@@ -98,9 +97,8 @@ class ConvergenceRate(object):
         if is_train:
             for j in range(list_len):
                 domain_size_j = train_sizes_domain[j]
-                boundary_size_j = train_sizes_boundary[j]
                 #train the model
-                data = eq.generate_data(domain_size_j, boundary_size_j)
+                data = eq.generate_data(domain_size_j)
                 opt1 = Adam_LBFGS(eq.n_input,1, self.solver1, data, eq)
                 trained_model1=opt1.train(f"{save_path}/model_weights_Adam_LBFGS.params")
                 trained_net1= trained_model1.net
@@ -110,7 +108,7 @@ class ConvergenceRate(object):
                 self.solver1 = trained_net2
                 self.solver3.PINN = trained_net2
                 # Predict with solver1
-                sol1 = self.solver1(torch.tensor(xt_values, dtype=torch.float32)).detach().clone().numpy()[:, 0]
+                sol1 = self.solver1(torch.tensor(xt_values, dtype=torch.float32)).detach().cpu().numpy()[:, 0]
             
                 # # Solve with solver2 (baseline solver)
                 # sol2 = self.solver2.u_solve(rhomax, rhomax, xt_values)

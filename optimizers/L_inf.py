@@ -104,9 +104,9 @@ class L_inf(object):
             grad_boundary = torch.autograd.grad(loss_boundary, tensor_boundary_points)[0]
             tensor_boundary_points = tensor_boundary_points.detach() + eta * torch.sign(grad_boundary.detach())
             tensor_boundary_points[:, -1] = torch.clamp(tensor_boundary_points[:, -1], eq.t0, eq.T)
-        return tensor_domain_points.detach().clone().numpy(), tensor_boundary_points.detach().clone().numpy()
+        return tensor_domain_points.detach().cpu().numpy(), tensor_boundary_points.detach().cpu().numpy()
     
-    def train(self, save_path, cycle=2, domain_anchors=100, boundary_anchors=100, adam_every=5000, metrics=["l2 relative error", "mse"]):
+    def train(self, save_path, cycle=2, domain_anchors=100, boundary_anchors=100, adam_every=100, metrics=["l2 relative error", "mse"]):
         '''Trains the model using an interleaved training strategy of Adam and LBFGS optimizers.
         
         Args:

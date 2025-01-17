@@ -105,8 +105,7 @@ class NormalSphere(object):
         # Train solver
         if is_train:
             domain_size = 100
-            boundary_size = 100
-            data = eq.generate_data(domain_size, boundary_size)
+            data = eq.generate_data(domain_size)
             opt1 = Adam_LBFGS(eq.n_input,1, self.solver1, data, eq)
             trained_model1=opt1.train(f"{save_path}/model_weights_Adam_LBFGS.params")
             trained_net1= trained_model1.net
@@ -128,7 +127,7 @@ class NormalSphere(object):
 
                 # Predict with solver1
                 start = time.time()
-                sol1 = self.solver1(torch.tensor(xt_values, dtype=torch.float32)).detach().clone().numpy()[:, 0]
+                sol1 = self.solver1(torch.tensor(xt_values, dtype=torch.float32)).detach().cpu().numpy()[:, 0]
                 time1 += time.time() - start
 
                 # Measure the time for solver2

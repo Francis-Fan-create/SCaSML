@@ -1,0 +1,10 @@
+numpy
+matplotlib
+scipy
+torch
+tqdm
+wandb
+deepxde
+jax[cuda12]
+optax
+flax

@@ -77,13 +77,11 @@ class SimpleUniform(object):
         # Train solver
         if is_train:
             domain_size = 100
-            boundary_size = 100
-            data = eq.generate_data(domain_size, boundary_size)
-            opt1 = Adam_LBFGS(eq.n_input,1, self.solver1, data, eq)
-            trained_model1=opt1.train(f"{save_path}/model_weights_Adam_LBFGS.params")
+            opt1 = Adam_LBFGS(eq.n_input,1, self.solver1, eq.generate_data(domain_size), eq)
+            trained_model1= opt1.train(f"{save_path}/model_weights_Adam_LBFGS.params")
             trained_net1= trained_model1.net
-            opt2 = L_inf(eq.n_input,1, trained_net1, data, eq)
-            trained_model2=opt2.train(f"{save_path}/model_weights_L_inf.params")
+            opt2 = L_inf(eq.n_input,1, trained_net1, eq.generate_data(domain_size), eq)
+            trained_model2= opt2.train(f"{save_path}/model_weights_L_inf.params")
             trained_net2= trained_model2.net
             self.solver1 = trained_net2
             self.solver3.PINN = trained_net2            
@@ -104,7 +102,7 @@ class SimpleUniform(object):
         # Measure the time and predict using solver1
         print("Predicting with solver1 on test data...")
         start = time.time()
-        sol1 = self.solver1(torch.tensor(xt_test, dtype=torch.float32)).detach().clone().numpy()[:, 0]
+        sol1 = self.solver1(torch.tensor(xt_test, dtype=torch.float32)).detach().cpu().numpy()[:, 0]
         time1 += time.time() - start
     
         # Measure the time and predict using solver2

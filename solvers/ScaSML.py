@@ -44,9 +44,9 @@ class ScaSML:
         # self.evaluation_counter+=batch_size
         self.evaluation_counter+=1
         tensor_x_t = torch.tensor(x_t, requires_grad=True)
-        u_hat = tensor_x_t.detach().clone().numpy()
+        u_hat = tensor_x_t.detach().cpu().numpy()
         tensor_grad_u_hat_x = torch.autograd.grad(u_hat, tensor_x_t, grad_outputs=torch.ones_like(u_hat), retain_graph=True, create_graph=True)[0][:,:-1]
-        grad_u_hat_x = tensor_grad_u_hat_x.detach().clone().numpy()
+        grad_u_hat_x = tensor_grad_u_hat_x.detach().cpu().numpy()
         # Calculate the values for the generator function
         val1 = eq.f(x_t, u_breve + u_hat, eq.sigma(x_t) * (grad_u_hat_x)+ z_breve)
         val2 = eq.f(x_t, u_hat, eq.sigma(x_t) * grad_u_hat_x)
@@ -67,7 +67,7 @@ class ScaSML:
         # self.evaluation_counter+=batch_size
         self.evaluation_counter+=1
         tensor_x_t = torch.tensor(x_t, requires_grad=True)
-        u_hat = tensor_x_t.detach().clone().numpy()
+        u_hat = tensor_x_t.detach().cpu().numpy()
         # tensor_x_t[:, -1] = self.T
         # Calculate the result of the terminal constraint function
         result = eq.g(x_t) - u_hat
@@ -218,9 +218,9 @@ class ScaSML:
         if n == 0:
             batch_size=x_t.shape[0]
             tensor_x_t = torch.tensor(x_t, requires_grad=True)
-            u_hat = tensor_x_t.detach().clone().numpy()
+            u_hat = tensor_x_t.detach().cpu().numpy()
             tensor_grad_u_hat_x = torch.autograd.grad(u_hat, tensor_x_t, grad_outputs=torch.ones_like(u_hat), retain_graph=True, create_graph=True)[0][:,:-1]
-            grad_u_hat_x = tensor_grad_u_hat_x.detach().clone().numpy() 
+            grad_u_hat_x = tensor_grad_u_hat_x.detach().cpu().numpy() 
             initial_value= jnp.concatenate((u_hat, sigma* grad_u_hat_x), axis=-1)        
             return initial_value 
         elif n < 0:

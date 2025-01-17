@@ -52,7 +52,6 @@ if os.path.exists(r"results/Linear_HJB/250d/model_weights_L_inf.params"):
     trained_net=net
     is_train = False
 else:
-    data=equation.generate_data()
     #initialize the FNN
     layers=[251]+[50]*5+[1]
     net=FNN(layers,equation)
@@ -62,7 +61,7 @@ else:
 #initialize the normal sphere test
 solver1= net #PINN network
 solver2=MLP(equation=equation) #Multilevel Picard object
-solver3=ScaSML(equation=equation,net=solver1) #ScaSML object
+solver3=ScaSML(equation=equation,PINN=solver1) #ScaSML object
 
 
 #run the test for NormalSphere
