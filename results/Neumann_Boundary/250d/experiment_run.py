@@ -47,11 +47,11 @@ if os.path.exists(r"results/Neumann_Boundary/250d/model_weights_L_inf.params"):
     #load the model
     net=dde.nn.jax.FNN([251]+[50]*5+[1], "tanh", "Glorot normal")
     net.restore(r"results/Neumann_Boundary/250d/model_weights_L_inf.params")
-    trained_net=net
+    # set is_train to False
     is_train = False
 else:
     #initialize the FNN
-    layers=[251]+[50]*5+[1]
+    #same layer width
     net=dde.nn.jax.FNN([251]+[50]*5+[1], "tanh", "Glorot normal")
     is_train = True
 

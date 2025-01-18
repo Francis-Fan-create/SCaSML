@@ -47,11 +47,11 @@ if os.path.exists(r"results/Grad_Dependent_Nonlinear/100d/model_weights_L_inf.pa
     #load the model
     net=dde.nn.jax.FNN([101]+[50]*5+[1], "tanh", "Glorot normal")
     net.restore(r"results/Grad_Dependent_Nonlinear/100d/model_weights_L_inf.params")
-    trained_net=net
+    # set is_train to False
     is_train = False
 else:
     #initialize the FNN
-    layers=[101]+[50]*5+[1]
+    #same layer width
     net=dde.nn.jax.FNN([101]+[50]*5+[1], "tanh", "Glorot normal")
     is_train = True
 
