@@ -51,18 +51,18 @@ class L_inf(object):
         eta = 1 / refinement_num
         domain_points = geom.random_points(domain_anchors)
         boundary_points = geom.random_boundary_points(boundary_anchors)
-        domain_points = jnp.array(domain_points)
-        boundary_points = jnp.array(boundary_points)
-        net = self.net
         eq = self.equation
+        model = self.model
         
         # Placeholder approach: demonstrate how to move domain_points with sign of gradient
         # In practice, you'd construct a jax.grad-compatible PDE_loss
         for _ in range(refinement_num):
             # PDE gradient for domain
             def domain_loss_fn(pts):
-                preds = net(pts)
-                return jnp.mean(eq.PDE_loss(pts, preds, None))
+                pts = jnp.asarray(pts)
+                preds = model.predict(pts)
+                preds = jnp.asarray(pts)
+                return jnp.mean(eq.PDE_loss(pts, preds))
             
             grad_domain = jax.grad(domain_loss_fn)(domain_points)
             domain_points = domain_points + eta * jnp.sign(grad_domain)
@@ -71,8 +71,8 @@ class L_inf(object):
             )
             # PDE gradient for boundary
             def boundary_loss_fn(pts):
-                preds = net(pts)
-                cons = jnp.array(eq.terminal_constraint(np.array(pts)))
+                preds = model.predict(pts)
+                cons = jnp.array(eq.terminal_constraint(pts))
                 return jnp.mean((preds - cons) ** 2)
             grad_boundary = jax.grad(boundary_loss_fn)(boundary_points)
             boundary_points = boundary_points + eta * jnp.sign(grad_boundary)
@@ -110,7 +110,8 @@ class L_inf(object):
             # Use compiled model with Adam
             self.model.compile("adam", lr=1e-2, metrics=metrics, loss_weights=loss_weights)
             # This .train call is assumed to be jax-friendly in the new dde version
-            self.model.train(iterations=adam_every, display_every=10, model_save_path=save_path)
+            loss_history, train_state= self.model.train(iterations=adam_every, display_every=10)
+            dde.saveplot(loss_history, train_state, issave=True, isplot=True,output_dir=save_path)
             for idx, loss_val in enumerate(self.model.train_state.loss_train, start=1):
                 wandb.log({f"Adam loss_{idx}": loss_val})
             for idx, metric_val in enumerate(self.model.train_state.metrics_test, start=1):

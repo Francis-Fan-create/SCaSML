@@ -23,7 +23,7 @@ import jax
 
 #fix random seed for dde
 dde.config.set_random_seed(1234)
-#use pytorch backend
+#use jax backend
 dde.backend.set_default_backend('jax')
 # fix random seed for jax
 jax.random.PRNGKey(0)
@@ -42,17 +42,19 @@ wandb.config.update({"device": device}) # record device type
 #initialize the equation
 equation=Grad_Dependent_Nonlinear(n_input=101,n_output=1)
 #check if trained model is already saved
-if os.path.exists(r"results/Grad_Dependent_Nonlinear/100d/model_weights_L_inf.params"):
+if os.path.exists(r"results/Grad_Dependent_Nonlinear/100d/model.ckpt-?"):
     '''To Do: Retrain the model with new data points& Try new methods to reduce errors'''
     #load the model
-    net=dde.nn.jax.FNN([101]+[50]*5+[1], "tanh", "Glorot normal")
-    net.restore(r"results/Grad_Dependent_Nonlinear/100d/model_weights_L_inf.params")
+    net=dde.maps.jax.FNN([101]+[50]*5+[1], "tanh", "Glorot normal")
+    data = equation.generate_data()
+    model = dde.Model(data,net)
+    model.restore(r"results/Grad_Dependent_Nonlinear/100d/model.ckpt-?",verbose=1)
     # set is_train to False
     is_train = False
 else:
     #initialize the FNN
     #same layer width
-    net=dde.nn.jax.FNN([101]+[50]*5+[1], "tanh", "Glorot normal")
+    net=dde.maps.jax.FNN([101]+[50]*5+[1], "tanh", "Glorot normal")
     is_train = True
 
 

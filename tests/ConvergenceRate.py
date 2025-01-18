@@ -101,10 +101,10 @@ class ConvergenceRate(object):
                 #train the model
                 data = eq.generate_data(domain_size_j)
                 opt1 = Adam(eq.n_input,1, self.solver1, data, eq)
-                trained_model1=opt1.train(f"{save_path}/model_weights_Adam_LBFGS.params")
+                trained_model1=opt1.train(f"{save_path}/model_weights_Adam")
                 trained_net1= trained_model1.net
                 opt2 = L_inf(eq.n_input,1, trained_net1, data, eq)
-                trained_model2=opt2.train(f"{save_path}/model_weights_L_inf.params")
+                trained_model2=opt2.train(f"{save_path}/model_weights_L_inf")
                 trained_net2= trained_model2.net
                 self.solver1 = trained_net2
                 self.solver3.PINN = trained_net2
@@ -135,7 +135,7 @@ class ConvergenceRate(object):
             epsilon = 1e-10  # To avoid log(0)
 
             domain_sizes = jnp.array(train_sizes_domain)
-            train_sizes = domain_sizes * 640
+            train_sizes = domain_sizes * 2200
             error1_array = jnp.array(error1_list)
             # error2_array = jnp.array(error2_list)
             error3_array = jnp.array(error3_list)

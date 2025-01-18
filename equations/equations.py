@@ -40,19 +40,6 @@ class Equation(object):
         """
         raise NotImplementedError
 
-    def gPDE_loss(self, x_t, u):
-        """
-        gPINN loss in the PDE, used for training.
-        
-        Args:
-            x_t (tensor): The input data, shape (n_samples, n_input).
-            u (tensor): The solution, shape (n_samples, n_output).
-            
-        Raises:
-            NotImplementedError: This is a placeholder method.
-        """
-        raise NotImplementedError
-
     def terminal_constraint(self, x_t):
         """
         Terminal constraint in the PDE.
@@ -332,51 +319,26 @@ class Grad_Dependent_Nonlinear(Equation):
         super().__init__(n_input, n_output)
         self.uncertainty = 1e-1
     
-    def PDE_loss(self, x_t,u,z):
+    def PDE_loss(self, x_t,u):
         '''
         Calculates the PDE loss for given inputs.
         
         Parameters:
         - x_t (tensor): Input tensor of shape (batch_size, n_input), where n_input includes the time dimension.
         - u (tensor): Output tensor of shape (batch_size, n_output), representing the solution of the PDE.
-        - z (tensor): Tensor of shape (batch_size, n_input-1), representing gradients of u w.r.t. x.
         
         Returns:
         - residual (tensor): The residual of the PDE of shape (batch_size, n_output).
         '''
-        du_t = dde.grad.jacobian(u,x_t,i=0,j=self.n_input-1) # Computes the time derivative of u.
+        du_t = dde.grad.jacobian(u,x_t,i=0,j=self.n_input-1)[0] # Computes the time derivative of u.
         laplacian=0
         div=0
         for k in range(self.n_input-1): # Accumulates laplacian and divergence over spatial dimensions.
-            laplacian +=dde.grad.jacobian(z, x_t, i=k, j=k) # Computes the laplacian of z.
-            div += dde.grad.jacobian(u, x_t, i=0, j=k) # Computes the divergence of u.
-        residual=du_t + (self.sigma()**2 * u - 1/(self.n_input-1) - self.sigma()**2/2) * div+ self.sigma()**2/2 * laplacian
-        return residual 
-    
-    def gPDE_loss(self, x_t,u):
-        '''
-        Calculates the generalized PDE loss using the gPINN approach.
-        
-        Parameters:
-        - x_t (tensor): Input tensor of shape (batch_size, n_input), where n_input includes the time dimension.
-        - u (tensor): Output tensor of shape (batch_size, n_output), representing the solution of the PDE.
-        
-        Returns:
-        - g_loss (list of tensor): List of gradients of the residual for gPINN loss, with the last element being the residual itself.
-        '''
-        du_t = dde.grad.jacobian(u,x_t,i=0,j=self.n_input-1) # Computes the time derivative of u.
-        laplacian=0
-        div=0
-        for k in range(self.n_input-1): # Accumulates laplacian and divergence over spatial dimensions.
-            laplacian +=dde.grad.hessian(u, x_t, i=k, j=k) # Computes the laplacian of u.
-            div += dde.grad.jacobian(u, x_t, i=0, j=k) # Computes the divergence of u.
-        residual=du_t + (self.sigma()**2 * u - 1/(self.n_input-1) - self.sigma()**2/2) * div + self.sigma()**2/2 * laplacian
-        g_loss=[]
-        for k in range(self.n_input-1): # Accumulates gradients of the residual for gPINN loss.
-            g_loss.append(0.01*dde.grad.jacobian(residual,x_t,i=0,j=k)) # Computes gradient penalty.
-        g_loss.append(residual) # Adds the residual to the loss.
-        return g_loss
-    
+            laplacian +=dde.grad.hessian(u, x_t, i=k, j=k)[0] # Computes the laplacian of z.
+            div += dde.grad.jacobian(u, x_t, i=0, j=k)[0] # Computes the divergence of u.
+        residual=du_t + (self.sigma()**2 * u[0] - 1/(self.n_input-1) - self.sigma()**2/2) * div + self.sigma()**2/2* laplacian
+        return residual
+
     @partial(jit,static_argnames=["self"])
     def terminal_constraint(self, x_t):
         '''
@@ -487,7 +449,7 @@ class Grad_Dependent_Nonlinear(Equation):
         self.terminal_condition() # Generates terminal condition.
         data = dde.data.TimePDE(
                                 geom, # Geometry of the domain.
-                                self.gPDE_loss, # gPDE loss function.
+                                self.PDE_loss, # PDE loss function.
                                 [self.tc], # Additional conditions.
                                 num_domain=num_domain, # Number of domain points.
                                 num_boundary=0, # Number of boundary points.
@@ -511,52 +473,26 @@ class Linear_HJB(Equation):
         super().__init__(n_input, n_output)
         self.uncertainty = 5e-1
     
-    def PDE_loss(self, x_t,u,z):
+    def PDE_loss(self, x_t,u):
         '''
         Calculates the PDE loss for given inputs.
         
         Parameters:
         - x_t (tensor): Input tensor of shape (batch_size, n_input), where n_input includes the time dimension.
         - u (tensor): Output tensor of shape (batch_size, n_output), representing the solution of the PDE.
-        - z (tensor): Tensor of shape (batch_size, n_input-1), representing gradients of u w.r.t. x.
         
         Returns:
         - residual (tensor): The residual of the PDE of shape (batch_size, n_output).
         '''
-        du_t = dde.grad.jacobian(u,x_t,i=0,j=self.n_input-1) # Computes the time derivative of u.
+        du_t = dde.grad.jacobian(u,x_t,i=0,j=self.n_input-1)[0] # Computes the time derivative of u.
         laplacian=0
         div=0
         dim=self.n_input-1
         for k in range(self.n_input-1): # Accumulates laplacian and divergence over spatial dimensions.
-            laplacian +=dde.grad.jacobian(z, x_t, i=k, j=k) # Computes the laplacian of z.
-            div += dde.grad.jacobian(u, x_t, i=0, j=k) # Computes the divergence of u.
+            laplacian +=dde.grad.hessian(u, x_t, i=k, j=k)[0] # Computes the laplacian of z.
+            div += dde.grad.jacobian(u, x_t, i=0, j=k)[0] # Computes the divergence of u.
         residual=du_t -(1/dim)*div+2+laplacian # Computes the residual of the PDE.
         return residual 
-    
-    def gPDE_loss(self, x_t,u):
-        '''
-        Calculates the generalized PDE loss using the gPINN approach.
-        
-        Parameters:
-        - x_t (tensor): Input tensor of shape (batch_size, n_input), where n_input includes the time dimension.
-        - u (tensor): Output tensor of shape (batch_size, n_output), representing the solution of the PDE.
-        
-        Returns:
-        - g_loss (list of tensor): List of gradients of the residual for gPINN loss, with the last element being the residual itself.
-        '''
-        du_t = dde.grad.jacobian(u,x_t,i=0,j=self.n_input-1) # Computes the time derivative of u.
-        laplacian=0
-        div=0
-        dim=self.n_input-1
-        for k in range(self.n_input-1): # Accumulates laplacian and divergence over spatial dimensions.
-            laplacian +=dde.grad.hessian(u, x_t, i=k, j=k) # Computes the laplacian of u.
-            div += dde.grad.jacobian(u, x_t, i=0, j=k) # Computes the divergence of u.
-        residual=du_t -(1/dim)*div+2+laplacian
-        g_loss=[]
-        for k in range(self.n_input-1): # Accumulates gradients of the residual for gPINN loss.
-            g_loss.append(0.01*dde.grad.jacobian(residual,x_t,i=0,j=k)) # Computes gradient penalty.
-        g_loss.append(residual) # Adds the residual to the loss.
-        return g_loss
     
     @partial(jit,static_argnames=["self"])
     def terminal_constraint(self, x_t):
@@ -667,7 +603,7 @@ class Linear_HJB(Equation):
         self.terminal_condition() # Generates terminal condition.
         data = dde.data.TimePDE(
                                 geom, # Geometry of the domain.
-                                self.gPDE_loss, # gPDE loss function.
+                                self.PDE_loss, # gPDE loss function.
                                 [self.tc], # Additional conditions.
                                 num_domain=num_domain, # Number of domain points.
                                 num_boundary=0, # Number of boundary points.
@@ -691,50 +627,25 @@ class Neumann_Boundary(Equation):
         super().__init__(n_input, n_output)
         self.uncertainty = 1e-1
     
-    def PDE_loss(self, x_t,u,z):
+    def PDE_loss(self, x_t,u):
         '''
         Calculates the PDE loss for given inputs.
         
         Parameters:
         - x_t (tensor): Input tensor of shape (batch_size, n_input), where n_input includes the time dimension.
         - u (tensor): Output tensor of shape (batch_size, n_output), representing the solution of the PDE.
-        - z (tensor): Tensor of shape (batch_size, n_input-1), representing gradients of u w.r.t. x.
         
         Returns:
         - residual (tensor): The residual of the PDE of shape (batch_size, n_output).
         '''
-        du_t = dde.grad.jacobian(u,x_t,i=0,j=self.n_input-1) # Computes the time derivative of u.
+        du_t = dde.grad.jacobian(u,x_t,i=0,j=self.n_input-1)[0] # Computes the time derivative of u.
         x_1=x_t[:,0,None]
         x_2=x_t[:,1,None]
         laplacian=0
         for k in range(self.n_input-1): # Accumulates laplacian and divergence over spatial dimensions.
-            laplacian +=dde.grad.jacobian(z, x_t, i=k, j=k) # Computes the laplacian of z.
-        residual=du_t +(2*u+(torch.pi**2/2+2)*torch.sin(torch.pi/2*x_1)*torch.cos(torch.pi/2*x_2))+laplacian # Computes the residual of the PDE.
+            laplacian +=dde.grad.hessian(u, x_t, i=k, j=k)[0] # Computes the laplacian of z.
+        residual=du_t +(2*u+(jnp.pi**2/2+2)*jnp.sin(jnp.pi/2*x_1)*jnp.cos(jnp.pi/2*x_2))+laplacian # Computes the residual of the PDE.
         return residual 
-    
-    def gPDE_loss(self, x_t,u):
-        '''
-        Calculates the generalized PDE loss using the gPINN approach.
-        
-        Parameters:
-        - x_t (tensor): Input tensor of shape (batch_size, n_input), where n_input includes the time dimension.
-        - u (tensor): Output tensor of shape (batch_size, n_output), representing the solution of the PDE.
-        
-        Returns:
-        - g_loss (list of tensor): List of gradients of the residual for gPINN loss, with the last element being the residual itself.
-        '''
-        du_t = dde.grad.jacobian(u,x_t,i=0,j=self.n_input-1) # Computes the time derivative of u.
-        x_1=x_t[:,0,None]
-        x_2=x_t[:,1,None]
-        laplacian=0
-        for k in range(self.n_input-1): # Accumulates laplacian and divergence over spatial dimensions.
-            laplacian +=dde.grad.hessian(u, x_t, i=k, j=k) # Computes the laplacian of z.
-        residual=du_t +(2*u+(torch.pi**2/2+2)*torch.sin(torch.pi/2*x_1)*torch.cos(torch.pi/2*x_2))+laplacian # Computes the residual of the PDE.
-        g_loss=[]
-        for k in range(self.n_input-1): # Accumulates gradients of the residual for gPINN loss.
-            g_loss.append(0.01*dde.grad.jacobian(residual,x_t,i=0,j=k)) # Computes gradient penalty.
-        g_loss.append(residual) # Adds the residual to the loss.
-        return g_loss
 
     @partial(jit,static_argnames=["self"]) 
     def terminal_constraint(self, x_t):
@@ -865,7 +776,7 @@ class Neumann_Boundary(Equation):
         data = dde.data.TimePDE(
                                 geom, # Geometry of the domain.
                                 self.gPDE_loss, # gPDE loss function.
-                                [self.N_bc], # Additional conditions.
+                                [self.tc, self.N_bc], # Additional conditions.
                                 num_domain=num_domain, # Number of domain points.
                                 num_boundary=num_N_boundary, # Number of boundary points.
                                 solution=self.exact_solution   # Incorporates exact solution for error metrics.
