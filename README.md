@@ -33,11 +33,11 @@ To set up a new SCaSML solver for specific equations, follow these steps:
 
 2. In the `models/` directory, create a new `.py` file and define your network structure, taking `FNN.py` as an example. Ensure to set the `self.regularizer` parameter.
 
-3. In the `optimizers/` directory, create a new `.py` file to customize your training process, following the `Adam_LBFGS.py` template.
+3. In the `optimizers/` directory, create a new `.py` file to customize your training process, following the `Adam.py` template.
 
 4. To use test methods other than `tests/NormalSphere.py`, create a new one in the `tests/` directory using the `NormalSphere.py` format.
 
-5. Copy `experiment_run.py` (Adam_LBFGS training) from `results/Grad_Dependent_Nonlinear/(certain dimension)/` to `results/(your equation)/(certain dimension)/`, replacing all "Grad_Dependent_Nonlinear" with your equation's name.
+5. Copy `experiment_run.py` (Adam training) from `results/Grad_Dependent_Nonlinear/(certain dimension)/` to `results/(your equation)/(certain dimension)/`, replacing all "Grad_Dependent_Nonlinear" with your equation's name.
 
 6. Review beginning lines to enable or disable wandb online logging.
 

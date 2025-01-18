@@ -35,42 +35,6 @@ class L_inf(object):
         self.model = dde.Model(data, net)
         self.equation = equation
         self.geom = equation.geometry()
-
-    def Adam(self, lr=1e-2, weight_decay=1e-4, gamma=0.9):
-        '''Configures the Adam optimizer with exponential learning rate decay (using optax).
-        
-        Args:
-            lr (float): Learning rate.
-            weight_decay (float): Weight decay (L2 penalty).
-            gamma (float): Multiplicative factor of learning rate decay.
-        
-        Returns:
-            optax.GradientTransformation: Configured Adam optimizer chain.
-        '''
-        adam = optax.chain(
-            optax.add_decayed_weights(weight_decay),
-            optax.adam(lr)
-        )
-        wandb.config.update({"Adam lr": lr, "Adam weight_decay": weight_decay, "Adam gamma": gamma})
-        return adam
-
-    def LBFGS(self, lr=1e-2, max_iter=1000, tolerance_change=1e-5, tolerance_grad=1e-3):
-        '''Configures the LBFGS optimizer using jaxopt (placeholder usage).
-        
-        Args:
-            lr (float): Learning rate.
-            max_iter (int): Maximum number of iterations.
-            tolerance_change (float): Termination tolerance on function value/parameter changes.
-            tolerance_grad (float): Termination tolerance on gradient.
-        
-        Returns:
-            jaxopt.LBFGS: Configured LBFGS optimizer.
-        '''
-        lbfgs = dde.optimizers.JaxoptLBFGS(
-            maxiter=max_iter, tol=tolerance_grad
-        )
-        wandb.config.update({"LBFGS lr": lr, "LBFGS max_iter": max_iter, "LBFGS tolerance_change": tolerance_change, "LBFGS tolerance_grad": tolerance_grad})
-        return lbfgs
     
     def get_anchors(self, domain_anchors, boundary_anchors, refinement_num=20):
         '''Generates anchor points using a gradient-based refinement (converted to JAX).
@@ -98,9 +62,6 @@ class L_inf(object):
             # PDE gradient for domain
             def domain_loss_fn(pts):
                 preds = net(pts)
-                # eq.PDE_loss should be a jax-friendly function returning the PDE residual
-                # grad_u = jax.grad(lambda x: jnp.sum(net(x)))(pts)
-                # Here we assume eq.PDE_loss returns a scalar
                 return jnp.mean(eq.PDE_loss(pts, preds, None))
             
             grad_domain = jax.grad(domain_loss_fn)(domain_points)
@@ -136,29 +97,22 @@ class L_inf(object):
         '''
         eq = self.equation
         if eq.__class__.__name__ == "Linear_HJB" or "Grad_Dependent_Nonlinear":
-            loss_weights = [1e-3] * (self.n_input - 1) + [1] + [1e-2]
+            loss_weights = [1] + [1e-2]
         elif eq.__class__.__name__ == "Neumann_Boundary":
-            loss_weights = [1e-3] * (self.n_input - 1) + [1] + [1e-2]*2
+            loss_weights = [1] + [1e-2]*2
         wandb.config.update({"adam_iterations": adam_every, "loss_weights": loss_weights})
-        adam = self.Adam()
         data = self.data
-        try:
-            for i in range(cycle):
-                print("Cycle: ", i)
-                domain_points, boundary_points = self.get_anchors(domain_anchors, boundary_anchors)
-                data.replace_with_anchors(domain_points)
-                data.train_x_bc = boundary_points
-                # Use compiled model with Adam
-                self.model.compile(optimizer=adam, metrics=metrics, loss_weights=loss_weights)
-                # This .train call is assumed to be jax-friendly in the new dde version
-                losses, train_state = self.model.train(iterations=adam_every, display_every=10)
-                for idx, loss_val in enumerate(self.model.train_state.loss_train, start=1):
-                    wandb.log({f"Adam loss_{idx}": loss_val})
-                for idx, metric_val in enumerate(self.model.train_state.metrics_test, start=1):
-                    wandb.log({f"Adam metric_{idx}": metric_val})
-            # Save with dde.saveplot
-            dde.saveplot(losses, train_state, issave=True, isplot=False, output_dir=save_path)
-            return self.model
-        except KeyboardInterrupt:
-            dde.saveplot(losses, train_state, issave=True, isplot=False, output_dir=save_path)
-            return self.model
+        for i in range(cycle):
+            print("Cycle: ", i)
+            domain_points, boundary_points = self.get_anchors(domain_anchors, boundary_anchors)
+            data.replace_with_anchors(domain_points)
+            data.train_x_bc = boundary_points
+            # Use compiled model with Adam
+            self.model.compile("adam", lr=1e-2, metrics=metrics, loss_weights=loss_weights)
+            # This .train call is assumed to be jax-friendly in the new dde version
+            self.model.train(iterations=adam_every, display_every=10, model_save_path=save_path)
+            for idx, loss_val in enumerate(self.model.train_state.loss_train, start=1):
+                wandb.log({f"Adam loss_{idx}": loss_val})
+            for idx, metric_val in enumerate(self.model.train_state.metrics_test, start=1):
+                wandb.log({f"Adam metric_{idx}": metric_val})
+        return self.model

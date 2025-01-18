@@ -7,8 +7,7 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..', '..'))
 
 # import the required libraries
 from equations.equations import Grad_Dependent_Nonlinear
-from models.FNN import FNN
-from optimizers.Adam_LBFGS import Adam_LBFGS 
+from optimizers.Adam import Adam 
 from optimizers.L_inf import L_inf
 from tests.NormalSphere import NormalSphere
 from tests.SimpleUniform import SimpleUniform
@@ -31,14 +30,14 @@ jax.random.PRNGKey(0)
 # device configuration
 device = jax.default_backend()
 print(device)
-if device.type == 'gpu':
+if device == 'gpu':
     # get PINNU name
     gpu_name = jax.devices()[0].device_kind
 
 #initialize wandb
-wandb.init(project="Grad_Dependent_Nonlinear", notes="100 d", tags=["Adam_LBFGS training","L_inf_training"],mode="disabled") #debug mode
-# wandb.init(project="Grad_Dependent_Nonlinear", notes="100 d", tags=["Adam_LBFGS training","L_inf_training"]) #working mode
-wandb.config.update({"device": device.type}) # record device type
+wandb.init(project="Grad_Dependent_Nonlinear", notes="100 d", tags=["Adam training","L_inf_training"],mode="disabled") #debug mode
+# wandb.init(project="Grad_Dependent_Nonlinear", notes="100 d", tags=["Adam training","L_inf_training"]) #working mode
+wandb.config.update({"device": device}) # record device type
 
 #initialize the equation
 equation=Grad_Dependent_Nonlinear(n_input=251,n_output=1)
@@ -46,14 +45,14 @@ equation=Grad_Dependent_Nonlinear(n_input=251,n_output=1)
 if os.path.exists(r"results/Grad_Dependent_Nonlinear/250d/model_weights_L_inf.params"):
     '''To Do: Retrain the model with new data points& Try new methods to reduce errors'''
     #load the model
-    net=FNN([251]+[50]*5+[1],equation)
-    net.net.load_parameters(r"results/Grad_Dependent_Nonlinear/250d/model_weights_L_inf.params")
+    net=dde.nn.jax.FNN([251]+[50]*5+[1], "tanh", "Glorot normal")
+    net.restore(r"results/Grad_Dependent_Nonlinear/250d/model_weights_L_inf.params")
     trained_net=net
     is_train = False
 else:
     #initialize the FNN
     layers=[251]+[50]*5+[1]
-    net=FNN(layers,equation)
+    net=dde.nn.jax.FNN([251]+[50]*5+[1], "tanh", "Glorot normal")
     is_train = True
 
 

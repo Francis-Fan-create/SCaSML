@@ -8,7 +8,7 @@ import os
 import cProfile
 import shutil
 import jax.numpy as jnp
-from optimizers.Adam_LBFGS import Adam_LBFGS
+from optimizers.Adam import Adam
 from optimizers.L_inf import L_inf
 
 class SimpleUniform(object):
@@ -77,7 +77,7 @@ class SimpleUniform(object):
         # Train solver
         if is_train:
             domain_size = 100
-            opt1 = Adam_LBFGS(eq.n_input,1, self.solver1, eq.generate_data(domain_size), eq)
+            opt1 = Adam(eq.n_input,1, self.solver1, eq.generate_data(domain_size), eq)
             trained_model1= opt1.train(f"{save_path}/model_weights_Adam_LBFGS.params")
             trained_net1= trained_model1.net
             opt2 = L_inf(eq.n_input,1, trained_net1, eq.generate_data(domain_size), eq)

@@ -8,7 +8,7 @@ import os
 import cProfile
 import shutil
 import copy
-from optimizers.Adam_LBFGS import Adam_LBFGS
+from optimizers.Adam import Adam
 from optimizers.L_inf import L_inf
 import jax.numpy as jnp
 
@@ -100,7 +100,7 @@ class ConvergenceRate(object):
                 domain_size_j = train_sizes_domain[j]
                 #train the model
                 data = eq.generate_data(domain_size_j)
-                opt1 = Adam_LBFGS(eq.n_input,1, self.solver1, data, eq)
+                opt1 = Adam(eq.n_input,1, self.solver1, data, eq)
                 trained_model1=opt1.train(f"{save_path}/model_weights_Adam_LBFGS.params")
                 trained_net1= trained_model1.net
                 opt2 = L_inf(eq.n_input,1, trained_net1, data, eq)
