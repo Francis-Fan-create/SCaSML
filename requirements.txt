@@ -8,3 +8,4 @@ deepxde
 jax[cuda12]
 optax
 flax
+jaxopt

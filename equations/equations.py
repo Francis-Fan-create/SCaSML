@@ -210,8 +210,8 @@ class Equation(object):
             # use PointSetBC to enforce soft terminal condition
             # generate terminal point
             x = self.geomx.random_points(500)  # do not use uniform !!!
-            t = self.T * np.ones((500, 1))
-            my_data = np.concatenate((x, t), axis=1)
+            t = self.T * jnp.ones((500, 1))
+            my_data = jnp.concatenate((x, t), axis=1)
             tc = dde.icbc.PointSetBC(my_data, self.terminal_constraint(my_data), 0)  # need to be enforced on generate_data method
             self.tc = tc
             return tc
@@ -304,8 +304,8 @@ class Equation(object):
         - data (tuple): A tuple containing domain points and boundary points.
         '''
         geom = self.test_geometry()  # Defines the geometry of the domain.
-        data1 = geom.random_points(num_domain, random=random).astype(np.float16)  # Generates random points in the domain.
-        data2 = geom.random_boundary_points(num_boundary).astype(np.float16)  # Generates random points on the boundary.
+        data1 = geom.random_points(num_domain, random=random).astype(jnp.float16)  # Generates random points in the domain.
+        data2 = geom.random_boundary_points(num_boundary).astype(jnp.float16)  # Generates random points on the boundary.
         return data1, data2
     
     def generate_data(self):
@@ -377,7 +377,7 @@ class Grad_Dependent_Nonlinear(Equation):
         g_loss.append(residual) # Adds the residual to the loss.
         return g_loss
     
-    # @partial(jit,static_argnames=["self"])
+    @partial(jit,static_argnames=["self"])
     def terminal_constraint(self, x_t):
         '''
         Defines the terminal constraint for the PDE.
@@ -388,8 +388,8 @@ class Grad_Dependent_Nonlinear(Equation):
         Returns:
         - result (ndarray): A 1D tensor of shape (batch_size,), representing the terminal constraint.
         '''
-        result= 1-1 / (1 + np.exp(x_t[:,-1] + np.sum(x_t[:,:self.n_input-1],axis=1))) # Computes the terminal constraint.
-        return result[:,np.newaxis] 
+        result= 1-1 / (1 + jnp.exp(x_t[:,-1] + jnp.sum(x_t[:,:self.n_input-1],axis=1))) # Computes the terminal constraint.
+        return result[:,jnp.newaxis] 
 
     def mu(self, x_t=0):
         '''
@@ -418,7 +418,7 @@ class Grad_Dependent_Nonlinear(Equation):
         '''
         return 0.25
     
-    # @partial(jit,static_argnames=["self"])
+    @partial(jit,static_argnames=["self"])
     def f(self, x_t,u,z):
         '''
         Defines the generator term for the PDE.
@@ -431,10 +431,10 @@ class Grad_Dependent_Nonlinear(Equation):
         Returns:
         - result (ndarray): A 2D array of shape (batch_size, n_output), representing the generator term.
         '''
-        result= self.sigma() * u * np.sum(z, axis=1, keepdims=True)
+        result= self.sigma() * u * jnp.sum(z, axis=1, keepdims=True)
         return result
     
-    # @partial(jit,static_argnames=["self"])
+    @partial(jit,static_argnames=["self"])
     def exact_solution(self, x_t):
         '''
         Computes the exact solution of the PDE for given inputs.
@@ -447,10 +447,10 @@ class Grad_Dependent_Nonlinear(Equation):
         '''
         t = x_t[:, -1]
         x = x_t[:, :-1]
-        sum_x = np.sum(x, axis=1)
-        exp_term = np.exp(t + sum_x)  # Computes the exponential term of the solution.
+        sum_x = jnp.sum(x, axis=1)
+        exp_term = jnp.exp(t + sum_x)  # Computes the exponential term of the solution.
         result = 1 - 1 / (1 + exp_term)  # Computes the exact solution.
-        result = result[:, np.newaxis]  # Convert to 2D
+        result = result[:, jnp.newaxis]  # Convert to 2D
         return result
     
     def geometry(self,t0=0,T=0.5):
@@ -558,7 +558,7 @@ class Linear_HJB(Equation):
         g_loss.append(residual) # Adds the residual to the loss.
         return g_loss
     
-    # @partial(jit,static_argnames=["self"])
+    @partial(jit,static_argnames=["self"])
     def terminal_constraint(self, x_t):
         '''
         Defines the terminal constraint for the PDE.
@@ -570,10 +570,10 @@ class Linear_HJB(Equation):
         - result (ndarray): A 2D tensor of shape (batch_size, 1), representing the terminal constraint.
         '''
         x = x_t[:, :self.n_input - 1]  # Extracts the spatial coordinates.
-        sum_x = np.sum(x, axis=1)  # Computes the sum of spatial coordinates.
+        sum_x = jnp.sum(x, axis=1)  # Computes the sum of spatial coordinates.
         result = sum_x  # Computes the terminal constraint.
-        result = result[:, np.newaxis]  # Convert to 2D
-        return result[:,np.newaxis]
+        result = result[:, jnp.newaxis]  # Convert to 2D
+        return result[:,jnp.newaxis]
 
     def mu(self, x_t=0):
         '''
@@ -600,7 +600,7 @@ class Linear_HJB(Equation):
         '''
         return jnp.sqrt(2)
     
-    # @partial(jit,static_argnames=["self"])    
+    @partial(jit,static_argnames=["self"])    
     def f(self, x_t,u,z):
         '''
         Defines the generator term for the PDE.
@@ -613,9 +613,9 @@ class Linear_HJB(Equation):
         Returns:
         - result (ndarray): A 2D array of shape (batch_size, n_output), representing the generator term.
         '''
-        return 2*np.ones_like(u)
+        return 2*jnp.ones_like(u)
     
-    # @partial(jit,static_argnames=["self"])    
+    @partial(jit,static_argnames=["self"])    
     def exact_solution(self, x_t):
         '''
         Computes the exact solution of the PDE for given inputs.
@@ -628,9 +628,9 @@ class Linear_HJB(Equation):
         '''
         t = x_t[:, -1]
         x = x_t[:, :-1]
-        sum_x = np.sum(x, axis=1)
+        sum_x = jnp.sum(x, axis=1)
         result = sum_x + (self.T - t)
-        result = result[:, np.newaxis]  # Convert to 2D
+        result = result[:, jnp.newaxis]  # Convert to 2D
         return result
     
     def geometry(self,t0=0,T=0.5):
@@ -736,7 +736,7 @@ class Neumann_Boundary(Equation):
         g_loss.append(residual) # Adds the residual to the loss.
         return g_loss
 
-    # @partial(jit,static_argnames=["self"]) 
+    @partial(jit,static_argnames=["self"]) 
     def terminal_constraint(self, x_t):
         '''
         Computes the terminal constraint of the PDE for given inputs.
@@ -749,10 +749,10 @@ class Neumann_Boundary(Equation):
         '''
         x_1=x_t[:,0] # Extracts the spatial coordinate.
         x_2=x_t[:,1] # Extracts the spatial coordinate.
-        result=-np.sin(np.pi/2*x_1)*np.cos(np.pi/2*x_2) # Computes the exact solution.
-        return result[:,np.newaxis]
+        result=-jnp.sin(jnp.pi/2*x_1)*jnp.cos(jnp.pi/2*x_2) # Computes the exact solution.
+        return result[:,jnp.newaxis]
 
-    # @partial(jit,static_argnames=["self"])     
+    @partial(jit,static_argnames=["self"])     
     def Neumann_boundary_constraint(self, x_t):
         '''
         Defines the Neumann boundary constraint for the PDE.
@@ -765,10 +765,10 @@ class Neumann_Boundary(Equation):
         '''
         x=x_t[:,:self.n_input-1] # Extracts the spatial coordinates.
         boundary_normal=self.geomx.boundary_normal(x) # Computes the normal vector to the boundary.
-        dot_tensor=np.zeros_like(boundary_normal) # Initializes the dot product tensor.
-        dot_tensor[:,0]=-np.pi/2*np.cos(np.pi/2*x[:,0])*np.cos(np.pi/2*x[:,1]) # Computes the dot product.
-        dot_tensor[:,1]= np.pi/2*np.sin(np.pi/2*x[:,0])*np.sin(np.pi/2*x[:,1]) # Computes the dot product.
-        result= np.sum(boundary_normal*dot_tensor,axis=1)
+        dot_tensor=jnp.zeros_like(boundary_normal) # Initializes the dot product tensor.
+        dot_tensor[:,0]=-jnp.pi/2*jnp.cos(jnp.pi/2*x[:,0])*jnp.cos(jnp.pi/2*x[:,1]) # Computes the dot product.
+        dot_tensor[:,1]= jnp.pi/2*jnp.sin(jnp.pi/2*x[:,0])*jnp.sin(jnp.pi/2*x[:,1]) # Computes the dot product.
+        result= jnp.sum(boundary_normal*dot_tensor,axis=1)
         return result     
 
     def mu(self, x_t=0):
@@ -793,9 +793,9 @@ class Neumann_Boundary(Equation):
         Returns:
         - (float): The diffusion coefficient.
         '''
-        return -np.sqrt(2)
+        return -jnp.sqrt(2)
     
-    # @partial(jit,static_argnames=["self"])     
+    @partial(jit,static_argnames=["self"])     
     def f(self, x_t,u,z):
         '''
         Defines the generator term for the PDE.
@@ -808,12 +808,12 @@ class Neumann_Boundary(Equation):
         Returns:
         - result (ndarray): A 2D array of shape (batch_size, n_output), representing the generator term.
         '''
-        x_1=x_t[:,0,np.newaxis]
-        x_2=x_t[:,1,np.newaxis]
-        result=2*u+(np.pi**2/2+2)*np.sin(np.pi/2*x_1)*np.cos(np.pi/2*x_2)
+        x_1=x_t[:,0,jnp.newaxis]
+        x_2=x_t[:,1,jnp.newaxis]
+        result=2*u+(jnp.pi**2/2+2)*jnp.sin(jnp.pi/2*x_1)*jnp.cos(jnp.pi/2*x_2)
         return result
     
-    # @partial(jit,static_argnames=["self"]) 
+    @partial(jit,static_argnames=["self"]) 
     def exact_solution(self, x_t):
         '''
         Computes the exact solution of the PDE for given inputs.
@@ -826,7 +826,7 @@ class Neumann_Boundary(Equation):
         '''
         x_1=x_t[:,0] # Extracts the spatial coordinate.
         x_2=x_t[:,1] # Extracts the spatial coordinate.
-        result=-np.sin(np.pi/2*x_1)*np.cos(np.pi/2*x_2) # Computes the exact solution.
+        result=-jnp.sin(jnp.pi/2*x_1)*jnp.cos(jnp.pi/2*x_2) # Computes the exact solution.
         return result 
     
     def geometry(self,t0=0,T=0.5):

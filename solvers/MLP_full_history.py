@@ -97,10 +97,10 @@ class MLP_full_history(object):
         
         # Generate Monte Carlo samples for backward Euler
         std_normal = random.normal(subkey, shape=(batch_size, MC_g, dim))
-        dW = jnp.sqrt(T-t)[:, np.newaxis, np.newaxis] * std_normal  # Brownian increments, shape (batch_size, MC_g, dim)
+        dW = jnp.sqrt(T-t)[:, jnp.newaxis, jnp.newaxis] * std_normal  # Brownian increments, shape (batch_size, MC_g, dim)
         self.evaluation_counter+=MC_g
         X = jnp.repeat(x.reshape(x.shape[0], 1, x.shape[1]), MC_g, axis=1)  # Replicated spatial coordinates, shape (batch_size, MC_g, dim)
-        disturbed_X = X + mu*(T-t)[:, np.newaxis, np.newaxis]+ sigma * dW  # Disturbed spatial coordinates, shape (batch_size, MC_g, dim)
+        disturbed_X = X + mu*(T-t)[:, jnp.newaxis, jnp.newaxis]+ sigma * dW  # Disturbed spatial coordinates, shape (batch_size, MC_g, dim)
         
         # Initialize arrays for terminal and difference values
         terminals = jnp.zeros((batch_size, MC_g, 1))  # Terminal values, shape (batch_size, MC_g, 1)

@@ -1,8 +1,9 @@
-from torch.optim import Adam, LBFGS
 import deepxde as dde
 import wandb
-import torch
-from torch.optim.lr_scheduler import ExponentialLR  
+import optax 
+import jax.numpy as jnp
+from jaxopt import LBFGS
+
 
 class Adam_LBFGS(object):
     '''Adam-LBFGS optimizer.
@@ -10,7 +11,7 @@ class Adam_LBFGS(object):
     This class combines the Adam and LBFGS optimizers for training neural networks. It is specifically designed for use with the deepxde framework to solve differential equations using deep learning.
     
     Attributes:
-        net (torch.nn.Module): The neural network model to be optimized.
+        net (object): The neural network model to be optimized.
         data (dde.data.Data): The dataset used for training the model.
         n_input (int): Number of input features.
         n_output (int): Number of output features.
@@ -22,7 +23,7 @@ class Adam_LBFGS(object):
         Args:
             n_input (int): Number of input features.
             n_output (int): Number of output features.
-            net (torch.nn.Module): The neural network model to be optimized.
+            net (object): The neural network model to be optimized.
             data (dde.data.Data): The dataset used for training the model.
             equation (object): The differential equation object to be solved.
         '''
@@ -36,37 +37,27 @@ class Adam_LBFGS(object):
         # We do not need to initialize wandb here, as it is already initialized in the main script
 
     def Adam(self, lr=1e-2, weight_decay=1e-4, gamma=0.9):
-        '''Initializes and returns an Adam optimizer with an exponential learning rate scheduler.
-        
-        Args:
-            lr (float): Learning rate for the optimizer.
-            weight_decay (float): Weight decay for regularization.
-            gamma (float): Multiplicative factor of learning rate decay.
-        
-        Returns:
-            Adam: Configured Adam optimizer.
         '''
-        # Adam optimizer
-        adam = Adam(self.net.parameters(), lr=lr, weight_decay=weight_decay)
-        scheduler = ExponentialLR(adam, gamma=gamma)
-        wandb.config.update({"Adam lr": lr, "Adam weight_decay": weight_decay, "Adam gamma": gamma})  # Record hyperparameters
+        Initializes and returns an Adam optimizer with an exponential learning rate scheduler.
+        ...
+        '''
+        # adam = Adam(self.net.parameters(), lr=lr, weight_decay=weight_decay)
+        # scheduler = ExponentialLR(adam, gamma=gamma)
+        adam = optax.chain(
+            optax.add_decayed_weights(weight_decay),
+            optax.adam(lr)
+        )
+        wandb.config.update({"Adam lr": lr, "Adam weight_decay": weight_decay, "Adam gamma": gamma})
         return adam
 
     def LBFGS(self, lr=1e-2, max_iter=1000, tolerance_change=1e-5, tolerance_grad=1e-3):
-        '''Initializes and returns an LBFGS optimizer.
-        
-        Args:
-            lr (float): Learning rate for the optimizer.
-            max_iter (int): Maximum number of iterations per optimization step.
-            tolerance_change (float): Termination tolerance on function value/parameter changes.
-            tolerance_grad (float): Termination tolerance on first order optimality.
-        
-        Returns:
-            LBFGS: Configured LBFGS optimizer.
         '''
-        # LBFGS optimizer
-        lbfgs = LBFGS(self.net.parameters(), lr=lr, max_iter=max_iter, tolerance_change=tolerance_change, tolerance_grad=tolerance_grad)
-        wandb.config.update({"LBFGS lr": lr, "LBFGS max_iter": max_iter, "LBFGS tolerance_change": tolerance_change, "LBFGS tolerance_grad": tolerance_grad})  # Record hyperparameters
+        Initializes and returns an LBFGS optimizer.
+        ...
+        '''
+        # lbfgs = LBFGS(self.net.parameters(), lr=lr, max_iter=max_iter, tolerance_change=tolerance_change, tolerance_grad=tolerance_grad)
+        lbfgs = LBFGS(fun=None, maxiter=max_iter, tol=tolerance_grad)  # Placeholder usage for JAX-based LBFGS
+        wandb.config.update({"LBFGS lr": lr, "LBFGS max_iter": max_iter, "LBFGS tolerance_change": tolerance_change, "LBFGS tolerance_grad": tolerance_grad})
         return lbfgs
 
     def train(self, save_path, cycle=4, adam_every=100, lbfgs_every=10, metrics=["l2 relative error", "mse"]):
@@ -118,7 +109,7 @@ class Adam_LBFGS(object):
                     wandb.log({"LBFGS metric_{:d}".format(counter4): metric})
             # Stabilize the training by further training with Adam
             self.model.compile(optimizer=adam, metrics=metrics, loss_weights=loss_weights)
-            self.model.train(iterations=5 * adam_every, display_every=10)
+            _ , train_state = self.model.train(iterations=5 * adam_every, display_every=10)
             # Log a list of Adam losses and metrics, which are both lists, one by one
             counter5 = 0
             for loss in self.model.train_state.loss_train:
@@ -129,13 +120,13 @@ class Adam_LBFGS(object):
                 counter6 += 1
                 wandb.log({"Adam metric_{:d}".format(counter6): metric})
             # Save the model
-            torch.save(self.net.state_dict(), save_path)
+            dde.saveplot(_, train_state, issave=True, isplot=False, output_dir=save_path)
             # Log the model
             # wandb.log_model(path=save_path, name="model")
             return self.model
         except KeyboardInterrupt:
             # save the model
-            torch.save(self.net.state_dict(), save_path)
+            dde.saveplot(_, train_state, issave=True, isplot=False, output_dir=save_path)
             # Log the model
             # wandb.log_model(path=save_path, name="model")
             return self.model

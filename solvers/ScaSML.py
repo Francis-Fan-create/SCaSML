@@ -1,7 +1,7 @@
 import jax.numpy as jnp
 from jax import random
 from scipy.special import lambertw
-import torch
+import jax
 
 class ScaSML:
     '''Multilevel Picard Iteration calibrated PINN for high dimensional semilinear PDE'''
@@ -12,7 +12,7 @@ class ScaSML:
 
         Parameters:
             equation (Equation): An object representing the equation to be solved.
-            PINN (GaussianProcess Solver): An object of Gaussian Process Solver for PDE.
+            PINN (PINN Solver): An object of PINN Solver for PDE.
         '''
         # Initialize ScaSML parameters from the equation
         self.equation = equation
@@ -23,7 +23,7 @@ class ScaSML:
         self.t0 = equation.t0
         self.n_input = equation.n_input
         self.n_output = equation.n_output
-        self.PINN = PINN.eval()
+        self.PINN = PINN
         self.evaluation_counter = 0  # Number of evaluations
         self.key = random.PRNGKey(0)  # Random key for JAX
 
@@ -43,10 +43,8 @@ class ScaSML:
         # batch_size=x_t.shape[0]
         # self.evaluation_counter+=batch_size
         self.evaluation_counter+=1
-        tensor_x_t = torch.tensor(x_t, requires_grad=True)
-        u_hat = tensor_x_t.detach().cpu().numpy()
-        tensor_grad_u_hat_x = torch.autograd.grad(u_hat, tensor_x_t, grad_outputs=torch.ones_like(u_hat), retain_graph=True, create_graph=True)[0][:,:-1]
-        grad_u_hat_x = tensor_grad_u_hat_x.detach().cpu().numpy()
+        u_hat = self.PINN(x_t)
+        grad_u_hat_x = jax.grad(lambda tmp: jnp.sum(tmp))(x_t)[:, :-1]
         # Calculate the values for the generator function
         val1 = eq.f(x_t, u_breve + u_hat, eq.sigma(x_t) * (grad_u_hat_x)+ z_breve)
         val2 = eq.f(x_t, u_hat, eq.sigma(x_t) * grad_u_hat_x)
@@ -66,12 +64,11 @@ class ScaSML:
         # batch_size=x_t.shape[0]
         # self.evaluation_counter+=batch_size
         self.evaluation_counter+=1
-        tensor_x_t = torch.tensor(x_t, requires_grad=True)
-        u_hat = tensor_x_t.detach().cpu().numpy()
+        u_hat = self.PINN(x_t)
         # tensor_x_t[:, -1] = self.T
         # Calculate the result of the terminal constraint function
         result = eq.g(x_t) - u_hat
-        # if np.abs(result).any() > 0.5:
+        # if jnp.abs(result).any() > 0.5:
         #     print(f'g:{result}')
         return result[:,0]
     
@@ -217,10 +214,8 @@ class ScaSML:
         # Recursive call for n > 0
         if n == 0:
             batch_size=x_t.shape[0]
-            tensor_x_t = torch.tensor(x_t, requires_grad=True)
-            u_hat = tensor_x_t.detach().cpu().numpy()
-            tensor_grad_u_hat_x = torch.autograd.grad(u_hat, tensor_x_t, grad_outputs=torch.ones_like(u_hat), retain_graph=True, create_graph=True)[0][:,:-1]
-            grad_u_hat_x = tensor_grad_u_hat_x.detach().cpu().numpy() 
+            u_hat = self.PINN(x_t)
+            grad_u_hat_x = jax.grad(lambda tmp: jnp.sum(tmp))(x_t)[:, :-1]
             initial_value= jnp.concatenate((u_hat, sigma* grad_u_hat_x), axis=-1)        
             return initial_value 
         elif n < 0:
@@ -300,6 +295,6 @@ class ScaSML:
         u_breve_z_breve = self.uz_solve(n, rho, x_t)
         u_breve = u_breve_z_breve[:, 0][:, jnp.newaxis]
         
-        u_hat = self.PINN.predict(x_t)
+        u_hat = self.PINN(x_t)
         
         return u_hat + u_breve

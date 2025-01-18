@@ -19,22 +19,21 @@ import numpy as np
 import torch
 import wandb
 import deepxde as dde
+import jax
 
 
 #fix random seed for dde
 dde.config.set_random_seed(1234)
 #use pytorch backend
-dde.backend.set_default_backend('pytorch')
-# fix random seed for numpy
-np.random.seed(1234)
-#set default data type
-torch.set_default_dtype(torch.float64)
+dde.backend.set_default_backend('jax')
+# fix random seed for jax
+jax.random.PRNGKey(0)
 # device configuration
-device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+device = jax.default_backend()
 print(device)
-if device.type == 'cuda':
+if device.type == 'gpu':
     # get PINNU name
-    gpu_name = torch.cuda.get_device_name()
+    gpu_name = jax.devices()[0].device_kind
 
 #initialize wandb
 wandb.init(project="Neumann_Boundary", notes="100 d", tags=["Adam_LBFGS training","L_inf_training"],mode="disabled") #debug mode
@@ -48,7 +47,7 @@ if os.path.exists(r"results/Neumann_Boundary/250d/model_weights_L_inf.params"):
     '''To Do: Retrain the model with new data points& Try new methods to reduce errors'''
     #load the model
     net=FNN([251]+[50]*5+[1],equation)
-    net.load_state_dict(torch.load(r"results/Neumann_Boundary/250d/model_weights_L_inf.params",map_location=device)) #the other indexes are left for external resources of weights
+    net.net.load_parameters(r"results/Neumann_Boundary/250d/model_weights_L_inf.params")
     trained_net=net
     is_train = False
 else:
@@ -64,9 +63,9 @@ solver2=MLP(equation=equation) #Multilevel Picard object
 solver3=ScaSML(equation=equation,PINN=solver1) #ScaSML object
 
 
-#run the test for NormalSphere
-test1=NormalSphere(equation,solver1,solver2,solver3, is_train)
-rhomax=test1.test(r"results/Neumann_Boundary/250d")
+# #run the test for NormalSphere
+# test1=NormalSphere(equation,solver1,solver2,solver3, is_train)
+# rhomax=test1.test(r"results/Neumann_Boundary/250d")
 #run the test for SimpleUniform
 test2=SimpleUniform(equation,solver1,solver2,solver3,is_train)
 test2.test(r"results/Neumann_Boundary/250d")
