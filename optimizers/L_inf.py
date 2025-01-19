@@ -55,22 +55,18 @@ class L_inf(object):
         # In practice, you'd construct a jax.grad-compatible PDE_loss
         for _ in range(refinement_num):
             preds_domain = model.predict(domain_points)
-            # PDE gradient for domain
-            def domain_loss_fn(pts):
-                temp_PDE_loss = lambda points:eq.PDE_loss(points,preds_domain)
-                return jnp.mean(temp_PDE_loss(pts)**2)
-            
-            grad_domain = jax.grad(domain_loss_fn)(domain_points)
+            grad_domain = jnp.zeros(domain_points.shape[0],self.n_input)
+            domain_loss = jnp.mean((model.predict(domain_points) - eq.PDE_loss(domain_points)) ** 2)
+            grad_domain[k] = dde.grad.jacobian(domain_loss, domain_points, 0, None)
             domain_points = domain_points + eta * jnp.sign(grad_domain)
             domain_points = domain_points.at[:, -1].set(
                 jnp.clip(domain_points[:, -1], eq.t0, eq.T)
             )
             # PDE gradient for boundary
             preds_boundary = model.predict(boundary_points)
-            def boundary_loss_fn(pts):
-                cons = jnp.array(eq.terminal_constraint(pts))
-                return jnp.mean((preds_boundary - cons) ** 2)
-            grad_boundary = jax.grad(boundary_loss_fn)(boundary_points)
+            cons = eq.terminal_constraint(boundary_points)
+            boundary_loss = jnp.mean((preds_boundary - cons) ** 2)
+            grad_boundary = dde.grad.jacobian(boundary_loss, boundary_points, 0, None)
             boundary_points = boundary_points + eta * jnp.sign(grad_boundary)
             boundary_points = boundary_points.at[:, -1].set(
                 jnp.clip(boundary_points[:, -1], eq.t0, eq.T)
