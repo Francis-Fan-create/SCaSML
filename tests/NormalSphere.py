@@ -10,7 +10,7 @@ import os
 import cProfile
 import shutil
 from optimizers.Adam import Adam
-from optimizers.L_inf import L_inf
+# L_inf has been removed
 import jax.numpy as jnp
 
 class NormalSphere(object):
@@ -108,10 +108,8 @@ class NormalSphere(object):
             domain_size = 100
             opt1 = Adam(eq.n_input,1, self.solver1, eq.generate_data(domain_size), eq)
             trained_model1= opt1.train(f"{save_path}/model_weights_Adam")
-            opt2 = L_inf(eq.n_input,1, trained_model1, eq.generate_data(domain_size), eq)
-            trained_model2= opt2.train(f"{save_path}/model_weights_L_inf")
-            self.solver1 = trained_model2
-            self.solver3.PINN = trained_model2  
+            self.solver1 = trained_model1
+            self.solver3.PINN = trained_model1  
 
         # Compute the errors
         for i in tqdm(range(x_mesh.shape[0]), desc="Computing errors"):

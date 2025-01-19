@@ -9,7 +9,7 @@ import cProfile
 import shutil
 import jax.numpy as jnp
 from optimizers.Adam import Adam
-from optimizers.L_inf import L_inf
+# L_inf has been removed
 
 class SimpleUniform(object):
     '''
@@ -79,10 +79,8 @@ class SimpleUniform(object):
             domain_size = 100
             opt1 = Adam(eq.n_input,1, self.solver1, eq.generate_data(domain_size), eq)
             trained_model1= opt1.train(f"{save_path}/model_weights_Adam")
-            opt2 = L_inf(eq.n_input,1, trained_model1, eq.generate_data(domain_size), eq)
-            trained_model2= opt2.train(f"{save_path}/model_weights_L_inf")
-            self.solver1 = trained_model2
-            self.solver3.PINN = trained_model2            
+            self.solver1 = trained_model1
+            self.solver3.PINN = trained_model1            
         # Generate test data
         data_domain_test, data_boundary_test = eq.generate_test_data(num_domain, num_boundary, random = "LHS")
         data_test = jnp.concatenate((data_domain_test, data_boundary_test), axis=0)
@@ -123,7 +121,6 @@ class SimpleUniform(object):
         rel_error2 = jnp.linalg.norm(errors2) / jnp.linalg.norm(exact_sol)
         rel_error3 = jnp.linalg.norm(errors3) / jnp.linalg.norm(exact_sol)
         real_sol_L2 = jnp.linalg.norm(exact_sol) / jnp.sqrt(exact_sol.shape[0])
-        PDE_loss = self.solver1.compute_PDE_loss(data_test)
         #stop the profiler
         profiler.disable()
         #save the profiler results
@@ -198,7 +195,6 @@ class SimpleUniform(object):
         
         print("Real Solution->", real_sol_L2)
         
-        print(f"PDE Loss->", "min:", jnp.min(PDE_loss), "max:", jnp.max(PDE_loss), "mean:", jnp.mean(PDE_loss))
 
         print(f"PINN L1, rho={rhomax}->","min:", jnp.min(errors1), "max:", jnp.max(errors1), "mean:", jnp.mean(errors1))
         

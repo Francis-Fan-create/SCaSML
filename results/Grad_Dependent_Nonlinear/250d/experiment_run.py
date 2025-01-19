@@ -8,7 +8,7 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..', '..'))
 # import the required libraries
 from equations.equations import Grad_Dependent_Nonlinear
 from optimizers.Adam import Adam 
-from optimizers.L_inf import L_inf
+# L_inf has been removed
 from tests.NormalSphere import NormalSphere
 from tests.SimpleUniform import SimpleUniform
 from tests.ConvergenceRate import ConvergenceRate

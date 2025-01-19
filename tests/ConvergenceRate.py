@@ -9,7 +9,7 @@ import cProfile
 import shutil
 import copy
 from optimizers.Adam import Adam
-from optimizers.L_inf import L_inf
+# L_inf has been removed
 import jax.numpy as jnp
 
 class ConvergenceRate(object):
@@ -102,10 +102,8 @@ class ConvergenceRate(object):
                 data = eq.generate_data(domain_size_j)
                 opt1 = Adam(eq.n_input,1, self.solver1, data, eq)
                 trained_model1= opt1.train(f"{save_path}/model_weights_Adam")
-                opt2 = L_inf(eq.n_input,1, trained_model1, data, eq)
-                trained_model2= opt2.train(f"{save_path}/model_weights_L_inf")
-                self.solver1 = trained_model2
-                self.solver3.PINN = trained_model2 
+                self.solver1 = trained_model1
+                self.solver3.PINN = trained_model1
                 # Predict with solver1
                 sol1 = self.solver1.predict(xt_values)
             

@@ -317,7 +317,7 @@ class Grad_Dependent_Nonlinear(Equation):
         - n_output (int): The dimension of the output space. Defaults to 1.
         '''
         super().__init__(n_input, n_output)
-        self.uncertainty = 1e-1
+        self.uncertainty = 1e-2
     
     def PDE_loss(self, x_t,u):
         '''
@@ -471,7 +471,7 @@ class Linear_HJB(Equation):
         - n_output (int): The dimension of the output space. Defaults to 1.
         '''
         super().__init__(n_input, n_output)
-        self.uncertainty = 5e-1
+        self.uncertainty = 1
     
     def PDE_loss(self, x_t,u):
         '''
@@ -608,177 +608,6 @@ class Linear_HJB(Equation):
                                 num_domain=num_domain, # Number of domain points.
                                 num_boundary=0, # Number of boundary points.
                                 num_initial=0,  # Number of initial points.
-                                solution=self.exact_solution   # Incorporates exact solution for error metrics.
-                            )
-        return data
-
-class Neumann_Boundary(Equation):
-    '''
-    An Equation with Neumann boundary condition.
-    '''
-    def __init__(self, n_input, n_output=1):
-        '''
-        Initializes the PDE example with specified input and output dimensions.
-        
-        Parameters:
-        - n_input (int): The dimension of the input space, including the time dimension.
-        - n_output (int): The dimension of the output space. Defaults to 1.
-        '''
-        super().__init__(n_input, n_output)
-        self.uncertainty = 1e-1
-    
-    def PDE_loss(self, x_t,u):
-        '''
-        Calculates the PDE loss for given inputs.
-        
-        Parameters:
-        - x_t (tensor): Input tensor of shape (batch_size, n_input), where n_input includes the time dimension.
-        - u (tensor): Output tensor of shape (batch_size, n_output), representing the solution of the PDE.
-        
-        Returns:
-        - residual (tensor): The residual of the PDE of shape (batch_size, n_output).
-        '''
-        du_t = dde.grad.jacobian(u,x_t,i=0,j=self.n_input-1)[0] # Computes the time derivative of u.
-        x_1=x_t[:,0,None]
-        x_2=x_t[:,1,None]
-        laplacian=0
-        for k in range(self.n_input-1): # Accumulates laplacian and divergence over spatial dimensions.
-            laplacian +=dde.grad.hessian(u, x_t, i=k, j=k)[0] # Computes the laplacian of z.
-        residual=du_t +(2*u+(jnp.pi**2/2+2)*jnp.sin(jnp.pi/2*x_1)*jnp.cos(jnp.pi/2*x_2))+laplacian # Computes the residual of the PDE.
-        return residual 
-
-    @partial(jit,static_argnames=["self"]) 
-    def terminal_constraint(self, x_t):
-        '''
-        Computes the terminal constraint of the PDE for given inputs.
-        
-        Parameters:
-        - x_t (ndarray): Input tensor of shape (batch_size, n_input), where n_input includes the time dimension.
-        
-        Returns:
-        - result (ndarray): An arrary of shape (batch_size, ), representing the exact solution.
-        '''
-        x_1=x_t[:,0] # Extracts the spatial coordinate.
-        x_2=x_t[:,1] # Extracts the spatial coordinate.
-        result=-jnp.sin(jnp.pi/2*x_1)*jnp.cos(jnp.pi/2*x_2) # Computes the exact solution.
-        return result[:,jnp.newaxis]
-
-    @partial(jit,static_argnames=["self"])     
-    def Neumann_boundary_constraint(self, x_t):
-        '''
-        Defines the Neumann boundary constraint for the PDE.
-        
-        Parameters:
-        - x_t (ndarray): Input tensor of shape (batch_size, n_input), where n_input includes the time dimension.
-        
-        Returns:
-        - result (ndarray): A 1D tensor of shape (batch_size,), representing the terminal constraint.
-        '''
-        x=x_t[:,:self.n_input-1] # Extracts the spatial coordinates.
-        boundary_normal=self.geomx.boundary_normal(x) # Computes the normal vector to the boundary.
-        dot_tensor=jnp.zeros_like(boundary_normal) # Initializes the dot product tensor.
-        dot_tensor[:,0]=-jnp.pi/2*jnp.cos(jnp.pi/2*x[:,0])*jnp.cos(jnp.pi/2*x[:,1]) # Computes the dot product.
-        dot_tensor[:,1]= jnp.pi/2*jnp.sin(jnp.pi/2*x[:,0])*jnp.sin(jnp.pi/2*x[:,1]) # Computes the dot product.
-        result= jnp.sum(boundary_normal*dot_tensor,axis=1)
-        return result     
-
-    def mu(self, x_t=0):
-        '''
-        Returns the drift coefficient of the PDE. Here, it's a constant value.
-        
-        Parameters:
-        - x_t (int, optional): Not used in this implementation.
-        
-        Returns:
-        - (float): The drift coefficient.
-        '''
-        return 0
-    
-    def sigma(self, x_t=0):
-        '''
-        Returns the diffusion coefficient of the PDE. Here, it's a constant value.
-        
-        Parameters:
-        - x_t (int, optional): Not used in this implementation.
-        
-        Returns:
-        - (float): The diffusion coefficient.
-        '''
-        return -jnp.sqrt(2)
-    
-    @partial(jit,static_argnames=["self"])     
-    def f(self, x_t,u,z):
-        '''
-        Defines the generator term for the PDE.
-        
-        Parameters:
-        - x_t (ndarray): Input tensor of shape (batch_size, n_input), where n_input includes the time dimension.
-        - u (ndarray): Output tensor of shape (batch_size, n_output), representing the solution of the PDE.
-        - z (ndarray): Tensor of shape (batch_size, n_input-1), representing gradients.
-        
-        Returns:
-        - result (ndarray): A 2D array of shape (batch_size, n_output), representing the generator term.
-        '''
-        x_1=x_t[:,0,jnp.newaxis]
-        x_2=x_t[:,1,jnp.newaxis]
-        result=2*u+(jnp.pi**2/2+2)*jnp.sin(jnp.pi/2*x_1)*jnp.cos(jnp.pi/2*x_2)
-        return result
-    
-    @partial(jit,static_argnames=["self"]) 
-    def exact_solution(self, x_t):
-        '''
-        Computes the exact solution of the PDE for given inputs.
-        
-        Parameters:
-        - x_t (ndarray): Input tensor of shape (batch_size, n_input), where n_input includes the time dimension.
-        
-        Returns:
-        - result (ndarray): An arrary of shape (batch_size, ), representing the exact solution.
-        '''
-        x_1=x_t[:,0] # Extracts the spatial coordinate.
-        x_2=x_t[:,1] # Extracts the spatial coordinate.
-        result=-jnp.sin(jnp.pi/2*x_1)*jnp.cos(jnp.pi/2*x_2) # Computes the exact solution.
-        return result 
-    
-    def geometry(self,t0=0,T=0.5):
-        '''
-        Defines the geometry of the domain for the PDE.
-        
-        Parameters:
-        - t0 (float): Initial time.
-        - T (float): Terminal time.
-        
-        Returns:
-        - geom (dde.geometry.GeometryXTime): A GeometryXTime object representing the domain.
-        '''
-        self.t0=t0
-        self.T=T
-        spacedomain = dde.geometry.Hypercube([-0.5]*(self.n_input-1), [0.5]*(self.n_input-1)) # Defines the spatial domain, for train
-        timedomain = dde.geometry.TimeDomain(t0, T) # Defines the time domain.
-        geom = dde.geometry.GeometryXTime(spacedomain, timedomain) # Combines spatial and time domains.
-        self.geomx=spacedomain
-        self.geomt=timedomain
-        return geom
-    
-    def generate_data(self, num_domain=100,num_N_boundary=100):
-        '''
-        Generates data for training the PDE model.
-        
-        Parameters:
-        - num_domain (int): Number of points to sample in the domain.
-        - num_N_boundary (int): Number of points to sample on the Neumann boundary.
-        
-        Returns:
-        - data (dde.data.TimePDE): A TimePDE object containing the training data.
-        '''
-        geom=self.geometry() # Defines the geometry of the domain.
-        self.Neumann_boundary_condition()  # Generates boundary condition.
-        data = dde.data.TimePDE(
-                                geom, # Geometry of the domain.
-                                self.gPDE_loss, # gPDE loss function.
-                                [self.tc, self.N_bc], # Additional conditions.
-                                num_domain=num_domain, # Number of domain points.
-                                num_boundary=num_N_boundary, # Number of boundary points.
                                 solution=self.exact_solution   # Incorporates exact solution for error metrics.
                             )
         return data
