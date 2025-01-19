@@ -101,15 +101,13 @@ class ConvergenceRate(object):
                 #train the model
                 data = eq.generate_data(domain_size_j)
                 opt1 = Adam(eq.n_input,1, self.solver1, data, eq)
-                trained_model1=opt1.train(f"{save_path}/model_weights_Adam")
-                trained_net1= trained_model1.net
-                opt2 = L_inf(eq.n_input,1, trained_net1, data, eq)
-                trained_model2=opt2.train(f"{save_path}/model_weights_L_inf")
-                trained_net2= trained_model2.net
-                self.solver1 = trained_net2
-                self.solver3.PINN = trained_net2
+                trained_model1= opt1.train(f"{save_path}/model_weights_Adam")
+                opt2 = L_inf(eq.n_input,1, trained_model1, data, eq)
+                trained_model2= opt2.train(f"{save_path}/model_weights_L_inf")
+                self.solver1 = trained_model2
+                self.solver3.PINN = trained_model2 
                 # Predict with solver1
-                sol1 = self.solver1(xt_values)
+                sol1 = self.solver1.predict(xt_values)
             
                 # # Solve with solver2 (baseline solver)
                 # sol2 = self.solver2.u_solve(rhomax, rhomax, xt_values)

@@ -55,11 +55,13 @@ else:
     #initialize the FNN
     #same layer width
     net=dde.maps.jax.FNN([101]+[50]*5+[1], "tanh", "Glorot normal")
+    data = equation.generate_data()
+    model = dde.Model(data,net)
     is_train = True
 
 
 #initialize the normal sphere test
-solver1= net #PINN network
+solver1= model #PINN network
 solver2=MLP(equation=equation) #Multilevel Picard object
 solver3=ScaSML(equation=equation,PINN=solver1) #ScaSML object
 

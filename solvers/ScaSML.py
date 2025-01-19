@@ -2,6 +2,7 @@ import jax.numpy as jnp
 from jax import random
 from scipy.special import lambertw
 import jax
+import deepxde as dde
 
 class ScaSML:
     '''Multilevel Picard Iteration calibrated PINN for high dimensional semilinear PDE'''
@@ -12,7 +13,7 @@ class ScaSML:
 
         Parameters:
             equation (Equation): An object representing the equation to be solved.
-            PINN (PINN Solver): An object of PINN Solver for PDE.
+            PINN (dde.Model): An object of PINN Solver for PDE.
         '''
         # Initialize ScaSML parameters from the equation
         self.equation = equation
@@ -23,7 +24,7 @@ class ScaSML:
         self.t0 = equation.t0
         self.n_input = equation.n_input
         self.n_output = equation.n_output
-        self.PINN = PINN
+        self.model = PINN
         self.evaluation_counter = 0  # Number of evaluations
         self.key = random.PRNGKey(0)  # Random key for JAX
 
@@ -43,7 +44,7 @@ class ScaSML:
         # batch_size=x_t.shape[0]
         # self.evaluation_counter+=batch_size
         self.evaluation_counter+=1
-        u_hat = self.PINN(x_t)
+        u_hat = self.model.predict(x_t)
         grad_u_hat_x = jax.grad(lambda tmp: jnp.sum(tmp))(x_t)[:, :-1]
         # Calculate the values for the generator function
         val1 = eq.f(x_t, u_breve + u_hat, eq.sigma(x_t) * (grad_u_hat_x)+ z_breve)
@@ -64,7 +65,7 @@ class ScaSML:
         # batch_size=x_t.shape[0]
         # self.evaluation_counter+=batch_size
         self.evaluation_counter+=1
-        u_hat = self.PINN(x_t)
+        u_hat = self.model.predict(x_t)
         # tensor_x_t[:, -1] = self.T
         # Calculate the result of the terminal constraint function
         result = eq.g(x_t) - u_hat
@@ -214,7 +215,7 @@ class ScaSML:
         # Recursive call for n > 0
         if n == 0:
             batch_size=x_t.shape[0]
-            u_hat = self.PINN(x_t)
+            u_hat = self.model.predict(x_t)
             grad_u_hat_x = jax.grad(lambda tmp: jnp.sum(tmp))(x_t)[:, :-1]
             initial_value= jnp.concatenate((u_hat, sigma* grad_u_hat_x), axis=-1)        
             return initial_value 
@@ -295,6 +296,6 @@ class ScaSML:
         u_breve_z_breve = self.uz_solve(n, rho, x_t)
         u_breve = u_breve_z_breve[:, 0][:, jnp.newaxis]
         
-        u_hat = self.PINN(x_t)
+        u_hat = self.model.predict(x_t)
         
         return u_hat + u_breve

@@ -11,28 +11,26 @@ class Adam(object):
     This class combines the Adam and LBFGS optimizers for training neural networks. It is specifically designed for use with the deepxde framework to solve differential equations using deep learning.
     
     Attributes:
-        net (object): The neural network model to be optimized.
         data (dde.data.Data): The dataset used for training the model.
         n_input (int): Number of input features.
         n_output (int): Number of output features.
         model (dde.Model): The deepxde model that wraps around the neural network and the dataset.
     '''
-    def __init__(self, n_input, n_output, net, data, equation):
+    def __init__(self, n_input, n_output, model, data, equation):
         '''Initializes the Adam optimizer with the network, data, and dimensions.
         
         Args:
             n_input (int): Number of input features.
             n_output (int): Number of output features.
-            net (object): The neural network model to be optimized.
+            model (dde.Model): The DeepXDE model object.
             data (dde.data.Data): The dataset used for training the model.
             equation (object): The differential equation object to be solved.
         '''
         # Initialize the optimizer parameters
-        self.net = net
+        self.model = model
         self.data = data
         self.n_input = n_input
         self.n_output = n_output
-        self.model = dde.Model(data, net)
         self.equation = equation
         # We do not need to initialize wandb here, as it is already initialized in the main script
 

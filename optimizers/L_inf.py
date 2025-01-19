@@ -10,7 +10,6 @@ class L_inf(object):
     '''L_inf optimizer class for optimizing neural networks in the context of solving differential equations.
     
     Attributes:
-        net (object): The neural network model.
         data (dde.data): The data object containing training and boundary data.
         n_input (int): Number of input features.
         n_output (int): Number of output features.
@@ -18,21 +17,20 @@ class L_inf(object):
         equation (object): The differential equation object.
         geom (object): The geometry associated with the differential equation.
     '''
-    def __init__(self, n_input, n_output, net, data, equation):
+    def __init__(self, n_input, n_output, model, data, equation):
         '''Initializes the L_inf optimizer with the necessary parameters and model.
         
         Args:
             n_input (int): Number of input features.
             n_output (int): Number of output features.
-            net (object): The neural network model.
+            model (dde.Model): The DeepXDE model object.
             data (dde.data): The data object containing training and boundary data.
             equation (object): The differential equation object to be solved.
         '''
-        self.net = net
         self.data = data
         self.n_input = n_input
         self.n_output = n_output
-        self.model = dde.Model(data, net)
+        self.model = model
         self.equation = equation
         self.geom = equation.geometry()
     
@@ -53,14 +51,14 @@ class L_inf(object):
         boundary_points = geom.random_boundary_points(boundary_anchors)
         eq = self.equation
         model = self.model
-        
         # Placeholder approach: demonstrate how to move domain_points with sign of gradient
         # In practice, you'd construct a jax.grad-compatible PDE_loss
         for _ in range(refinement_num):
+            preds_domain = model.predict(domain_points)
             # PDE gradient for domain
             def domain_loss_fn(pts):
-                preds = model.predict(pts.numpy())
-                return jnp.mean(eq.PDE_loss(pts, preds))
+                temp_PDE_loss = lambda points:eq.PDE_loss(points,preds_domain)
+                return jnp.mean(temp_PDE_loss(pts)**2)
             
             grad_domain = jax.grad(domain_loss_fn)(domain_points)
             domain_points = domain_points + eta * jnp.sign(grad_domain)
@@ -68,10 +66,10 @@ class L_inf(object):
                 jnp.clip(domain_points[:, -1], eq.t0, eq.T)
             )
             # PDE gradient for boundary
+            preds_boundary = model.predict(boundary_points)
             def boundary_loss_fn(pts):
-                preds = model.predict(pts.numpy())
                 cons = jnp.array(eq.terminal_constraint(pts))
-                return jnp.mean((preds - cons) ** 2)
+                return jnp.mean((preds_boundary - cons) ** 2)
             grad_boundary = jax.grad(boundary_loss_fn)(boundary_points)
             boundary_points = boundary_points + eta * jnp.sign(grad_boundary)
             boundary_points = boundary_points.at[:, -1].set(

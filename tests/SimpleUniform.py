@@ -79,12 +79,10 @@ class SimpleUniform(object):
             domain_size = 100
             opt1 = Adam(eq.n_input,1, self.solver1, eq.generate_data(domain_size), eq)
             trained_model1= opt1.train(f"{save_path}/model_weights_Adam")
-            trained_net1= trained_model1.net
-            opt2 = L_inf(eq.n_input,1, trained_net1, eq.generate_data(domain_size), eq)
+            opt2 = L_inf(eq.n_input,1, trained_model1, eq.generate_data(domain_size), eq)
             trained_model2= opt2.train(f"{save_path}/model_weights_L_inf")
-            trained_net2= trained_model2.net
-            self.solver1 = trained_net2
-            self.solver3.PINN = trained_net2            
+            self.solver1 = trained_model2
+            self.solver3.PINN = trained_model2            
         # Generate test data
         data_domain_test, data_boundary_test = eq.generate_test_data(num_domain, num_boundary, random = "LHS")
         data_test = jnp.concatenate((data_domain_test, data_boundary_test), axis=0)
@@ -102,7 +100,7 @@ class SimpleUniform(object):
         # Measure the time and predict using solver1
         print("Predicting with solver1 on test data...")
         start = time.time()
-        sol1 = self.solver1(data_test)
+        sol1 = self.solver1.predict(data_test)
         time1 += time.time() - start
     
         # Measure the time and predict using solver2
