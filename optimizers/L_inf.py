@@ -59,9 +59,7 @@ class L_inf(object):
         for _ in range(refinement_num):
             # PDE gradient for domain
             def domain_loss_fn(pts):
-                pts = jnp.asarray(pts)
-                preds = model.predict(pts)
-                preds = jnp.asarray(pts)
+                preds = model.predict(pts.numpy())
                 return jnp.mean(eq.PDE_loss(pts, preds))
             
             grad_domain = jax.grad(domain_loss_fn)(domain_points)
@@ -71,7 +69,7 @@ class L_inf(object):
             )
             # PDE gradient for boundary
             def boundary_loss_fn(pts):
-                preds = model.predict(pts)
+                preds = model.predict(pts.numpy())
                 cons = jnp.array(eq.terminal_constraint(pts))
                 return jnp.mean((preds - cons) ** 2)
             grad_boundary = jax.grad(boundary_loss_fn)(boundary_points)
