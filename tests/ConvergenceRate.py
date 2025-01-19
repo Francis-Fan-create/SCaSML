@@ -48,7 +48,7 @@ class ConvergenceRate(object):
         self.T = equation.T  # equation.T: float
         self.is_train = is_train
 
-    def test(self, save_path, rhomax=2, train_sizes_domain=[10, 20, 30, 40, 50, 60, 70, 80, 90, 100]):
+    def test(self, save_path, rhomax=2, train_iters = [1000, 1200, 1400, 1600, 1800, 2000]):
         '''
         Compares solvers on different training iterations.
     
@@ -57,7 +57,7 @@ class ConvergenceRate(object):
         opt1 (object): The first optimizer object.
         opt2 (object): The second optimizer object.
         rhomax (int): The fixed value of rho for approximation parameters.
-        train_sizes_domain (list): The list of training sizes for the domain.
+        train_iters (list): The list of training iterations.
         '''
         # Initialize the profiler
         profiler = cProfile.Profile()
@@ -85,10 +85,11 @@ class ConvergenceRate(object):
     
         # Set the approximation parameters
         eq = self.equation
-        list_len = len(train_sizes_domain)
+        list_len = len(train_iters)
         error1_list = []
         # error2_list = []
         error3_list = []
+        domain_size = 100
     
         # Generate test data (fixed)
         xt_values_domain, xt_values_boundary = eq.generate_test_data(500, 100 , random='LHS')
@@ -97,11 +98,10 @@ class ConvergenceRate(object):
     
         if is_train:
             for j in range(list_len):
-                domain_size_j = train_sizes_domain[j]
                 #train the model
-                data = eq.generate_data(domain_size_j)
+                data = eq.generate_data(domain_size)
                 opt1 = Adam(eq.n_input,1, self.solver1, data, eq)
-                trained_model1= opt1.train(f"{save_path}/model_weights_Adam")
+                trained_model1= opt1.train(f"{save_path}/model_weights_Adam", iters=train_iters[j])
                 self.solver1 = trained_model1
                 self.solver3.PINN = trained_model1
                 # Predict with solver1
@@ -130,8 +130,8 @@ class ConvergenceRate(object):
             plt.figure()
             epsilon = 1e-10  # To avoid log(0)
 
-            domain_sizes = jnp.array(train_sizes_domain)
-            train_sizes = domain_sizes * 2200
+            domain_sizes = jnp.array(train_iters)
+            train_sizes = domain_sizes * 100
             error1_array = jnp.array(error1_list)
             # error2_array = jnp.array(error2_list)
             error3_array = jnp.array(error3_list)
