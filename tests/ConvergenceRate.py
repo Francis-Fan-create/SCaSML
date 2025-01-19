@@ -48,7 +48,7 @@ class ConvergenceRate(object):
         self.T = equation.T  # equation.T: float
         self.is_train = is_train
 
-    def test(self, save_path, rhomax=2, train_iters = [1000, 1200, 1400, 1600, 1800, 2000]):
+    def test(self, save_path, rhomax=3, train_iters = [1000, 3000, 5000, 7000, 9000, 11000]):
         '''
         Compares solvers on different training iterations.
     
@@ -92,7 +92,7 @@ class ConvergenceRate(object):
         domain_size = 100
     
         # Generate test data (fixed)
-        xt_values_domain, xt_values_boundary = eq.generate_test_data(500, 100 , random='LHS')
+        xt_values_domain, xt_values_boundary = eq.generate_test_data(500, 100 , random='Hammersley')
         xt_values = jnp.concatenate((xt_values_domain, xt_values_boundary), axis=0)
         exact_sol = eq.exact_solution(xt_values)
     

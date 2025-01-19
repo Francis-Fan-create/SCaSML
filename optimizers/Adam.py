@@ -34,7 +34,7 @@ class Adam(object):
         self.equation = equation
         # We do not need to initialize wandb here, as it is already initialized in the main script
 
-    def train(self, save_path, iters = 2000, metrics=["l2 relative error", "mse"]):
+    def train(self, save_path, iters = 20000, metrics=["l2 relative error", "mse"]):
         '''Trains the model using an interleaved strategy of Adam optimizer.
         
         Args:
@@ -47,7 +47,7 @@ class Adam(object):
         # Stabilize the training by further training with Adam
         self.model.compile("adam", lr=1e-2, metrics=metrics)
         # Deepxde does not implement Model.save() for jax
-        loss_history, train_state= self.model.train(iterations=iters, display_every=10)
+        loss_history, train_state= self.model.train(iterations=iters, display_every=10, disregard_previous_best= True)
         dde.saveplot(loss_history, train_state, issave=True, isplot=True,output_dir=save_path)
         # Log a list of Adam losses and metrics, which are both lists, one by one
         counter5 = 0

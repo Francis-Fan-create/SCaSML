@@ -42,19 +42,19 @@ wandb.config.update({"device": device}) # record device type
 #initialize the equation
 equation=Linear_HJB(n_input=101,n_output=1)
 #check if trained model is already saved
-if os.path.exists(r"results/Linear_HJB/100d/model.ckpt-?"):
+if os.path.exists(r"results_full_history/Linear_HJB/100d/model.ckpt-?"):
     '''To Do: Retrain the model with new data points& Try new methods to reduce errors'''
     #load the model
-    net=dde.maps.jax.FNN([101]+[50]*5+[1], "tanh", "Glorot normal")
+    net=dde.maps.jax.FNN([101]+[50]*5+[1], "relu", "Glorot normal")
     data = equation.generate_data()
     model = dde.Model(data,net)
-    model.restore(r"results/Linear_HJB/100d/model.ckpt-?",verbose=1)
+    model.restore(r"results_full_history/Linear_HJB/100d/model.ckpt-?",verbose=1)
     # set is_train to False
     is_train = False
 else:
     #initialize the FNN
     #same layer width
-    net=dde.maps.jax.FNN([101]+[50]*5+[1], "tanh", "Glorot normal")
+    net=dde.maps.jax.FNN([101]+[50]*5+[1], "relu", "Glorot normal")
     data = equation.generate_data()
     model = dde.Model(data,net)
     is_train = True
@@ -68,13 +68,13 @@ solver3=ScaSML(equation=equation,PINN=solver1) #ScaSML object
 
 # #run the test for NormalSphere
 # test1=NormalSphere(equation,solver1,solver2,solver3, is_train)
-# rhomax=test1.test(r"results/Linear_HJB/100d")
+# rhomax=test1.test(r"results_full_history/Linear_HJB/100d")
 #run the test for SimpleUniform
 test2=SimpleUniform(equation,solver1,solver2,solver3,is_train)
-test2.test(r"results/Linear_HJB/100d")
+test2.test(r"results_full_history/Linear_HJB/100d")
 #run the test for ConvergenceRate
 test3=ConvergenceRate(equation,solver1,solver2,solver3, is_train)
-test3.test(r"results/Linear_HJB/100d")
+test3.test(r"results_full_history/Linear_HJB/100d")
 
 
 #finish wandb

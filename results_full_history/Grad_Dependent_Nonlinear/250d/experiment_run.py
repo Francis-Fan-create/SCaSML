@@ -42,19 +42,19 @@ wandb.config.update({"device": device}) # record device type
 #initialize the equation
 equation=Grad_Dependent_Nonlinear(n_input=251,n_output=1)
 #check if trained model is already saved
-if os.path.exists(r"results/Grad_Dependent_Nonlinear/250d/model.ckpt-?"):
+if os.path.exists(r"results_full_history/Grad_Dependent_Nonlinear/250d/model.ckpt-?"):
     '''To Do: Retrain the model with new data points& Try new methods to reduce errors'''
     #load the model
-    net=dde.maps.jax.FNN([251]+[50]*5+[1], "tanh", "Glorot normal")
+    net=dde.maps.jax.FNN([251]+[50]*5+[1], "relu", "Glorot normal")
     data = equation.generate_data()
     model = dde.Model(data,net)
-    model.restore(r"results/Grad_Dependent_Nonlinear/250d/model.ckpt-?",verbose=1)
+    model.restore(r"results_full_history/Grad_Dependent_Nonlinear/250d/model.ckpt-?",verbose=1)
     # set is_train to False
     is_train = False
 else:
     #initialize the FNN
     #same layer width
-    net=dde.maps.jax.FNN([251]+[50]*5+[1], "tanh", "Glorot normal")
+    net=dde.maps.jax.FNN([251]+[50]*5+[1], "relu", "Glorot normal")
     data = equation.generate_data()
     model = dde.Model(data,net)
     is_train = True
@@ -68,13 +68,13 @@ solver3=ScaSML(equation=equation,PINN=solver1) #ScaSML object
 
 # #run the test for NormalSphere
 # test1=NormalSphere(equation,solver1,solver2,solver3, is_train)
-# rhomax=test1.test(r"results/Grad_Dependent_Nonlinear/250d")
+# rhomax=test1.test(r"results_full_history/Grad_Dependent_Nonlinear/250d")
 #run the test for SimpleUniform
 test2=SimpleUniform(equation,solver1,solver2,solver3,is_train)
-test2.test(r"results/Grad_Dependent_Nonlinear/250d")
+test2.test(r"results_full_history/Grad_Dependent_Nonlinear/250d")
 #run the test for ConvergenceRate
 test3=ConvergenceRate(equation,solver1,solver2,solver3, is_train)
-test3.test(r"results/Grad_Dependent_Nonlinear/250d")
+test3.test(r"results_full_history/Grad_Dependent_Nonlinear/250d")
 
 
 #finish wandb
