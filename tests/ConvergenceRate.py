@@ -118,9 +118,9 @@ class ConvergenceRate(object):
                 # errors2 = jnp.linalg.norm(sol2 - exact_sol)
                 errors3 = jnp.linalg.norm(sol3 - exact_sol)
             
-                error_value1 = errors1 / jnp.linalg.norm(exact_sol)
+                error_value1 = errors1 / jnp.linalg.norm(exact_sol+1e-6)
                 # error_value2 = errors2 / jnp.linalg.norm(exact_sol)
-                error_value3 = errors3 / jnp.linalg.norm(exact_sol)
+                error_value3 = errors3 / jnp.linalg.norm(exact_sol+1e-6)
 
                 error1_list.append(error_value1)
                 # error2_list.append(error_value2)
