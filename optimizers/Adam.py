@@ -34,7 +34,7 @@ class Adam(object):
         self.equation = equation
         # We do not need to initialize wandb here, as it is already initialized in the main script
 
-    def train(self, save_path, iters = 20000, metrics=["l2 relative error", "mse"]):
+    def train(self, save_path, iters = 5000, metrics=["l2 relative error", "mse"]):
         '''Trains the model using an interleaved strategy of Adam optimizer.
         
         Args:

@@ -48,7 +48,7 @@ class ConvergenceRate(object):
         self.T = equation.T  # equation.T: float
         self.is_train = is_train
 
-    def test(self, save_path, rhomax=3, train_iters = [1000, 3000, 5000, 7000, 9000, 11000]):
+    def test(self, save_path, rhomax=3, train_iters = [0, 500, 1000, 1500, 2000, 2500, 3000, 3500, 4000]):
         '''
         Compares solvers on different training iterations.
     
@@ -119,7 +119,7 @@ class ConvergenceRate(object):
                 errors3 = jnp.linalg.norm(sol3 - exact_sol)
             
                 error_value1 = errors1 / jnp.linalg.norm(exact_sol+1e-6)
-                # error_value2 = errors2 / jnp.linalg.norm(exact_sol)
+                # error_value2 = errors2 / jnp.linalg.norm(exact_sol+1e-6)
                 error_value3 = errors3 / jnp.linalg.norm(exact_sol+1e-6)
 
                 error1_list.append(error_value1)

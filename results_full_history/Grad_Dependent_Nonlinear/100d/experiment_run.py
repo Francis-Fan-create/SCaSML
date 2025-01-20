@@ -61,7 +61,7 @@ else:
 
 
 #initialize the normal sphere test
-solver1 = model #PINN network
+solver1=model #PINN network
 solver2=MLP(equation=equation) #Multilevel Picard object
 solver3=ScaSML(equation=equation,PINN=solver1) #ScaSML object
 

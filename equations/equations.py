@@ -460,7 +460,7 @@ class Grad_Dependent_Nonlinear(Equation):
         data = dde.data.TimePDE(
                                 geom, # Geometry of the domain.
                                 self.PDE_loss, # PDE loss function.
-                                [self.tc,self.dlc], # Additional conditions.
+                                [self.tc], # Additional conditions.
                                 num_domain=num_domain, # Number of domain points.
                                 num_boundary=0, # Number of boundary points.
                                 num_initial=0,  # Number of initial points.
@@ -615,7 +615,7 @@ class Linear_HJB(Equation):
         data = dde.data.TimePDE(
                                 geom, # Geometry of the domain.
                                 self.PDE_loss, # gPDE loss function.
-                                [self.tc, self.dlc], # Additional conditions.
+                                [self.tc], # Additional conditions.
                                 num_domain=num_domain, # Number of domain points.
                                 num_boundary=0, # Number of boundary points.
                                 num_initial=0,  # Number of initial points.
