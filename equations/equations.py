@@ -158,7 +158,7 @@ class Equation(object):
         """
         raise NotImplementedError
 
-    def data_loss(self, x_t):
+    def data_loss(self):
         """
         Data loss in PDE.
         
@@ -166,9 +166,17 @@ class Equation(object):
             x_t (ndarray): The input data, shape (n_samples, n_input).
             
         Raises:
-            NotImplementedError: This is a placeholder method.
+            NotImplementedError if exact_solution is not implemented.
         """
-        raise NotImplementedError
+        if hasattr(self, 'exact_solution') and hasattr(self, 'geometry'):
+            # use PointSetBC to enforce soft terminal condition
+            # generate terminal point
+            my_data = self.geom.random_points(500)  # do not use uniform !!!
+            dlc = dde.icbc.PointSetBC(my_data, self.exact_solution(my_data), 0)  # need to be enforced on generate_data method
+            self.dlc = dlc
+            return dlc
+        else:
+            raise NotImplementedError
     
     def geometry(self, t0, T):
         """
@@ -447,10 +455,11 @@ class Grad_Dependent_Nonlinear(Equation):
         '''
         geom=self.geometry() # Defines the geometry of the domain.
         self.terminal_condition() # Generates terminal condition.
+        self.data_loss() # Generates data loss. 
         data = dde.data.TimePDE(
                                 geom, # Geometry of the domain.
                                 self.PDE_loss, # PDE loss function.
-                                [self.tc], # Additional conditions.
+                                [self.tc,self.dlc], # Additional conditions.
                                 num_domain=num_domain, # Number of domain points.
                                 num_boundary=0, # Number of boundary points.
                                 num_initial=0,  # Number of initial points.
@@ -601,10 +610,11 @@ class Linear_HJB(Equation):
         '''
         geom=self.geometry() # Defines the geometry of the domain.
         self.terminal_condition() # Generates terminal condition.
+        self.data_loss() # Generates data loss.
         data = dde.data.TimePDE(
                                 geom, # Geometry of the domain.
                                 self.PDE_loss, # gPDE loss function.
-                                [self.tc], # Additional conditions.
+                                [self.tc, self.dlc], # Additional conditions.
                                 num_domain=num_domain, # Number of domain points.
                                 num_boundary=0, # Number of boundary points.
                                 num_initial=0,  # Number of initial points.
