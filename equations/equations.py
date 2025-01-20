@@ -171,7 +171,8 @@ class Equation(object):
         if hasattr(self, 'exact_solution') and hasattr(self, 'geometry'):
             # use PointSetBC to enforce soft terminal condition
             # generate terminal point
-            my_data = self.geom.random_points(500)  # do not use uniform !!!
+            geom = self.geometry()
+            my_data = geom.random_points(500)  # do not use uniform !!!
             dlc = dde.icbc.PointSetBC(my_data, self.exact_solution(my_data), 0)  # need to be enforced on generate_data method
             self.dlc = dlc
             return dlc
