@@ -12,6 +12,7 @@ from optimizers.Adam import Adam
 from tests.NormalSphere import NormalSphere
 from tests.SimpleUniform import SimpleUniform
 from tests.ConvergenceRate import ConvergenceRate
+from tests.InferenceScaling import InferenceScaling
 from solvers.MLP import MLP
 from solvers.ScaSML import ScaSML
 import numpy as np
@@ -69,13 +70,12 @@ solver3=ScaSML(equation=equation,PINN=solver1) #ScaSML object
 # #run the test for NormalSphere
 # test1=NormalSphere(equation,solver1,solver2,solver3, is_train)
 # rhomax=test1.test(r"results_full_history/Grad_Dependent_Nonlinear/100d")
-#run the test for SimpleUniform
-test2=SimpleUniform(equation,solver1,solver2,solver3,is_train)
-test2.test(r"results_full_history/Grad_Dependent_Nonlinear/100d")
-#run the test for ConvergenceRate
-test3=ConvergenceRate(equation,solver1,solver2,solver3, is_train)
-test3.test(r"results_full_history/Grad_Dependent_Nonlinear/100d")
-
+# #run the test for SimpleUniform
+# test2=SimpleUniform(equation,solver1,solver2,solver3,is_train)
+# test2.test(r"results_full_history/Grad_Dependent_Nonlinear/100d")
+# #run the test for ConvergenceRate
+# test3=ConvergenceRate(equation,solver1,solver2,solver3, is_train)
+# test3.test(r"results_full_history/Grad_Dependent_Nonlinear/100d")
 
 #finish wandb
 wandb.finish()

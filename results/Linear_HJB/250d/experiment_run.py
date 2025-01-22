@@ -12,6 +12,7 @@ from optimizers.Adam import Adam
 from tests.NormalSphere import NormalSphere
 from tests.SimpleUniform import SimpleUniform
 from tests.ConvergenceRate import ConvergenceRate
+from tests.InferenceScaling import InferenceScaling
 from solvers.MLP import MLP
 from solvers.ScaSML import ScaSML
 import numpy as np
