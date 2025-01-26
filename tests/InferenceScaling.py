@@ -92,7 +92,7 @@ class InferenceScaling(object):
         train_sizes_boundary = 100
         eval_counter_list = []
         error1_list = []
-        # error2_list = []
+        error2_list = []
         error3_list = []
     
         # Generate test data (fixed)
@@ -121,22 +121,22 @@ class InferenceScaling(object):
             sol1 = self.solver1.predict(xt_values)
         
             # # Solve with solver2 (baseline solver)
-            # sol2 = self.solver2.u_solve(rho, rho, xt_values)
+            sol2 = self.solver2.u_solve(rho, rho, xt_values)
         
             # Solve with solver3 using the trained solver1
             sol3 = self.solver3.u_solve(rho, rho, xt_values)
         
             # Compute errors
             errors1 = np.linalg.norm(sol1 - exact_sol)
-            # errors2 = np.linalg.norm(sol2 - exact_sol)
+            errors2 = np.linalg.norm(sol2 - exact_sol)
             errors3 = np.linalg.norm(sol3 - exact_sol)
         
-            error_value1 = errors1 / np.linalg.norm(exact_sol+1e-6)
-            # error_value2 = errors2 / np.linalg.norm(exact_sol+1e-6)
-            error_value3 = errors3 / np.linalg.norm(exact_sol+1e-6)
+            error_value1 = errors1 / np.linalg.norm(exact_sol)
+            error_value2 = errors2 / np.linalg.norm(exact_sol)
+            error_value3 = errors3 / np.linalg.norm(exact_sol)
 
             error1_list.append(error_value1)
-            # error2_list.append(error_value2)
+            error2_list.append(error_value2)
             error3_list.append(error_value3)
 
             eval_counter_list.append(self.solver3.evaluation_counter)
@@ -146,28 +146,28 @@ class InferenceScaling(object):
         epsilon = 1e-10  # To avoid log(0)
 
         error1_array = np.array(error1_list)
-        # error2_array = np.array(error2_list)
+        error2_array = np.array(error2_list)
         error3_array = np.array(error3_list)
         evaluation_counter_array = np.array(eval_counter_list)
 
         plt.plot(evaluation_counter_array, error1_array, marker='x', linestyle='-', label='GP')
-        # plt.plot(evaluation_counter_array, error2_array, marker='x', linestyle='-', label='MLP')
+        plt.plot(evaluation_counter_array, error2_array, marker='x', linestyle='-', label='MLP')
         plt.plot(evaluation_counter_array, error3_array, marker='x', linestyle='-', label='ScaSML')
         
         # Fit lines to compute slopes
         log_GN_steps = np.log10(evaluation_counter_array + epsilon)
         log_error1 = np.log10(error1_array+ epsilon)
-        # log_error2 = np.log10(error2_array+ epsilon)
+        log_error2 = np.log10(error2_array+ epsilon)
         log_error3 = np.log10(error3_array+ epsilon) 
         slope1, intercept1 = np.polyfit(log_GN_steps, log_error1, 1)
-        # slope2, intercept2 = np.polyfit(log_GN_steps, log_error2, 1)
+        slope2, intercept2 = np.polyfit(log_GN_steps, log_error2, 1)
         slope3, intercept3 = np.polyfit(log_GN_steps, log_error3, 1)
         fitted_line1 = (intercept1 + slope1 * log_GN_steps)
-        # fitted_line2 = (intercept2 + slope2 * log_GN_steps)
+        fitted_line2 = (intercept2 + slope2 * log_GN_steps)
         fitted_line3 = (intercept3 + slope3 * log_GN_steps)
         
         plt.plot(evaluation_counter_array, fitted_line1, linestyle='--', label=f'GP: slope={slope1:.2f}')
-        # plt.plot(evaluation_counter_array, fitted_line2, linestyle='--', label=f'MLP: slope={slope2:.2f}')
+        plt.plot(evaluation_counter_array, fitted_line2, linestyle='--', label=f'MLP: slope={slope2:.2f}')
         plt.plot(evaluation_counter_array, fitted_line3, linestyle='--', label=f'SCaSML: slope={slope3:.2f}')
 
         plt.yscale('log')

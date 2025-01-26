@@ -43,7 +43,7 @@ class ScaSML:
         eq = self.equation
         # batch_size=x_t.shape[0]
         # self.evaluation_counter+=batch_size
-        self.evaluation_counter+=1
+        # self.evaluation_counter+=1
         u_hat = self.model.predict(x_t)
         grad_u_hat_x = jax.grad(lambda tmp: jnp.sum(tmp))(x_t)[:, :-1]
         # Calculate the values for the generator function
@@ -64,7 +64,7 @@ class ScaSML:
         eq = self.equation
         # batch_size=x_t.shape[0]
         # self.evaluation_counter+=batch_size
-        self.evaluation_counter+=1
+        # self.evaluation_counter+=1
         u_hat = self.model.predict(x_t)
         # tensor_x_t[:, -1] = self.T
         # Calculate the result of the terminal constraint function
