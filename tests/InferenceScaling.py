@@ -150,9 +150,9 @@ class InferenceScaling(object):
         error3_array = np.array(error3_list)
         evaluation_counter_array = np.array(eval_counter_list)
 
-        plt.plot(evaluation_counter_array, error1_array, marker='x', linestyle='-', label='GP')
-        plt.plot(evaluation_counter_array, error2_array, marker='x', linestyle='-', label='MLP')
-        plt.plot(evaluation_counter_array, error3_array, marker='x', linestyle='-', label='ScaSML')
+        # plt.plot(evaluation_counter_array, error1_array, marker='x', linestyle='-', label='GP')
+        # plt.plot(evaluation_counter_array, error2_array, marker='x', linestyle='-', label='MLP')
+        # plt.plot(evaluation_counter_array, error3_array, marker='x', linestyle='-', label='ScaSML')
         
         # Fit lines to compute slopes
         log_GN_steps = np.log10(evaluation_counter_array + epsilon)
@@ -166,9 +166,9 @@ class InferenceScaling(object):
         fitted_line2 = (intercept2 + slope2 * log_GN_steps)
         fitted_line3 = (intercept3 + slope3 * log_GN_steps)
         
-        plt.plot(evaluation_counter_array, fitted_line1, linestyle='--', label=f'GP: slope={slope1:.2f}')
-        plt.plot(evaluation_counter_array, fitted_line2, linestyle='--', label=f'MLP: slope={slope2:.2f}')
-        plt.plot(evaluation_counter_array, fitted_line3, linestyle='--', label=f'SCaSML: slope={slope3:.2f}')
+        plt.plot(evaluation_counter_array, fitted_line1, marker='x', linestyle='--', label=f'GP: slope={slope1:.2f}')
+        plt.plot(evaluation_counter_array, fitted_line2, marker='x', linestyle='--', label=f'MLP: slope={slope2:.2f}')
+        plt.plot(evaluation_counter_array, fitted_line3, marker='x', linestyle='--', label=f'SCaSML: slope={slope3:.2f}')
 
         plt.yscale('log')
 

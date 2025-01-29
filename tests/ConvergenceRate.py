@@ -136,9 +136,9 @@ class ConvergenceRate(object):
             # error2_array = jnp.array(error2_list)
             error3_array = jnp.array(error3_list)
 
-            plt.plot(train_sizes, error1_array, marker='x', linestyle='-', label='PINN')
-            # plt.plot(train_sizes, error2_array, marker='x', linestyle='-', label='MLP')
-            plt.plot(train_sizes, error3_array, marker='x', linestyle='-', label='ScaSML')
+            # plt.plot(train_sizes, error1_array, marker='x', linestyle='-', label='PINN')
+            # # plt.plot(train_sizes, error2_array, marker='x', linestyle='-', label='MLP')
+            # plt.plot(train_sizes, error3_array, marker='x', linestyle='-', label='ScaSML')
             
             # Fit lines to compute slopes
             log_GN_steps = jnp.log10(train_sizes + epsilon)
@@ -152,9 +152,9 @@ class ConvergenceRate(object):
             # fitted_line2 = 10 ** (intercept2 + slope2 * log_GN_steps)
             fitted_line3 = 10 ** (intercept3 + slope3 * log_GN_steps)
             
-            plt.plot(train_sizes, fitted_line1, linestyle='--', label=f'PINN: slope={slope1:.2f}')
-            # plt.plot(train_sizes, fitted_line2, linestyle='--', label=f'MLP: slope={slope2:.2f}')
-            plt.plot(train_sizes, fitted_line3, linestyle='--', label=f'SCaSML: slope={slope3:.2f}')
+            plt.plot(train_sizes, fitted_line1, marker='x', linestyle='--', label=f'PINN: slope={slope1:.2f}')
+            # plt.plot(train_sizes, fitted_line2, marker='x', linestyle='--', label=f'MLP: slope={slope2:.2f}')
+            plt.plot(train_sizes, fitted_line3, marker='x', linestyle='--', label=f'SCaSML: slope={slope3:.2f}')
 
             plt.yscale('log')
 
