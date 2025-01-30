@@ -172,7 +172,7 @@ class Equation(object):
             # use PointSetBC to enforce soft terminal condition
             # generate terminal point
             geom = self.geometry()
-            my_data = geom.random_points(500)  # do not use uniform !!!
+            my_data = geom.random_points(100)  # do not use uniform !!!
             dlc = dde.icbc.PointSetBC(my_data, self.exact_solution(my_data), 0)  # need to be enforced on generate_data method
             self.dlc = dlc
             return dlc
@@ -287,14 +287,14 @@ class Equation(object):
         self.geomt = timedomain
         return geom  
     
-    def generate_test_data(self, num_domain=100, num_boundary=20, random='LHS'):
+    def generate_test_data(self, num_domain=100, num_boundary=20, random='Hammersley'):
         '''
         Generates data for testing the PDE model.
         
         Parameters:
         - num_domain (int): Number of points to sample in the domain.
         - num_boundary (int): Number of points to sample on the boundary.
-        - random (str): The method of sampling. Defaults to 'LHS'.
+        - random (str): The method of sampling. Defaults to 'Hammersley'.
         
         Returns:
         - data (tuple): A tuple containing domain points and boundary points.
@@ -326,7 +326,7 @@ class Grad_Dependent_Nonlinear(Equation):
         - n_output (int): The dimension of the output space. Defaults to 1.
         '''
         super().__init__(n_input, n_output)
-        self.uncertainty = 1e-1
+        self.uncertainty = 1e-2
     
     def PDE_loss(self, x_t,u):
         '''
@@ -456,7 +456,7 @@ class Grad_Dependent_Nonlinear(Equation):
         '''
         geom=self.geometry() # Defines the geometry of the domain.
         self.terminal_condition() # Generates terminal condition.
-        self.data_loss() # Generates data loss. 
+        # self.data_loss() # Generates data loss. 
         data = dde.data.TimePDE(
                                 geom, # Geometry of the domain.
                                 self.PDE_loss, # PDE loss function.
@@ -481,7 +481,7 @@ class Linear_HJB(Equation):
         - n_output (int): The dimension of the output space. Defaults to 1.
         '''
         super().__init__(n_input, n_output)
-        self.uncertainty = 10
+        self.uncertainty = 1e-1
     
     def PDE_loss(self, x_t,u):
         '''
@@ -611,10 +611,10 @@ class Linear_HJB(Equation):
         '''
         geom=self.geometry() # Defines the geometry of the domain.
         self.terminal_condition() # Generates terminal condition.
-        self.data_loss() # Generates data loss.
+        # self.data_loss() # Generates data loss.
         data = dde.data.TimePDE(
                                 geom, # Geometry of the domain.
-                                self.PDE_loss, # gPDE loss function.
+                                self.PDE_loss, # PDE loss function.
                                 [self.tc], # Additional conditions.
                                 num_domain=num_domain, # Number of domain points.
                                 num_boundary=0, # Number of boundary points.

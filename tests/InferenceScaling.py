@@ -98,7 +98,7 @@ class InferenceScaling(object):
         # Generate test data (fixed)
         n_samples_domain = n_samples
         n_samples_boundary = int(n_samples/5)
-        xt_values_domain, xt_values_boundary = eq.generate_test_data(n_samples_domain, n_samples_boundary , random='LHS')
+        xt_values_domain, xt_values_boundary = eq.generate_test_data(n_samples_domain, n_samples_boundary , random='Hammersley')
         xt_values = np.concatenate((xt_values_domain, xt_values_boundary), axis=0)
         exact_sol = eq.exact_solution(xt_values)
 
@@ -150,7 +150,7 @@ class InferenceScaling(object):
         error3_array = np.array(error3_list)
         evaluation_counter_array = np.array(eval_counter_list)
 
-        # plt.plot(evaluation_counter_array, error1_array, marker='x', linestyle='-', label='GP')
+        # plt.plot(evaluation_counter_array, error1_array, marker='x', linestyle='-', label='PINN')
         # plt.plot(evaluation_counter_array, error2_array, marker='x', linestyle='-', label='MLP')
         # plt.plot(evaluation_counter_array, error3_array, marker='x', linestyle='-', label='ScaSML')
         
@@ -162,11 +162,11 @@ class InferenceScaling(object):
         slope1, intercept1 = np.polyfit(log_GN_steps, log_error1, 1)
         slope2, intercept2 = np.polyfit(log_GN_steps, log_error2, 1)
         slope3, intercept3 = np.polyfit(log_GN_steps, log_error3, 1)
-        fitted_line1 = (intercept1 + slope1 * log_GN_steps)
-        fitted_line2 = (intercept2 + slope2 * log_GN_steps)
-        fitted_line3 = (intercept3 + slope3 * log_GN_steps)
+        fitted_line1 = 10 ** (intercept1 + slope1 * log_GN_steps)
+        fitted_line2 = 10 ** (intercept2 + slope2 * log_GN_steps)
+        fitted_line3 = 10 ** (intercept3 + slope3 * log_GN_steps)
         
-        plt.plot(evaluation_counter_array, fitted_line1, marker='x', linestyle='--', label=f'GP: slope={slope1:.2f}')
+        plt.plot(evaluation_counter_array, fitted_line1, marker='x', linestyle='--', label=f'PINN: slope={slope1:.2f}')
         plt.plot(evaluation_counter_array, fitted_line2, marker='x', linestyle='--', label=f'MLP: slope={slope2:.2f}')
         plt.plot(evaluation_counter_array, fitted_line3, marker='x', linestyle='--', label=f'SCaSML: slope={slope3:.2f}')
 
@@ -175,8 +175,8 @@ class InferenceScaling(object):
         plt.legend()
         plt.grid(True, which="both", ls="--", linewidth=0.5)
         
-        plt.xlabel('Log10(Evaluation Number)')
-        plt.ylabel('Log10(Mean Relative L2 Error on Test Set)')
+        plt.xlabel('Evaluation Number')
+        plt.ylabel('Mean Relative L2 Error on Test Set')
         plt.title('InferenceScaling Verification')
 
         plt.tight_layout()

@@ -82,7 +82,7 @@ class SimpleUniform(object):
             self.solver1 = trained_model1
             self.solver3.PINN = trained_model1            
         # Generate test data
-        data_domain_test, data_boundary_test = eq.generate_test_data(num_domain, num_boundary, random = "LHS")
+        data_domain_test, data_boundary_test = eq.generate_test_data(num_domain, num_boundary, random = "Hammersley")
         data_test = jnp.concatenate((data_domain_test, data_boundary_test), axis=0)
         xt_test = data_test[:, :self.dim + 1]
         exact_sol = eq.exact_solution(xt_test)

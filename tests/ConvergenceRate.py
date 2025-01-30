@@ -92,7 +92,7 @@ class ConvergenceRate(object):
         domain_size = 100
     
         # Generate test data (fixed)
-        xt_values_domain, xt_values_boundary = eq.generate_test_data(500, 100 , random='LHS')
+        xt_values_domain, xt_values_boundary = eq.generate_test_data(500, 100 , random='Hammersley')
         xt_values = jnp.concatenate((xt_values_domain, xt_values_boundary), axis=0)
         exact_sol = eq.exact_solution(xt_values)
     
