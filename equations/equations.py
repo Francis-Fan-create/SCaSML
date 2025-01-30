@@ -8,7 +8,6 @@ from functools import partial
 import jax.numpy as jnp
 #add the parent directory to the path
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..'))
-from solvers.MLP import MLP # use MLP to deal with equations without explicit solutions
 
 class Equation(object):
     '''Equation class for PDEs based on deepxde framework'''
