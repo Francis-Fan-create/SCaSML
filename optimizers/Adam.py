@@ -31,7 +31,7 @@ class Adam(object):
         self.equation = equation
         # We do not need to initialize wandb here, as it is already initialized in the main script
 
-    def train(self, save_path, iters = 10000, metrics=["l2 relative error", "mse"]):
+    def train(self, save_path, iters = 5000, metrics=["l2 relative error", "mse"]):
         '''Trains the model using an interleaved strategy of Adam optimizer.
         
         Args:
@@ -44,26 +44,23 @@ class Adam(object):
         # Stabilize the training by further training with Adam
         self.model.compile("adam", lr=1e-3, metrics=metrics)
         # Deepxde does not implement Model.save() for jax
-        loss_history, train_state= self.model.train(iterations=iters, display_every=10, disregard_previous_best= True)
+        self.model.train(iterations=iters, display_every=10, disregard_previous_best= True)
+        # RAR training
         geom = self.equation.geometry()
         # Use Adaptive Refinement for training
-        data_pool = geom.random_points(100* iters)
-        # Define LBFGS optimizer
-        lbfgs = optax.chain(optax.clip_by_global_norm(1.0), optax.lbfgs())
+        data_pool = geom.random_points(20* iters)
         err = 1.0
-        while err > 1e-4:
+        for i in range(5):
             residual = self.model.predict(data_pool, operator=self.equation.PDE_loss)
             err_array = jnp.abs(residual)
             err = jnp.mean(err_array)
             print(f"Mean residual: {err}")
-            train_id = jnp.argsort(err_array, kind='stable')[:1000]
-            train_data = data_pool[train_id]
+            train_id = jnp.argsort(err_array, stable=True)[:1000]
+            train_data = data_pool[train_id,:][:,0,:]
             self.model.data.add_anchors(train_data)
             early_stopping = dde.callbacks.EarlyStopping(min_delta=1e-4, patience=2000)
-            self.model.compile("adam", lr=1e-3, metrics=metrics, callbacks=[early_stopping])
-            self.model.train(iterations=1000, display_every=10, disregard_previous_best=True)
-            self.model.compile(optimizer=lbfgs, metrics=metrics)
-            loss_history, train_state = self.model.train()
+            self.model.compile("adam", lr=1e-3, metrics=metrics)
+            loss_history, train_state = self.model.train(iterations=500, display_every=10, disregard_previous_best=True, callbacks=[early_stopping])
         dde.saveplot(loss_history, train_state, issave=True, isplot=True,output_dir=save_path)
         # Log a list of Adam losses and metrics, which are both lists, one by one
         counter1 = 0

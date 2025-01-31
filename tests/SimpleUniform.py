@@ -76,9 +76,8 @@ class SimpleUniform(object):
         n = rhomax
         # Train solver
         if is_train:
-            domain_size = 100
-            opt1 = Adam(eq.n_input,1, self.solver1, eq.generate_data(domain_size), eq)
-            trained_model1= opt1.train(f"{save_path}/model_weights_Adam")
+            opt = Adam(eq.n_input,1, self.solver1, eq)
+            trained_model1= opt.train(f"{save_path}/model_weights_Adam")
             self.solver1 = trained_model1
             self.solver3.PINN = trained_model1            
         # Generate test data

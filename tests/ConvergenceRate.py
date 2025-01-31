@@ -99,7 +99,7 @@ class ConvergenceRate(object):
             for j in range(list_len):
                 #train the model
                 opt = Adam(eq.n_input,1, self.solver1, eq)
-                trained_model1= opt.train(f"{save_path}/model_weights_Adam", iters=train_iters[j])
+                trained_model1= opt.train(f"{save_path}/model_weights_Adam", iters=train_iters[j] if j==0 else train_iters[j]-train_iters[j-1])
                 self.solver1 = trained_model1
                 self.solver3.PINN = trained_model1
                 # Predict with solver1
