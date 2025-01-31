@@ -89,8 +89,7 @@ class ConvergenceRate(object):
         error1_list = []
         # error2_list = []
         error3_list = []
-        domain_size = 100
-    
+
         # Generate test data (fixed)
         xt_values_domain, xt_values_boundary = eq.generate_test_data(500, 100 , random='Hammersley')
         xt_values = jnp.concatenate((xt_values_domain, xt_values_boundary), axis=0)
@@ -99,9 +98,8 @@ class ConvergenceRate(object):
         if is_train:
             for j in range(list_len):
                 #train the model
-                data = eq.generate_data(domain_size)
-                opt1 = Adam(eq.n_input,1, self.solver1, data, eq)
-                trained_model1= opt1.train(f"{save_path}/model_weights_Adam", iters=train_iters[j])
+                opt = Adam(eq.n_input,1, self.solver1, eq)
+                trained_model1= opt.train(f"{save_path}/model_weights_Adam", iters=train_iters[j])
                 self.solver1 = trained_model1
                 self.solver3.PINN = trained_model1
                 # Predict with solver1
@@ -118,9 +116,9 @@ class ConvergenceRate(object):
                 # errors2 = jnp.linalg.norm(sol2 - exact_sol)
                 errors3 = jnp.linalg.norm(sol3 - exact_sol)
             
-                error_value1 = errors1 / jnp.linalg.norm(exact_sol+1e-6)
-                # error_value2 = errors2 / jnp.linalg.norm(exact_sol+1e-6)
-                error_value3 = errors3 / jnp.linalg.norm(exact_sol+1e-6)
+                error_value1 = errors1 / jnp.linalg.norm(exact_sol)
+                # error_value2 = errors2 / jnp.linalg.norm(exact_sol)
+                error_value3 = errors3 / jnp.linalg.norm(exact_sol)
 
                 error1_list.append(error_value1)
                 # error2_list.append(error_value2)
@@ -131,7 +129,7 @@ class ConvergenceRate(object):
             epsilon = 1e-10  # To avoid log(0)
 
             domain_sizes = jnp.array(train_iters)
-            train_sizes = domain_sizes * 100
+            train_sizes = domain_sizes * 2760
             error1_array = jnp.array(error1_list)
             # error2_array = jnp.array(error2_list)
             error3_array = jnp.array(error3_list)

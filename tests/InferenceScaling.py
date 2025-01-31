@@ -88,7 +88,7 @@ class InferenceScaling(object):
         GN_steps = 1000 
         # Build a list for training sizes
         list_len = rhomax - 1
-        train_sizes_domain = 500
+        train_sizes_domain = 2500
         train_sizes_boundary = 100
         eval_counter_list = []
         error1_list = []
@@ -103,10 +103,9 @@ class InferenceScaling(object):
         exact_sol = eq.exact_solution(xt_values)
 
         # Training solver
-        print(f"Training solver1 with {train_sizes_domain} domain points...")
-        data = eq.generate_data(train_sizes_domain)
-        opt1 = Adam(eq.n_input,1, self.solver1, data, eq)
-        trained_model1= opt1.train(f"{save_path}/model_weights_Adam", iters=GN_steps)
+        print(f"Training solver1 with {train_sizes_domain} domain points and {train_sizes_boundary} boundary points")
+        opt = Adam(eq.n_input,1, self.solver1, eq)
+        trained_model1= opt.train(f"{save_path}/model_weights_Adam", iters=GN_steps)
         self.solver1 = trained_model1
         self.solver3.PINN = trained_model1
     

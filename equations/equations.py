@@ -171,7 +171,7 @@ class Equation(object):
             # use PointSetBC to enforce soft terminal condition
             # generate terminal point
             geom = self.geometry()
-            my_data = geom.random_points(100)  # do not use uniform !!!
+            my_data = geom.random_points(160)  # do not use uniform !!!
             dlc = dde.icbc.PointSetBC(my_data, self.exact_solution(my_data), 0)  # need to be enforced on generate_data method
             self.dlc = dlc
             return dlc
@@ -204,8 +204,8 @@ class Equation(object):
         if hasattr(self, 'terminal_constraint') and hasattr(self, 'geometry'):
             # use PointSetBC to enforce soft terminal condition
             # generate terminal point
-            x = self.geomx.random_points(500)  # do not use uniform !!!
-            t = self.T * jnp.ones((500, 1))
+            x = self.geomx.random_points(160)  # do not use uniform !!!
+            t = self.T * jnp.ones((160, 1))
             my_data = jnp.concatenate((x, t), axis=1)
             tc = dde.icbc.PointSetBC(my_data, self.terminal_constraint(my_data), 0)  # need to be enforced on generate_data method
             self.tc = tc
@@ -360,6 +360,25 @@ class Grad_Dependent_Nonlinear(Equation):
         '''
         result= 1-1 / (1 + jnp.exp(x_t[:,-1] + jnp.sum(x_t[:,:self.n_input-1],axis=1))) # Computes the terminal constraint.
         return result[:,jnp.newaxis] 
+    
+    @partial(jit,static_argnames=["self"])
+    def Dirichlet_boundary_constraint(self, x_t):
+        '''
+        Defines the Dirichlet boundary constraint for the PDE.
+        
+        Parameters:
+        - x_t (ndarray): Input tensor of shape (batch_size, n_input), where n_input includes the time dimension.
+        
+        Returns:
+        - result (ndarray): A 1D tensor of shape (batch_size,), representing the Dirichlet boundary constraint.
+        '''
+        t = x_t[:, -1]
+        x = x_t[:, :-1]
+        sum_x = jnp.sum(x, axis=1)
+        exp_term = jnp.exp(t + sum_x)  # Computes the exponential term of the solution.
+        result = 1 - 1 / (1 + exp_term)  # Computes the exact solution.
+        result = result[:, jnp.newaxis]  # Convert to 2D
+        return result
 
     def mu(self, x_t=0):
         '''
@@ -443,7 +462,7 @@ class Grad_Dependent_Nonlinear(Equation):
         self.geomt=timedomain
         return geom
     
-    def generate_data(self, num_domain=100):
+    def generate_data(self, num_domain=2500):
         '''
         Generates data for training the PDE model.
         
@@ -455,13 +474,14 @@ class Grad_Dependent_Nonlinear(Equation):
         '''
         geom=self.geometry() # Defines the geometry of the domain.
         self.terminal_condition() # Generates terminal condition.
+        self.Dirichlet_boundary_condition() # Generates Dirichlet boundary condition.
         # self.data_loss() # Generates data loss. 
         data = dde.data.TimePDE(
                                 geom, # Geometry of the domain.
                                 self.PDE_loss, # PDE loss function.
-                                [self.tc], # Additional conditions.
+                                [self.tc, self.D_bc], # Additional conditions.
                                 num_domain=num_domain, # Number of domain points.
-                                num_boundary=0, # Number of boundary points.
+                                num_boundary=100, # Number of boundary points.
                                 num_initial=0,  # Number of initial points.
                                 solution=self.exact_solution   # Incorporates exact solution for error metrics.
                             )
@@ -519,6 +539,24 @@ class Linear_HJB(Equation):
         result = sum_x  # Computes the terminal constraint.
         result = result[:, jnp.newaxis]  # Convert to 2D
         return result[:,jnp.newaxis]
+    
+    @partial(jit,static_argnames=["self"])
+    def Dirichlet_boundary_constraint(self, x_t):
+        '''
+        Defines the Dirichlet boundary constraint for the PDE.
+        
+        Parameters:
+        - x_t (ndarray): Input tensor of shape (batch_size, n_input), where n_input includes the time dimension.
+        
+        Returns:
+        - result (ndarray): A 2D tensor of shape (batch_size, 1), representing the Dirichlet boundary constraint.
+        '''
+        t = x_t[:, -1]
+        x = x_t[:, :-1]
+        sum_x = jnp.sum(x, axis=1)
+        result = sum_x + (self.T - t)
+        result = result[:, jnp.newaxis]  # Convert to 2D
+        return result
 
     def mu(self, x_t=0):
         '''
@@ -598,7 +636,7 @@ class Linear_HJB(Equation):
         self.geomt=timedomain
         return geom
     
-    def generate_data(self, num_domain=100):
+    def generate_data(self, num_domain=2500):
         '''
         Generates data for training the PDE model.
         
@@ -610,13 +648,14 @@ class Linear_HJB(Equation):
         '''
         geom=self.geometry() # Defines the geometry of the domain.
         self.terminal_condition() # Generates terminal condition.
+        self.Dirichlet_boundary_condition() # Generates Dirichlet boundary condition.
         # self.data_loss() # Generates data loss.
         data = dde.data.TimePDE(
                                 geom, # Geometry of the domain.
                                 self.PDE_loss, # PDE loss function.
-                                [self.tc], # Additional conditions.
+                                [self.tc, self.D_bc], # Additional conditions.
                                 num_domain=num_domain, # Number of domain points.
-                                num_boundary=0, # Number of boundary points.
+                                num_boundary=100, # Number of boundary points.
                                 num_initial=0,  # Number of initial points.
                                 solution=self.exact_solution   # Incorporates exact solution for error metrics.
                             )

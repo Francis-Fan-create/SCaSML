@@ -26,6 +26,8 @@ import jax
 dde.config.set_random_seed(1234)
 #use jax backend
 dde.backend.set_default_backend('jax')
+#set default float to float16
+dde.config.set_default_float("float16")
 # fix random seed for jax
 jax.random.PRNGKey(0)
 # device configuration
@@ -46,7 +48,7 @@ equation=Grad_Dependent_Nonlinear(n_input=61,n_output=1)
 if os.path.exists(r"results_full_history/Grad_Dependent_Nonlinear/60d/model.ckpt-?"):
     '''To Do: Retrain the model with new data points& Try new methods to reduce errors'''
     #load the model
-    net=dde.maps.jax.FNN([61]+[50]*5+[1], "relu", "Glorot normal")
+    net=dde.maps.jax.FNN([61]+[50]*5+[1], "tanh", "Glorot normal")
     data = equation.generate_data()
     model = dde.Model(data,net)
     model.restore(r"results_full_history/Grad_Dependent_Nonlinear/60d/model.ckpt-?",verbose=1)
@@ -55,7 +57,7 @@ if os.path.exists(r"results_full_history/Grad_Dependent_Nonlinear/60d/model.ckpt
 else:
     #initialize the FNN
     #same layer width
-    net=dde.maps.jax.FNN([61]+[50]*5+[1], "relu", "Glorot normal")
+    net=dde.maps.jax.FNN([61]+[50]*5+[1], "tanh", "Glorot normal")
     data = equation.generate_data()
     model = dde.Model(data,net)
     is_train = True
