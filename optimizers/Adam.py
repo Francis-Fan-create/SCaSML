@@ -41,10 +41,10 @@ class Adam(object):
         Returns:
             dde.Model: The trained model.
         '''
-        # # Stabilize the training by further training with Adam
-        # self.model.compile("adam", lr=1e-3, metrics=metrics)
-        # # Deepxde does not implement Model.save() for jax
-        # self.model.train(iterations=iters, display_every=10, disregard_previous_best= True)
+        # Stabilize the training by further training with Adam
+        self.model.compile("adam", lr=1e-3, metrics=metrics)
+        # Deepxde does not implement Model.save() for jax
+        self.model.train(iterations=iters//10, display_every=10, disregard_previous_best= True)
         # RAR training
         geom = self.equation.geometry()
         # Use Adaptive Refinement for training
@@ -60,7 +60,7 @@ class Adam(object):
             self.model.data.add_anchors(train_data)
             early_stopping = dde.callbacks.EarlyStopping(min_delta=1e-4, patience=2000)
             self.model.compile("adam", lr=1e-3, metrics=metrics)
-            loss_history, train_state = self.model.train(iterations=iter//10, display_every=10, disregard_previous_best=True, callbacks=[early_stopping])
+            loss_history, train_state = self.model.train(iterations=iters//10, display_every=10, disregard_previous_best=True, callbacks=[early_stopping])
         dde.saveplot(loss_history, train_state, issave=True, isplot=True,output_dir=save_path)
         # Log a list of Adam losses and metrics, which are both lists, one by one
         counter1 = 0
