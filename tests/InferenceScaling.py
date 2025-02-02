@@ -87,7 +87,7 @@ class InferenceScaling(object):
         # Fix GN_steps
         GN_steps = 1000 
         # Build a list for training sizes
-        list_len = rhomax - 1
+        list_len = rhomax
         train_sizes_domain = 2500
         train_sizes_boundary = 100
         eval_counter_list = []
@@ -111,7 +111,7 @@ class InferenceScaling(object):
     
         for j in range(list_len):
 
-            rho = j + 2
+            rho = j + 1
 
             # Print current rho value
             print(f"Current rho value: {rho}")
