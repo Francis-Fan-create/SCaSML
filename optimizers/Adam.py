@@ -31,7 +31,7 @@ class Adam(object):
         self.equation = equation
         # We do not need to initialize wandb here, as it is already initialized in the main script
 
-    def train(self, save_path, iters = 5000, metrics=["l2 relative error", "mse"]):
+    def train(self, save_path, iters = 2500, metrics=["l2 relative error", "mse"]):
         '''Trains the model using an interleaved strategy of Adam optimizer.
         
         Args:
@@ -50,7 +50,7 @@ class Adam(object):
         # Use Adaptive Refinement for training
         data_pool = geom.random_points(20* iters)
         err = 1.0
-        for i in range(4):
+        for i in range(3):
             residual = self.model.predict(data_pool, operator=self.equation.PDE_loss)
             err_array = jnp.abs(residual)
             err = jnp.mean(err_array)
