@@ -45,7 +45,7 @@ class InferenceScaling(object):
         self.t0 = equation.t0  # equation.t0: float
         self.T = equation.T  # equation.T: float
 
-    def test(self, save_path, rhomax=4, n_samples=500):
+    def test(self, save_path, rhomax=3, n_samples=500):
         '''
         Compares solvers on different training iterations.
     
@@ -109,9 +109,9 @@ class InferenceScaling(object):
         self.solver1 = trained_model1
         self.solver3.PINN = trained_model1
     
-        for j in range(list_len):
+        for j in range(list_len-1):
 
-            rho = j + 1
+            rho = j + 2
 
             # Print current rho value
             print(f"Current rho value: {rho}")
@@ -130,9 +130,9 @@ class InferenceScaling(object):
             errors2 = np.linalg.norm(sol2 - exact_sol)
             errors3 = np.linalg.norm(sol3 - exact_sol)
         
-            error_value1 = errors1 / np.linalg.norm(exact_sol)
-            error_value2 = errors2 / np.linalg.norm(exact_sol)
-            error_value3 = errors3 / np.linalg.norm(exact_sol)
+            error_value1 = errors1 / np.linalg.norm(exact_sol+1e-3)
+            error_value2 = errors2 / np.linalg.norm(exact_sol+1e-3)
+            error_value3 = errors3 / np.linalg.norm(exact_sol+1e-3)
 
             error1_list.append(error_value1)
             error2_list.append(error_value2)
