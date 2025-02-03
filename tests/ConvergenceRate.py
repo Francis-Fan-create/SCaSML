@@ -11,6 +11,7 @@ import copy
 from optimizers.Adam import Adam
 # L_inf has been removed
 import jax.numpy as jnp
+from scipy.stats import t
 
 class ConvergenceRate(object):
     '''
@@ -48,7 +49,7 @@ class ConvergenceRate(object):
         self.T = equation.T  # equation.T: float
         self.is_train = is_train
 
-    def test(self, save_path, rhomax=3, train_iters = [0, 500, 1000, 1500, 2000, 2500, 3000, 3500, 4000]):
+    def test(self, save_path, rhomax=2, train_iters = [0, 500, 1000, 1500, 2000, 2500, 3000, 3500, 4000]):
         '''
         Compares solvers on different training iterations.
     
@@ -150,22 +151,132 @@ class ConvergenceRate(object):
             # fitted_line2 = 10 ** (intercept2 + slope2 * log_GN_steps)
             fitted_line3 = 10 ** (intercept3 + slope3 * log_GN_steps)
             
-            plt.plot(train_sizes, fitted_line1, marker='x', linestyle='--', label=f'PINN: slope={slope1:.2f}')
-            # plt.plot(train_sizes, fitted_line2, marker='x', linestyle='--', label=f'MLP: slope={slope2:.2f}')
-            plt.plot(train_sizes, fitted_line3, marker='x', linestyle='--', label=f'SCaSML: slope={slope3:.2f}')
+            # ======================
+            # Visualization Settings
+            # ======================
+            # Define custom color scheme (Black, Gray, Teal)
+            COLOR_PALETTE = {
+                'GP': '#000000',    # Primary black
+                'SCaSML': '#2C939A' # Scientific teal
+            }
 
-            plt.yscale('log')
+            # Configure matplotlib rcParams for publication quality
+            plt.rcParams.update({
+                'font.family': 'Arial',        # Set font family
+                'font.size': 9,                # Base font size
+                'axes.labelsize': 10,          # Axis label size
+                'axes.titlesize': 0,           # Disable title (per request)
+                'legend.fontsize': 8,          # Legend font size
+                'xtick.labelsize': 8,          # X-tick label size
+                'ytick.labelsize': 8,          # Y-tick label size
+                'axes.linewidth': 0.8,         # Axis line width
+                'lines.linewidth': 1.2,        # Plot line width
+                'lines.markersize': 5,         # Marker size
+                'savefig.dpi': 600,            # Output resolution
+                'savefig.transparent': True,   # Transparent background
+                'figure.autolayout': True      # Enable tight layout
+            })
 
-            plt.legend()
-            plt.grid(True, which="both", ls="--", linewidth=0.5)
+            # =========================
+            # Confidence Interval Calculation
+            # =========================
+            def calculate_confidence_interval(log_x, log_y, slope, intercept, alpha=0.95):
+                """Calculate 95% confidence interval for regression line"""
+                # Calculate predicted values
+                log_y_pred = slope * log_x + intercept
+                
+                # Compute residuals and standard error
+                residuals = log_y - log_y_pred
+                SSE = np.sum(residuals**2)
+                n = len(log_x)
+                df = n - 2
+                MSE = SSE / df
+                x_mean = np.mean(log_x)
+                t_crit = t.ppf((1 + alpha)/2, df)  # Critical t-value
+                
+                # Calculate confidence bands
+                se = np.sqrt(MSE * (1/n + (log_x - x_mean)**2 / np.sum((log_x - x_mean)**2)))
+                ci_upper = log_y_pred + t_crit * se
+                ci_lower = log_y_pred - t_crit * se
+                
+                return 10**ci_upper, 10**ci_lower
+
+            # Calculate confidence intervals for all methods
+            ci_upper1, ci_lower1 = calculate_confidence_interval(log_GN_steps, log_error1, slope1, intercept1)
+            ci_upper3, ci_lower3 = calculate_confidence_interval(log_GN_steps, log_error3, slope3, intercept3)
+
+            # ======================
+            # Figure Composition
+            # ======================
+            # Create figure with specific dimensions (Nature standard: 89mm single column)
+            fig = plt.figure(figsize=(3.5, 3))  # 3.5 inches = ~89mm width
             
-            plt.xlabel('Training Size')
-            plt.ylabel('Mean Relative L2 Error on Test Set')
-            plt.title('ConvergenceRate Verification')
+            # Configure axis spacing
+            ax = fig.add_subplot(111)
+            ax.spines['top'].set_visible(False)
+            ax.spines['right'].set_visible(False)
+            ax.tick_params(axis='both', which='both', length=4, pad=2)
 
-            plt.tight_layout()
-            
-            plt.savefig(f'{save_path}/ConvergenceRate_Verification.png')
+            # ======================
+            # Data Visualization
+            # ======================
+            # Plot confidence intervals first
+            fill_alpha = 0.15  # Subtle transparency for confidence bands
+            for method, ci_upper, ci_lower in zip(['GP', 'SCaSML'],
+                                                [ci_upper1, ci_upper3],
+                                                [ci_lower1, ci_lower3]):
+                ax.fill_between(train_sizes, ci_lower, ci_upper,
+                            color=COLOR_PALETTE[method], alpha=fill_alpha, 
+                            linewidth=0, zorder=1)
+
+            # Plot regression lines with distinct markers
+            marker_params = {
+                'GP': {'marker': 'o', 'facecolor': 'none', 'edgewidth': 0.8},
+                'SCaSML': {'marker': '^', 'facecolor': 'none', 'edgewidth': 0.8}
+            }
+
+            for method, line in zip(['GP', 'SCaSML'],
+                                [fitted_line1, fitted_line3]):
+                ax.plot(train_sizes, line,
+                    color=COLOR_PALETTE[method],
+                    linestyle='--',
+                    marker=marker_params[method]['marker'],
+                    markersize=4,
+                    markeredgewidth=marker_params[method]['edgewidth'],
+                    markerfacecolor=marker_params[method]['facecolor'],
+                    zorder=2)
+
+            # ======================
+            # Aesthetic Refinements
+            # ======================
+            # Configure axis labels
+            ax.set_xlabel('Training Size', labelpad=3)
+            ax.set_ylabel('Relative L2 Error', labelpad=3)
+
+            # Set axis limits and scale
+            ax.set_yscale('log')
+            ax.set_xlim(left=0)  # Keep linear scale per request
+
+            # Create minimalist legend
+            legend_elements = [
+                plt.Line2D([0], [0], color=COLOR_PALETTE['GP'], lw=1.2,
+                        label=f'GP (m={slope1:.2f})'),
+                plt.Line2D([0], [0], color=COLOR_PALETTE['SCaSML'], lw=1.2,
+                        label=f'SCaSML (m={slope3:.2f})')
+            ]
+            ax.legend(handles=legend_elements, frameon=False,
+                    loc='upper right', bbox_to_anchor=(1, 1),
+                    handlelength=1.5, handletextpad=0.5)
+
+            # Add gridlines
+            ax.grid(True, which='major', axis='y', linestyle='--', 
+                linewidth=0.5, alpha=0.4)
+
+            # ======================
+            # Output Configuration
+            # ======================
+            plt.savefig(f'{save_path}/ConvergenceRate_Verification.pdf',  # Vector format preferred
+                    format='pdf', bbox_inches='tight', pad_inches=0.05)
             plt.close()
         
             # Disable the profiler and print stats

@@ -47,7 +47,7 @@ class SimpleUniform(object):
         self.T = equation.T  # equation.T: float
         self.is_train = is_train
 
-    def test(self, save_path, rhomax=3, num_domain=500, num_boundary=100):
+    def test(self, save_path, rhomax=2, num_domain=500, num_boundary=100):
         '''
         Compares solvers on test data after training on a large training dataset.
     
@@ -113,9 +113,9 @@ class SimpleUniform(object):
         time3 += time.time() - start
 
         # Compute the average error and relative error
-        errors1 = jnp.abs(sol1 - exact_sol)
-        errors2 = jnp.abs(sol2 - exact_sol)
-        errors3 = jnp.abs(sol3 - exact_sol)
+        errors1 = jnp.abs(sol1 - exact_sol).flatten()
+        errors2 = jnp.abs(sol2 - exact_sol).flatten()
+        errors3 = jnp.abs(sol3 - exact_sol).flatten()
         rel_error1 = jnp.linalg.norm(errors1) / jnp.linalg.norm(exact_sol+1e-6)
         rel_error2 = jnp.linalg.norm(errors2) / jnp.linalg.norm(exact_sol+1e-6)
         rel_error3 = jnp.linalg.norm(errors3) / jnp.linalg.norm(exact_sol+1e-6)
@@ -142,45 +142,141 @@ class SimpleUniform(object):
         errors_13 = errors1 - errors3
         errors_23 = errors2 - errors3
         
-        plt.figure()
-        # collect all absolute errors
-        # errors = [errors1.flatten(), errors2.flatten(), errors3.flatten(), errors_13.flatten(), errors_23.flatten()]
-        errors = [errors1.flatten(), errors2.flatten(), errors3.flatten()]
-        # Create a boxplot
-        # plt.boxplot(errors, labels=['PINN_l1', 'MLP_l1', 'ScaSML_l1', 'PINN_l1 - ScaSML_l1', 'MLP_l1 - ScaSML_l1'])
-        plt.boxplot(errors, labels=['PINN_L2', 'MLP_L2', 'ScaSML_L2'])
-        plt.xticks(rotation=45)
-        plt.yscale('log')
-        # Add a title and labels
-        plt.title('L2 Error Distribution')
-        plt.ylabel('L2 Error Value')
-        plt.tight_layout()
-        # Show the plot
-        plt.savefig(f"{save_path}/L2_Error_Distribution.png")
-        # Upload the plot to wandb
-        wandb.log({"Error Distribution": wandb.Image(f"{save_path}/L2_Error_Distribution.png")})
+        # Calculate comparison metrics
+        diff_gp = errors_13
+        diff_mlp = errors_23
         
-        plt.figure()
-        # collect all absolute errors
-        errors = [errors1.flatten(), errors2.flatten(), errors3.flatten()]
-        # Calculate means and standard deviations
-        means = [jnp.mean(e) for e in errors]
-        stds = [jnp.std(e) for e in errors]
-        # Define labels
-        labels = ['PINN_L2', 'MLP_L2', 'ScaSML_L2']
-        x_pos = range(len(labels))
-        # Create an error bar plot
-        plt.errorbar(x_pos, means, yerr=stds, capsize=5, capthick=2, ecolor='black',  marker='s', markersize=7, mfc='red', mec='black')
-        plt.xticks(x_pos, labels, rotation=45)
-        plt.yscale('log')
-        # Add a title and labels
-        plt.title('L2 Error Distribution')
-        plt.ylabel('L2 Error Value')
+        # Get spatial coordinates (first two dimensions)
+        spatial_coords = xt_test[:, :2]
+
+        # =============================================
+        # Visualization Configuration
+        # =============================================
+        COLOR_SCHEME = {
+            'GP': '#000000',     # Black
+            'MLP': '#A6A3A4',    # Gray
+            'SCaSML': '#2C939A'  # Teal
+        }
+
+        # Use DejaVu Sans as a replacement for Arial
+        plt.rcParams.update({
+            'font.family': 'DejaVu Sans',  # Similar to Arial
+            'font.size': 8,
+            'axes.labelsize': 9,
+            'axes.titlesize': 0,
+            'legend.fontsize': 7,
+            'xtick.labelsize': 7,
+            'ytick.labelsize': 7,
+            'axes.linewidth': 0.6,
+            'lines.linewidth': 0.8,
+            'savefig.dpi': 600,
+            'savefig.transparent': True,
+            'figure.autolayout': False
+        })
+
+        # =============================================
+        # Figure 1: Error Distribution (Violin Plot)
+        # =============================================
+        fig1 = plt.figure(figsize=(3.5, 3))
+        ax1 = fig1.add_subplot(111)
+        
+        # Create violin plot
+        vp = ax1.violinplot([errors1, errors2, errors3], 
+                        showmeans=False, showmedians=True)
+        
+        # Style violins
+        for pc, color in zip(vp['bodies'], COLOR_SCHEME.values()):
+            pc.set_facecolor(color)
+            pc.set_edgecolor('black')
+            pc.set_alpha(0.8)
+        
+        # Configure axes
+        ax1.set_yscale('log')
+        ax1.set_ylabel('Absolute Error', labelpad=2)
+        ax1.set_xticks([1, 2, 3])
+        ax1.set_xticklabels(['GP', 'MLP', 'SCaSML'], rotation=45, ha='right')
+        ax1.grid(axis='y', linestyle='--', alpha=0.4)
+        
+        # Final touches
+        ax1.spines[['top', 'right']].set_visible(False)
         plt.tight_layout()
-        # Show the plot
-        plt.savefig(f"{save_path}/L2_Error_Distribution_errorbar.png")
-        # Upload the plot to wandb
-        wandb.log({"Error Distribution": wandb.Image(f"{save_path}/L2_Error_Distribution_errorbar.png")})
+        plt.savefig(f"{save_path}/Error_Distribution.pdf", 
+                bbox_inches='tight', pad_inches=0.05)
+        plt.close()
+
+        # =============================================
+        # Figure 2: GP vs SCaSML Comparison
+        # =============================================
+        fig2, ax2 = plt.subplots(figsize=(3.5, 3))
+        
+        # Determine symmetric colorbar limits
+        max_diff = max(np.abs(diff_gp).max(), np.abs(diff_mlp).max())
+        vmin, vmax = -max_diff, max_diff  # Ensure 0 is centered
+        
+        # Create hexbin plot
+        hb_gp = ax2.hexbin(spatial_coords[:,0], spatial_coords[:,1], 
+                        C=diff_gp, cmap='coolwarm', gridsize=30,
+                        reduce_C_function=np.mean, mincnt=1,
+                        vmin=vmin, vmax=vmax)  # Set symmetric limits
+        
+        # Add colorbar
+        cb_gp = fig2.colorbar(hb_gp, ax=ax2, pad=0.02)
+        cb_gp.set_label('Error Difference (GP - SCaSML)', rotation=270, labelpad=10)
+        cb_gp.set_ticks([vmin, 0, vmax])  # Ensure 0 is centered
+        
+        # Add statistical annotation
+        stats_text = (f"Positive count: {np.sum(diff_gp > 0)}\n"
+                    f"Negative count: {np.sum(diff_gp < 0)}\n"
+                    f"Positive sum: {np.sum(diff_gp[diff_gp > 0]):.2f}\n"
+                    f"Negative sum: {np.sum(diff_gp[diff_gp < 0]):.2f}")
+        ax2.text(0.95, 0.95, stats_text, transform=ax2.transAxes,
+                ha='right', va='top', fontsize=7,
+                bbox=dict(facecolor='white', alpha=0.8, edgecolor='none'))
+        
+        # Format axes
+        ax2.set_xlabel('Spatial Dimension 1', labelpad=2)
+        ax2.set_ylabel('Spatial Dimension 2', labelpad=2)
+        ax2.set_aspect('equal')
+        ax2.spines[['top', 'right']].set_visible(False)
+        plt.tight_layout()
+        plt.savefig(f"{save_path}/GP_vs_SCaSML.pdf", 
+                bbox_inches='tight', pad_inches=0.05)
+        plt.close()
+
+        # =============================================
+        # Figure 3: MLP vs SCaSML Comparison 
+        # =============================================
+        fig3, ax3 = plt.subplots(figsize=(3.5, 3))
+        
+        # Create hexbin plot with same colorbar limits
+        hb_mlp = ax3.hexbin(spatial_coords[:,0], spatial_coords[:,1],
+                        C=diff_mlp, cmap='coolwarm', gridsize=30,
+                        reduce_C_function=np.mean, mincnt=1,
+                        vmin=vmin, vmax=vmax)  # Use same limits as GP plot
+        
+        # Add colorbar
+        cb_mlp = fig3.colorbar(hb_mlp, ax=ax3, pad=0.02)
+        cb_mlp.set_label('Error Difference (MLP - SCaSML)', rotation=270, labelpad=10)
+        cb_mlp.set_ticks([vmin, 0, vmax])  # Ensure 0 is centered
+        
+        # Add statistical annotation
+        stats_text = (f"Positive count: {np.sum(diff_mlp > 0)}\n"
+                    f"Negative count: {np.sum(diff_mlp < 0)}\n"
+                    f"Positive sum: {np.sum(diff_mlp[diff_mlp > 0]):.2f}\n"
+                    f"Negative sum: {np.sum(diff_mlp[diff_mlp < 0]):.2f}")
+        ax3.text(0.95, 0.95, stats_text, transform=ax3.transAxes,
+                ha='right', va='top', fontsize=7,
+                bbox=dict(facecolor='white', alpha=0.8, edgecolor='none'))
+        
+        # Format axes
+        ax3.set_xlabel('Spatial Dimension 1', labelpad=2)
+        ax3.set_ylabel('Spatial Dimension 2', labelpad=2)
+        ax3.set_aspect('equal')
+        ax3.spines[['top', 'right']].set_visible(False)
+        plt.tight_layout()
+        plt.savefig(f"{save_path}/MLP_vs_SCaSML.pdf", 
+                bbox_inches='tight', pad_inches=0.05)
+        plt.close()
 
         # Print the results
         print(f"PINN rel L2, rho={rhomax}->", rel_error1)
