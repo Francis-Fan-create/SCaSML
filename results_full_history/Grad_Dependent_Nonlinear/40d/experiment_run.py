@@ -12,8 +12,8 @@ from optimizers.Adam import Adam
 from tests.SimpleUniform import SimpleUniform
 from tests.ConvergenceRate import ConvergenceRate
 from tests.InferenceScaling import InferenceScaling
-from solvers.MLP import MLP
-from solvers.ScaSML import ScaSML
+from solvers.MLP_full_history import MLP_full_history
+from solvers.ScaSML_full_history import ScaSML_full_history
 import numpy as np
 import torch
 import wandb
@@ -25,8 +25,8 @@ import jax
 dde.config.set_random_seed(1234)
 #use jax backend
 dde.backend.set_default_backend('jax')
-#set default float to float32
-dde.config.set_default_float("float32")
+#set default float to float16
+dde.config.set_default_float("float16")
 # fix random seed for jax
 jax.random.PRNGKey(0)
 # device configuration
@@ -64,8 +64,8 @@ else:
 
 #initialize the normal sphere test
 solver1 = model #PINN network
-solver2=MLP(equation=equation) #Multilevel Picard object
-solver3=ScaSML(equation=equation,PINN=solver1) #ScaSML object
+solver2=MLP_full_history(equation=equation) #Multilevel Picard object
+solver3=ScaSML_full_history(equation=equation,PINN=solver1) #ScaSML object
 
 
 #run the test for SimpleUniform

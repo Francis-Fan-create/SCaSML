@@ -10,6 +10,7 @@ import shutil
 import copy
 from optimizers.Adam import Adam
 from scipy.stats import t
+import matplotlib.ticker as ticker
 
 class InferenceScaling(object):
     '''
@@ -30,7 +31,7 @@ class InferenceScaling(object):
 
         Parameters:
         equation (object): The equation object containing problem specifics.
-        solver1 (object): The GP solver.
+        solver1 (object): The PINN solver.
         solver2 (object): The MLP solver object.
         solver3 (object): The ScaSML solver object.
         '''
@@ -110,9 +111,9 @@ class InferenceScaling(object):
         self.solver1 = trained_model1
         self.solver3.PINN = trained_model1
     
-        for j in range(list_len-1):
+        for j in range(list_len):
 
-            rho = j + 2
+            rho = j + 1
 
             # Print current rho value
             print(f"Current rho value: {rho}")
@@ -131,9 +132,9 @@ class InferenceScaling(object):
             errors2 = np.linalg.norm(sol2 - exact_sol)
             errors3 = np.linalg.norm(sol3 - exact_sol)
         
-            error_value1 = errors1 / np.linalg.norm(exact_sol+1e-3)
-            error_value2 = errors2 / np.linalg.norm(exact_sol+1e-3)
-            error_value3 = errors3 / np.linalg.norm(exact_sol+1e-3)
+            error_value1 = errors1 / np.linalg.norm(exact_sol)
+            error_value2 = errors2 / np.linalg.norm(exact_sol)
+            error_value3 = errors3 / np.linalg.norm(exact_sol)
 
             error1_list.append(error_value1)
             error2_list.append(error_value2)
@@ -171,7 +172,7 @@ class InferenceScaling(object):
         # ======================
         # Define custom color scheme (Black, Gray, Teal)
         COLOR_PALETTE = {
-            'GP': '#000000',    # Primary black
+            'PINN': '#000000',    # Primary black
             'MLP': '#A6A3A4',   # Neutral gray
             'SCaSML': '#2C939A' # Scientific teal
         }
@@ -239,7 +240,7 @@ class InferenceScaling(object):
         # ======================
         # Plot confidence intervals first
         fill_alpha = 0.15  # Subtle transparency for confidence bands
-        for method, ci_upper, ci_lower in zip(['GP', 'MLP', 'SCaSML'],
+        for method, ci_upper, ci_lower in zip(['PINN', 'MLP', 'SCaSML'],
                                             [ci_upper1, ci_upper2, ci_upper3],
                                             [ci_lower1, ci_lower2, ci_lower3]):
             ax.fill_between(evaluation_counter_array, ci_lower, ci_upper,
@@ -248,12 +249,12 @@ class InferenceScaling(object):
 
         # Plot regression lines with distinct markers
         marker_params = {
-            'GP': {'marker': 'o', 'facecolor': 'none', 'edgewidth': 0.8},
+            'PINN': {'marker': 'o', 'facecolor': 'none', 'edgewidth': 0.8},
             'MLP': {'marker': 's', 'facecolor': 'none', 'edgewidth': 0.8},
             'SCaSML': {'marker': '^', 'facecolor': 'none', 'edgewidth': 0.8}
         }
 
-        for method, line in zip(['GP', 'MLP', 'SCaSML'],
+        for method, line in zip(['PINN', 'MLP', 'SCaSML'],
                               [fitted_line1, fitted_line2, fitted_line3]):
             ax.plot(evaluation_counter_array, line,
                   color=COLOR_PALETTE[method],
@@ -276,10 +277,18 @@ class InferenceScaling(object):
         ax.set_xscale('log')
         ax.set_xlim(left=0)  # Keep linear scale per request
 
+        # Set x-ticks (manually) and rotate the labels
+        formatter = ticker.ScalarFormatter(useMathText=True)
+        formatter.set_powerlimits((0, 6))  
+        ax.xaxis.set_major_formatter(formatter)
+        ax.set_xticklabels(ax.get_xticklabels(), rotation=45)
+
+
+
         # Create minimalist legend
         legend_elements = [
-            plt.Line2D([0], [0], color=COLOR_PALETTE['GP'], lw=1.2,
-                     label=f'GP (m={slope1:.2f})'),
+            plt.Line2D([0], [0], color=COLOR_PALETTE['PINN'], lw=1.2,
+                     label=f'PINN (m={slope1:.2f})'),
             plt.Line2D([0], [0], color=COLOR_PALETTE['MLP'], lw=1.2,
                      label=f'MLP (m={slope2:.2f})'),
             plt.Line2D([0], [0], color=COLOR_PALETTE['SCaSML'], lw=1.2,
@@ -296,6 +305,7 @@ class InferenceScaling(object):
         # ======================
         # Output Configuration
         # ======================
+        plt.tight_layout()
         plt.savefig(f'{save_path}/InferenceScaling_Verification.pdf',  # Vector format preferred
                   format='pdf', bbox_inches='tight', pad_inches=0.05)
         plt.close()

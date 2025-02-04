@@ -155,7 +155,7 @@ class SimpleUniform(object):
         # Visualization Configuration
         # =============================================
         COLOR_SCHEME = {
-            'GP': '#000000',     # Black
+            'PINN': '#000000',     # Black
             'MLP': '#A6A3A4',    # Gray
             'SCaSML': '#2C939A'  # Teal
         }
@@ -196,7 +196,7 @@ class SimpleUniform(object):
         ax1.set_yscale('log')
         ax1.set_ylabel('Absolute Error', labelpad=2)
         ax1.set_xticks([1, 2, 3])
-        ax1.set_xticklabels(['GP', 'MLP', 'SCaSML'], rotation=45, ha='right')
+        ax1.set_xticklabels(['PINN', 'MLP', 'SCaSML'], rotation=45, ha='right')
         ax1.grid(axis='y', linestyle='--', alpha=0.4)
         
         # Final touches
@@ -207,7 +207,7 @@ class SimpleUniform(object):
         plt.close()
 
         # =============================================
-        # Figure 2: GP vs SCaSML Comparison
+        # Figure 2: PINN vs SCaSML Comparison
         # =============================================
         fig2, ax2 = plt.subplots(figsize=(3.5, 3))
         
@@ -223,7 +223,7 @@ class SimpleUniform(object):
         
         # Add colorbar
         cb_gp = fig2.colorbar(hb_gp, ax=ax2, pad=0.02)
-        cb_gp.set_label('Error Difference (GP - SCaSML)', rotation=270, labelpad=10)
+        cb_gp.set_label('Error Difference (PINN - SCaSML)', rotation=270, labelpad=10)
         cb_gp.set_ticks([vmin, 0, vmax])  # Ensure 0 is centered
         
         # Add statistical annotation
@@ -254,7 +254,7 @@ class SimpleUniform(object):
         hb_mlp = ax3.hexbin(spatial_coords[:,0], spatial_coords[:,1],
                         C=diff_mlp, cmap='coolwarm', gridsize=30,
                         reduce_C_function=np.mean, mincnt=1,
-                        vmin=vmin, vmax=vmax)  # Use same limits as GP plot
+                        vmin=vmin, vmax=vmax)  # Use same limits as PINN plot
         
         # Add colorbar
         cb_mlp = fig3.colorbar(hb_mlp, ax=ax3, pad=0.02)
@@ -294,7 +294,7 @@ class SimpleUniform(object):
 
         # Create bar plot
         fig, ax = plt.subplots(figsize=(3.5, 3))
-        methods = ['GP', 'MLP', 'SCaSML']
+        methods = ['PINN', 'MLP', 'SCaSML']
         colors = ['#000000', '#A6A3A4', '#2C939A']
         
         # Plot bars
@@ -379,7 +379,7 @@ class SimpleUniform(object):
             plt.close()
 
         # Generate three spatiotemporal plots
-        plot_spatio_temp_error(errors1_grid, 'GP', 'GP_Spatiotemporal_Errors')
+        plot_spatio_temp_error(errors1_grid, 'PINN', 'GP_Spatiotemporal_Errors')
         plot_spatio_temp_error(errors2_grid, 'MLP', 'MLP_Spatiotemporal_Errors')
         plot_spatio_temp_error(errors3_grid, 'SCaSML', 'SCaSML_Spatiotemporal_Errors')
 

@@ -156,7 +156,7 @@ class ConvergenceRate(object):
             # ======================
             # Define custom color scheme (Black, Gray, Teal)
             COLOR_PALETTE = {
-                'GP': '#000000',    # Primary black
+                'PINN': '#000000',    # Primary black
                 'SCaSML': '#2C939A' # Scientific teal
             }
 
@@ -222,7 +222,7 @@ class ConvergenceRate(object):
             # ======================
             # Plot confidence intervals first
             fill_alpha = 0.15  # Subtle transparency for confidence bands
-            for method, ci_upper, ci_lower in zip(['GP', 'SCaSML'],
+            for method, ci_upper, ci_lower in zip(['PINN', 'SCaSML'],
                                                 [ci_upper1, ci_upper3],
                                                 [ci_lower1, ci_lower3]):
                 ax.fill_between(train_sizes, ci_lower, ci_upper,
@@ -231,11 +231,11 @@ class ConvergenceRate(object):
 
             # Plot regression lines with distinct markers
             marker_params = {
-                'GP': {'marker': 'o', 'facecolor': 'none', 'edgewidth': 0.8},
+                'PINN': {'marker': 'o', 'facecolor': 'none', 'edgewidth': 0.8},
                 'SCaSML': {'marker': '^', 'facecolor': 'none', 'edgewidth': 0.8}
             }
 
-            for method, line in zip(['GP', 'SCaSML'],
+            for method, line in zip(['PINN', 'SCaSML'],
                                 [fitted_line1, fitted_line3]):
                 ax.plot(train_sizes, line,
                     color=COLOR_PALETTE[method],
@@ -259,8 +259,8 @@ class ConvergenceRate(object):
 
             # Create minimalist legend
             legend_elements = [
-                plt.Line2D([0], [0], color=COLOR_PALETTE['GP'], lw=1.2,
-                        label=f'GP (m={slope1:.2f})'),
+                plt.Line2D([0], [0], color=COLOR_PALETTE['PINN'], lw=1.2,
+                        label=f'PINN (m={slope1:.2f})'),
                 plt.Line2D([0], [0], color=COLOR_PALETTE['SCaSML'], lw=1.2,
                         label=f'SCaSML (m={slope3:.2f})')
             ]

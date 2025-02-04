@@ -177,7 +177,7 @@ class MLP_full_history(object):
                 # Update u and z values
                 u -= (T-t)[:,jnp.newaxis]* jnp.mean(y, axis=1)  # Update u values
                 delta_sqrt_t = jnp.sqrt(sampled_time_steps + 1e-6)  # Avoid division by zero, shape (batch_size, 1)
-                z += (T-t)[:,jnp.newaxis] * jnp.mean((y * std_normal / (delta_sqrt_t)),axis=1)  # Update z values  
+                z -= (T-t)[:,jnp.newaxis] * jnp.mean((y * std_normal / (delta_sqrt_t)),axis=1)  # Update z values  
         output_cated = jnp.concatenate((u, z), axis=-1)  # Concatenate adjusted u and z values, shape (batch_size, dim + 1)
         norm_estimation = self.equation.norm_estimation
         return jnp.clip(output_cated, -norm_estimation, norm_estimation)  # Clip the output to avoid numerical instability
