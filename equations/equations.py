@@ -286,21 +286,20 @@ class Equation(object):
         self.geomt = timedomain
         return geom  
     
-    def generate_test_data(self, num_domain=100, num_boundary=20, random='Hammersley'):
+    def generate_test_data(self, num_domain=100, num_boundary=20):
         '''
         Generates data for testing the PDE model.
         
         Parameters:
         - num_domain (int): Number of points to sample in the domain.
         - num_boundary (int): Number of points to sample on the boundary.
-        - random (str): The method of sampling. Defaults to 'Hammersley'.
         
         Returns:
         - data (tuple): A tuple containing domain points and boundary points.
         '''
         geom = self.test_geometry()  # Defines the geometry of the domain.
-        data1 = geom.random_points(num_domain, random=random).astype(jnp.float16)  # Generates random points in the domain.
-        data2 = geom.random_boundary_points(num_boundary).astype(jnp.float16)  # Generates random points on the boundary.
+        data1 = geom.random_points(num_domain)  # Generates random points in the domain.
+        data2 = geom.random_boundary_points(num_boundary)  # Generates random points on the boundary.
         return data1, data2
     
     def generate_data(self):
@@ -349,6 +348,24 @@ class Grad_Dependent_Nonlinear(Equation):
         return residual
 
     @partial(jit,static_argnames=["self"])
+    def initial_constraint(self, x_t):
+        '''
+        Computes the initial contraint of the PDE for given inputs.
+        
+        Parameters:
+        - x_t (ndarray): Input tensor of shape (batch_size, n_input), where n_input includes the time dimension.
+        
+        Returns:
+        - result (ndarray): An arrary of shape (batch_size, n_output), representing the initial constraint.
+        '''
+        x = x_t[:, :-1]
+        sum_x = jnp.sum(x, axis=1)
+        exp_term = jnp.exp(sum_x)  # Computes the exponential term of the solution.
+        result = 1 - 1 / (1 + exp_term)  # Computes the exact solution.
+        result = result[:, jnp.newaxis]  # Convert to 2D
+        return result
+
+    @partial(jit,static_argnames=["self"])
     def terminal_constraint(self, x_t):
         '''
         Defines the terminal constraint for the PDE.
@@ -359,8 +376,12 @@ class Grad_Dependent_Nonlinear(Equation):
         Returns:
         - result (ndarray): A 1D tensor of shape (batch_size,), representing the terminal constraint.
         '''
-        result= 1-1 / (1 + jnp.exp(x_t[:,-1] + jnp.sum(x_t[:,:self.n_input-1],axis=1))) # Computes the terminal constraint.
-        return result[:,jnp.newaxis] 
+        x = x_t[:, :-1]
+        sum_x = jnp.sum(x, axis=1)
+        exp_term = jnp.exp(self.T+sum_x)  # Computes the exponential term of the solution.
+        result = 1 - 1 / (1 + exp_term)  # Computes the exact solution.
+        result = result[:, jnp.newaxis]  # Convert to 2D
+        return result
     
     @partial(jit,static_argnames=["self"])
     def Dirichlet_boundary_constraint(self, x_t):
@@ -476,14 +497,15 @@ class Grad_Dependent_Nonlinear(Equation):
         geom=self.geometry() # Defines the geometry of the domain.
         self.terminal_condition() # Generates terminal condition.
         self.Dirichlet_boundary_condition() # Generates Dirichlet boundary condition.
+        self.initial_condition() # Generate initial condition
         # self.data_loss() # Generates data loss. 
         data = dde.data.TimePDE(
                                 geom, # Geometry of the domain.
                                 self.PDE_loss, # PDE loss function.
-                                [self.tc, self.D_bc], # Additional conditions.
+                                [self.ic, self.tc, self.D_bc], # Additional conditions.
                                 num_domain=num_domain, # Number of domain points.
                                 num_boundary=100, # Number of boundary points.
-                                num_initial=0,  # Number of initial points.
+                                num_initial=160,  # Number of initial points.
                                 solution=self.exact_solution   # Incorporates exact solution for error metrics.
                             )
         return data
@@ -525,6 +547,23 @@ class Linear_HJB(Equation):
         residual=du_t -(1/dim)*div+2+laplacian # Computes the residual of the PDE.
         return residual 
     
+    @partial(jit,static_argnames=["self"])
+    def initial_constraint(self, x_t):
+        '''
+        Defines the initial constraint for the PDE.
+        
+        Parameters:
+        - x_t (ndarray): Input tensor of shape (batch_size, n_input), where n_input includes the time dimension.
+        
+        Returns:
+        - result (ndarray): A 2D tensor of shape (batch_size, 1), representing the initial constraint.
+        '''
+        x = x_t[:, :self.n_input - 1]  # Extracts the spatial coordinates.
+        sum_x = jnp.sum(x, axis=1)  # Computes the sum of spatial coordinates.
+        result = sum_x + self.T # Computes the initial constraint.
+        result = result[:, jnp.newaxis]  # Convert to 2D
+        return result[:,jnp.newaxis]
+
     @partial(jit,static_argnames=["self"])
     def terminal_constraint(self, x_t):
         '''
@@ -651,14 +690,15 @@ class Linear_HJB(Equation):
         geom=self.geometry() # Defines the geometry of the domain.
         self.terminal_condition() # Generates terminal condition.
         self.Dirichlet_boundary_condition() # Generates Dirichlet boundary condition.
+        self.initial_condition() # Generate initial condition
         # self.data_loss() # Generates data loss.
         data = dde.data.TimePDE(
                                 geom, # Geometry of the domain.
                                 self.PDE_loss, # PDE loss function.
-                                [self.tc, self.D_bc], # Additional conditions.
+                                [self.ic, self.tc, self.D_bc], # Additional conditions.
                                 num_domain=num_domain, # Number of domain points.
                                 num_boundary=100, # Number of boundary points.
-                                num_initial=0,  # Number of initial points.
+                                num_initial=160,  # Number of initial points.
                                 solution=self.exact_solution   # Incorporates exact solution for error metrics.
                             )
         return data

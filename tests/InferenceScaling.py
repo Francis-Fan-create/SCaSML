@@ -99,7 +99,7 @@ class InferenceScaling(object):
         # Generate test data (fixed)
         n_samples_domain = n_samples
         n_samples_boundary = int(n_samples/5)
-        xt_values_domain, xt_values_boundary = eq.generate_test_data(n_samples_domain, n_samples_boundary , random='Hammersley')
+        xt_values_domain, xt_values_boundary = eq.generate_test_data(n_samples_domain, n_samples_boundary)
         xt_values = np.concatenate((xt_values_domain, xt_values_boundary), axis=0)
         exact_sol = eq.exact_solution(xt_values)
 

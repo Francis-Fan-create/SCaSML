@@ -163,8 +163,8 @@ class ScaSML_full_history(object):
             dW =jnp.sqrt(sampled_time_steps) * std_normal  # Brownian increments for current time step, shape (batch_size, MC_f, dim)
             self.evaluation_counter+=MC_f*dim
             X += mu*(sampled_time_steps)+sigma * dW  # Update spatial coordinates
-            co_solver_l = lambda X_t: self.uz_solve(n=l, rho= None, x_t=X_t)  # Co-solver for level l
-            co_solver_l_minus_1 = lambda X_t: self.uz_solve(n=l - 1, rho= None, x_t=X_t)  # Co-solver for level l - 1
+            co_solver_l = lambda X_t: self.uz_solve(n=l, rho= l, x_t=X_t)  # Co-solver for level l
+            co_solver_l_minus_1 = lambda X_t: self.uz_solve(n=l - 1, rho= l, x_t=X_t)  # Co-solver for level l - 1
             # Compute Compute u and z values for current quadrature point using vmap
             input_intermediates = jnp.concatenate((X, sampled_time_steps), axis=2)  # Intermediate spatial-temporal coordinates, shape (batch_size, MC_f, n_input)
             input_intermediates_flat = input_intermediates.reshape(-1, self.n_input)

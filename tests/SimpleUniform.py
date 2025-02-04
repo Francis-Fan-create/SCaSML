@@ -9,6 +9,8 @@ import cProfile
 import shutil
 import jax.numpy as jnp
 from optimizers.Adam import Adam
+from matplotlib.colors import LogNorm
+
 # L_inf has been removed
 
 class SimpleUniform(object):
@@ -81,7 +83,7 @@ class SimpleUniform(object):
             self.solver1 = trained_model1
             self.solver3.PINN = trained_model1            
         # Generate test data
-        data_domain_test, data_boundary_test = eq.generate_test_data(num_domain, num_boundary, random = "Hammersley")
+        data_domain_test, data_boundary_test = eq.generate_test_data(num_domain, num_boundary)
         data_test = jnp.concatenate((data_domain_test, data_boundary_test), axis=0)
         xt_test = data_test[:, :self.dim + 1]
         exact_sol = eq.exact_solution(xt_test)
@@ -277,6 +279,109 @@ class SimpleUniform(object):
         plt.savefig(f"{save_path}/MLP_vs_SCaSML.pdf", 
                 bbox_inches='tight', pad_inches=0.05)
         plt.close()
+        
+        # =============================================
+        # Figure 4: Relative L2 Improvement Bar Plot
+        # =============================================
+        # Calculate mean relative errors
+        mean_rel_error1 = np.mean(rel_error1)
+        mean_rel_error2 = np.mean(rel_error2)
+        mean_rel_error3 = np.mean(rel_error3)
+
+        # Calculate improvements
+        improvement_gp = (mean_rel_error1 - mean_rel_error3) / mean_rel_error1 * 100
+        improvement_mlp = (mean_rel_error2 - mean_rel_error3) / mean_rel_error2 * 100
+
+        # Create bar plot
+        fig, ax = plt.subplots(figsize=(3.5, 3))
+        methods = ['GP', 'MLP', 'SCaSML']
+        colors = ['#000000', '#A6A3A4', '#2C939A']
+        
+        # Plot bars
+        bars = ax.bar(methods, [mean_rel_error1, mean_rel_error2, mean_rel_error3], 
+                    color=colors, edgecolor='black')
+        
+        # Annotate improvements
+        def format_improvement(val):
+            if val > 0: return f"-{val:.1f}%"
+            elif val < 0: return f"+{abs(val):.1f}%"
+            else: return "0%"
+        
+        ax.text(0, mean_rel_error1*1.05, format_improvement(improvement_gp),
+            ha='center', va='bottom', fontsize=7)
+        ax.text(1, mean_rel_error2*1.05, format_improvement(improvement_mlp),
+            ha='center', va='bottom', fontsize=7)
+
+        # Formatting
+        ax.set_ylabel('Mean Relative L2 Error')
+        ax.grid(axis='y', linestyle='--', alpha=0.4)
+        ax.spines[['top', 'right']].set_visible(False)
+        plt.tight_layout()
+        plt.savefig(f"{save_path}/Relative_L2_Improvement.pdf", bbox_inches='tight')
+        plt.close()
+    
+        # =============================================
+        # Figure 5: Spatiotemporal Error Analysis
+        # =============================================
+        # Compute (x1, x2) from test data
+        x1_values = xt_test[:, 0]  # First dimension is x1
+        x2_values = xt_test[:, 1]  # Second dimension is x2
+
+        # Create grid parameters
+        x1_grid_num, x2_grid_num = 3, 3  # mesh density
+        x1_bins = np.linspace(np.min(x1_values), np.max(x1_values), x1_grid_num + 1)
+        x2_bins = np.linspace(np.min(x2_values), np.max(x2_values), x2_grid_num + 1)
+
+        # Initialize error arrays for grid cells
+        errors1_grid = np.zeros((x2_grid_num, x1_grid_num))
+        errors2_grid = np.zeros((x2_grid_num, x1_grid_num))
+        errors3_grid = np.zeros((x2_grid_num, x1_grid_num))
+
+        # Compute errors for each grid cell
+        for i in range(x2_grid_num):
+            for j in range(x1_grid_num):
+                # Find points in current cell
+                x1_mask = (x1_values >= x1_bins[j]) & (x1_values < x1_bins[j+1])
+                x2_mask = (x2_values >= x2_bins[i]) & (x2_values < x2_bins[i+1])
+                cell_mask = x1_mask & x2_mask
+                
+                if np.sum(cell_mask) > 0:
+                    # Compute mean L1 errors
+                    errors1_grid[i, j] = np.mean(errors1[cell_mask])
+                    errors2_grid[i, j] = np.mean(errors2[cell_mask])
+                    errors3_grid[i, j] = np.mean(errors3[cell_mask])
+
+        # =============================================
+        # New Code: Spatiotemporal Error Visualization
+        # =============================================
+        def plot_spatio_temp_error(data, label, filename):
+            fig, ax = plt.subplots(figsize=(5, 4))
+            norm = LogNorm(vmin=1e-6, vmax=np.max([errors1.max(), errors2.max(), errors3.max()]))
+            
+            # Create heatmap
+            im = ax.pcolormesh(x1_bins, x2_bins, data, cmap='viridis', norm=norm, shading='auto')
+            
+            # Add annotations
+            for i in range(x2_grid_num):
+                for j in range(x1_grid_num):
+                    if data[i, j] > 0:
+                        x1_center = (x1_bins[j] + x1_bins[j+1])/2
+                        x2_center = (x2_bins[i] + x2_bins[i+1])/2
+                        ax.text(x1_center, x2_center, f'{data[i, j]:.2e}', 
+                                ha='center', va='center', color='black', fontsize=6)
+            
+            # Formatting
+            cb = fig.colorbar(im, ax=ax, label='L1 Error (log scale)')
+            ax.set_xlabel('x1')
+            ax.set_ylabel('x2')
+            plt.tight_layout()
+            plt.savefig(f"{save_path}/{filename}.pdf", bbox_inches='tight')
+            plt.close()
+
+        # Generate three spatiotemporal plots
+        plot_spatio_temp_error(errors1_grid, 'GP', 'GP_Spatiotemporal_Errors')
+        plot_spatio_temp_error(errors2_grid, 'MLP', 'MLP_Spatiotemporal_Errors')
+        plot_spatio_temp_error(errors3_grid, 'SCaSML', 'SCaSML_Spatiotemporal_Errors')
 
         # Print the results
         print(f"PINN rel L2, rho={rhomax}->", rel_error1)

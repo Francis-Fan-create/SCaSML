@@ -9,7 +9,6 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..', '..'))
 from equations.equations import Linear_HJB
 from optimizers.Adam import Adam 
 # L_inf has been removed
-from tests.NormalSphere import NormalSphere
 from tests.SimpleUniform import SimpleUniform
 from tests.ConvergenceRate import ConvergenceRate
 from tests.InferenceScaling import InferenceScaling
@@ -26,8 +25,8 @@ import jax
 dde.config.set_random_seed(1234)
 #use jax backend
 dde.backend.set_default_backend('jax')
-#set default float to float16
-dde.config.set_default_float("float16")
+#set default float to float32
+dde.config.set_default_float("float32")
 # fix random seed for jax
 jax.random.PRNGKey(0)
 # device configuration
@@ -69,9 +68,6 @@ solver2=MLP(equation=equation) #Multilevel Picard object
 solver3=ScaSML(equation=equation,PINN=solver1) #ScaSML object
 
 
-# #run the test for NormalSphere
-# test1=NormalSphere(equation,solver1,solver2,solver3, is_train)
-# rhomax=test1.test(r"results/Linear_HJB/80d")
 #run the test for SimpleUniform
 test2=SimpleUniform(equation,solver1,solver2,solver3,is_train)
 test2.test(r"results/Linear_HJB/80d")
