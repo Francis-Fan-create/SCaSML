@@ -1,14 +1,10 @@
 # Simulation-Calibrated Scientific Machine Learning (SCaSML)
 
-SCaSML is a novel approach for solving high-dimensional partial differential equations (PDEs) that combines the dimension insensitivity of neural networks with the transparent, unbiased, and physical estimation from simulation solvers.
+SCaSML is a novel approach for solving high-dimensional partial differential equations (PDEs) that combines the dimension insensitivity of neural networks with the transparent, unbiased, and physical estimation from simulation solvers, leveragin inference time computation for scalable and refined predictions. This repo is a PINN implementation of this algorithm, another Gaussian Kernel Regression implementation is on https://github.com/Francis-Fan-create/SCaSML_GP.git .
 
 ## Abstract
 
-Addressing high-dimensional PDEs has long been challenging due to the 'curse of dimensionality'. Deep learning methods, while promising, often suffer from bias, non-transparency, and insufficient physics embedding. To address these, we propose Simulation Calibrated Scientific Machine Learning (SCaSML), integrating neural network's dimension insensitivity with transparent, unbiased and physical estimation from simulation solvers. 
-
-We train Physics-Informed Neural Networks (PINNs) to provide initial solution estimates, whose errors, governed by a new PDE, are corrected via Monte Carlo solvers using the Feynman-Kac and Elworthy-Bismut-Li formulae. We prove SCaSML's rate improvement for two state-of-the-art solvers, quadrature multilevel Picard and full-history multilevel Picard. 
-
-Numerical experiments on various high-dimensional PDEs, including the Hamilton-Jacobi-Bellman and gradient dependent nonlinear equations, etc., confirm our theoretical results in terms of accuracy. This method advances fields like economics, finance, operations research, and physics by comprehensively considering all involved elements as agents, assets, and resources.
+High-dimensional partial differential equations (PDEs) are fundamental to many scientific and engineering applications yet remain notoriously difficult to solve due to the "curse of dimensionality." While scientific machine learning (SciML) methods offer promising avenues for approximation, they frequently suffer from bias, non-transparency, and insufficient incorporation of physical laws. Inspired by breakthroughs in language models that leverage inference time computation for scalable and refined predictions, we introduce Simulation Calibrated Scientific Machine Learning (SCaSML). This framework marries the dimension-insensitive capabilities of surrogate models with the transparent, physics-based accuracy of simulation solvers. In SCaSML, surrogate models such as Physics-Informed Neural Networks (PINNs) and Gaussian Process are first employed to generate initial solution estimates. The systematic errors in these estimates—governed by a newly derived PDE—are subsequently corrected during inference time using Monte Carlo solvers based on the Feynman-Kac and Elworthy-Bismut-Li formula. Our extensive numerical experiments demonstrate the scalability of inference time corrections over broad solution domains for various high-dimensional PDEs, including the Hamilton-Jacobi-Bellman equation and other gradient-dependent semilinear equations. This work underscores the critical role of physics--informed inference time scaling in enhancing predictive performance, thereby significantly advancing the reliability and interpretability of high-dimensional PDE solvers in scientific computing.
 
 ## Installation
 
@@ -24,24 +20,39 @@ cd scasml
 ```bash
 pip install -r requirements.txt
 ```
+## Basic Usage
 
-## Usage
+You can run experiments for Grad_Dependent_Nonlinear_Equation and Linear_HJB by the following script:
+
+1. Run the experiment for 20d and 40d:
+
+```bash
+chmod +x low_dim_group.sh
+./low_dim_group.sh
+```
+
+2. Run the experiment for 60d and 80d:
+
+```bash
+chmod +x high_dim_group.sh
+./high_dim_group.sh
+```
+
+## Custom Usage
 
 To set up a new SCaSML solver for specific equations, follow these steps:
 
 1. Configure your equation in `equations/equations.py` using the `Grad_Dependent_Nonlinear` class as a guide.
 
-2. In the `models/` directory, create a new `.py` file and define your network structure, taking `FNN.py` as an example. Ensure to set the `self.regularizer` parameter.
+2. In the `optimizers/` directory, create a new `.py` file to customize your training process, following the `Adam.py` template.
 
-3. In the `optimizers/` directory, create a new `.py` file to customize your training process, following the `Adam.py` template.
+3. To use test methods other than `tests/SimpleUniform.py`, create a new one in the `tests/` directory using the `SimpleUniform.py` format.
 
-4. To use test methods other than `tests/NormalSphere.py`, create a new one in the `tests/` directory using the `NormalSphere.py` format.
+4. Copy `experiment_run.py` (Adam training) from `results/Grad_Dependent_Nonlinear/(certain dimension)/` to `results/(your equation)/(certain dimension)/`, replacing all "Grad_Dependent_Nonlinear" with your equation's name.
 
-5. Copy `experiment_run.py` (Adam training) from `results/Grad_Dependent_Nonlinear/(certain dimension)/` to `results/(your equation)/(certain dimension)/`, replacing all "Grad_Dependent_Nonlinear" with your equation's name.
+5. Review beginning lines to enable or disable wandb online logging.
 
-6. Review beginning lines to enable or disable wandb online logging.
-
-7. Run the experiment:
+6. Run the experiment:
 
 ```bash
 python results/(your equation)/(certain dimension)/experiment_run.py
