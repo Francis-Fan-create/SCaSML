@@ -67,7 +67,7 @@ python results/(your equation)/(certain dimension)/experiment_run.py
 ## Project Structure
 
 - `equations/`: Contains equation definitions
-- `models/`: Neural network model definitions
+- `utils/`: Some decorators to log callings of functions(No longer supported)
 - `optimizers/`: Custom optimization algorithms
 - `tests/`: Test methods for evaluating the solver
 - `results/`: Experiment results for quadrature MLP
