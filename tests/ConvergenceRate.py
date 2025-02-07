@@ -162,7 +162,7 @@ class ConvergenceRate(object):
 
             # Configure matplotlib rcParams for publication quality
             plt.rcParams.update({
-                'font.family': 'Arial',        # Set font family
+                'font.family': 'DejaVu Sans',        # Set font family
                 'font.size': 9,                # Base font size
                 'axes.labelsize': 10,          # Axis label size
                 'axes.titlesize': 0,           # Disable title (per request)

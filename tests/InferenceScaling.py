@@ -47,7 +47,7 @@ class InferenceScaling(object):
         self.t0 = equation.t0  # equation.t0: float
         self.T = equation.T  # equation.T: float
 
-    def test(self, save_path, rhomax=3, n_samples=500):
+    def test(self, save_path, rhomax=3, n_samples=1000):
         '''
         Compares solvers on different training iterations.
     
@@ -179,7 +179,7 @@ class InferenceScaling(object):
 
         # Configure matplotlib rcParams for publication quality
         plt.rcParams.update({
-            'font.family': 'Arial',        # Set font family
+            'font.family': 'DejaVu Sans',        # Set font family
             'font.size': 9,                # Base font size
             'axes.labelsize': 10,          # Axis label size
             'axes.titlesize': 0,           # Disable title (per request)
