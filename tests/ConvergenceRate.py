@@ -222,29 +222,37 @@ class ConvergenceRate(object):
             # ======================
             # Plot confidence intervals first
             fill_alpha = 0.15  # Subtle transparency for confidence bands
-            for method, ci_upper, ci_lower in zip(['PINN', 'SCaSML'],
+            for method, ci_upper, ci_lower in zip(['GP', 'SCaSML'],
                                                 [ci_upper1, ci_upper3],
                                                 [ci_lower1, ci_lower3]):
                 ax.fill_between(train_sizes, ci_lower, ci_upper,
                             color=COLOR_PALETTE[method], alpha=fill_alpha, 
                             linewidth=0, zorder=1)
 
-            # Plot regression lines with distinct markers
+            # Plot original data points with distinct markers
             marker_params = {
-                'PINN': {'marker': 'o', 'facecolor': 'none', 'edgewidth': 0.8},
+                'GP': {'marker': 'o', 'facecolor': 'none', 'edgewidth': 0.8},
                 'SCaSML': {'marker': '^', 'facecolor': 'none', 'edgewidth': 0.8}
             }
 
-            for method, line in zip(['PINN', 'SCaSML'],
-                                [fitted_line1, fitted_line3]):
-                ax.plot(train_sizes, line,
+            for method, error_array in zip(['GP', 'SCaSML'],
+                                        [error1_array, error3_array]):
+                ax.plot(train_sizes, error_array,
                     color=COLOR_PALETTE[method],
-                    linestyle='--',
+                    linestyle='',  # No line connecting points
                     marker=marker_params[method]['marker'],
                     markersize=4,
                     markeredgewidth=marker_params[method]['edgewidth'],
                     markerfacecolor=marker_params[method]['facecolor'],
                     zorder=2)
+
+            # Plot fitted lines with dashed style
+            for method, line in zip(['GP', 'SCaSML'],
+                                [fitted_line1, fitted_line3]):
+                ax.plot(train_sizes, line,
+                    color=COLOR_PALETTE[method],
+                    linestyle='--',
+                    zorder=3)
 
             # ======================
             # Aesthetic Refinements
@@ -259,8 +267,8 @@ class ConvergenceRate(object):
 
             # Create minimalist legend
             legend_elements = [
-                plt.Line2D([0], [0], color=COLOR_PALETTE['PINN'], lw=1.2,
-                        label=f'PINN (m={slope1:.2f})'),
+                plt.Line2D([0], [0], color=COLOR_PALETTE['GP'], lw=1.2,
+                        label=f'GP (m={slope1:.2f})'),
                 plt.Line2D([0], [0], color=COLOR_PALETTE['SCaSML'], lw=1.2,
                         label=f'SCaSML (m={slope3:.2f})')
             ]

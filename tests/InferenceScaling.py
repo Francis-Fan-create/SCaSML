@@ -240,30 +240,39 @@ class InferenceScaling(object):
         # ======================
         # Plot confidence intervals first
         fill_alpha = 0.15  # Subtle transparency for confidence bands
-        for method, ci_upper, ci_lower in zip(['PINN', 'MLP', 'SCaSML'],
+        for method, ci_upper, ci_lower in zip(['GP', 'MLP', 'SCaSML'],
                                             [ci_upper1, ci_upper2, ci_upper3],
                                             [ci_lower1, ci_lower2, ci_lower3]):
             ax.fill_between(evaluation_counter_array, ci_lower, ci_upper,
-                          color=COLOR_PALETTE[method], alpha=fill_alpha, 
-                          linewidth=0, zorder=1)
-
+                        color=COLOR_PALETTE[method], alpha=fill_alpha, 
+                        linewidth=0, zorder=1)
         # Plot regression lines with distinct markers
         marker_params = {
-            'PINN': {'marker': 'o', 'facecolor': 'none', 'edgewidth': 0.8},
+            'GP': {'marker': 'o', 'facecolor': 'none', 'edgewidth': 0.8},
             'MLP': {'marker': 's', 'facecolor': 'none', 'edgewidth': 0.8},
             'SCaSML': {'marker': '^', 'facecolor': 'none', 'edgewidth': 0.8}
         }
+        
+        # Plot original points
+        for method, error_array in zip(['GP', 'MLP', 'SCaSML'],
+                                    [error1_array, error2_array, error3_array]):
+            ax.scatter(evaluation_counter_array, error_array,
+                    color=COLOR_PALETTE[method],
+                    marker=marker_params[method]['marker'],
+                    s=20,  # Adjust marker size
+                    edgecolor=COLOR_PALETTE[method],
+                    linewidths=0.5,
+                    alpha=0.8,
+                    zorder=3)
 
-        for method, line in zip(['PINN', 'MLP', 'SCaSML'],
-                              [fitted_line1, fitted_line2, fitted_line3]):
+        # Plot regression lines
+        for method, line in zip(['GP', 'MLP', 'SCaSML'],
+                            [fitted_line1, fitted_line2, fitted_line3]):
             ax.plot(evaluation_counter_array, line,
-                  color=COLOR_PALETTE[method],
-                  linestyle='--',
-                  marker=marker_params[method]['marker'],
-                  markersize=4,
-                  markeredgewidth=marker_params[method]['edgewidth'],
-                  markerfacecolor=marker_params[method]['facecolor'],
-                  zorder=2)
+                color=COLOR_PALETTE[method],
+                linestyle='--',
+                linewidth=1.2,
+                zorder=2)
 
         # ======================
         # Aesthetic Refinements
@@ -283,16 +292,14 @@ class InferenceScaling(object):
         ax.xaxis.set_major_formatter(formatter)
         ax.set_xticklabels(ax.get_xticklabels(), rotation=45)
 
-
-
         # Create minimalist legend
         legend_elements = [
-            plt.Line2D([0], [0], color=COLOR_PALETTE['PINN'], lw=1.2,
-                     label=f'PINN (m={slope1:.2f})'),
+            plt.Line2D([0], [0], color=COLOR_PALETTE['GP'], lw=1.2,
+                    label=f'GP (m={slope1:.2f})'),
             plt.Line2D([0], [0], color=COLOR_PALETTE['MLP'], lw=1.2,
-                     label=f'MLP (m={slope2:.2f})'),
+                    label=f'MLP (m={slope2:.2f})'),
             plt.Line2D([0], [0], color=COLOR_PALETTE['SCaSML'], lw=1.2,
-                     label=f'SCaSML (m={slope3:.2f})')
+                    label=f'SCaSML (m={slope3:.2f})')
         ]
         ax.legend(handles=legend_elements, frameon=False,
                 loc='upper right', bbox_to_anchor=(1, 1),
@@ -300,14 +307,14 @@ class InferenceScaling(object):
 
         # Add gridlines
         ax.grid(True, which='major', axis='y', linestyle='--', 
-              linewidth=0.5, alpha=0.4)
+            linewidth=0.5, alpha=0.4)
 
         # ======================
         # Output Configuration
         # ======================
         plt.tight_layout()
         plt.savefig(f'{save_path}/InferenceScaling_Verification.pdf',  # Vector format preferred
-                  format='pdf', bbox_inches='tight', pad_inches=0.05)
+                format='pdf', bbox_inches='tight', pad_inches=0.05)
         plt.close()
     
         # Disable the profiler and print stats
