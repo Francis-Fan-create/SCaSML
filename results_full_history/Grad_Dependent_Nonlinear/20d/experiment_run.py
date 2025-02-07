@@ -68,12 +68,12 @@ solver2=MLP_full_history(equation=equation) #Multilevel Picard object
 solver3=ScaSML_full_history(equation=equation,PINN=solver1) #ScaSML object
 
 
-#run the test for SimpleUniform
-test2=SimpleUniform(equation,solver1,solver2,solver3,is_train)
-test2.test(r"results_full_history/Grad_Dependent_Nonlinear/20d")
-#run the test for ConvergenceRate
-test3=ConvergenceRate(equation,solver1,solver2,solver3, is_train)
-test3.test(r"results_full_history/Grad_Dependent_Nonlinear/20d")
+# #run the test for SimpleUniform
+# test2=SimpleUniform(equation,solver1,solver2,solver3,is_train)
+# test2.test(r"results_full_history/Grad_Dependent_Nonlinear/20d")
+# #run the test for ConvergenceRate
+# test3=ConvergenceRate(equation,solver1,solver2,solver3, is_train)
+# test3.test(r"results_full_history/Grad_Dependent_Nonlinear/20d")
 #run the test for InferenceScaling
 test4=InferenceScaling(equation,solver1,solver2,solver3)
 test4.test(r"results_full_history/Grad_Dependent_Nonlinear/20d")

@@ -25,6 +25,22 @@ class Equation(object):
         self.n_input = n_input  # dimension of the input, including time
         self.n_output = n_output  # dimension of the output
 
+    def grad(self, x_t,u):
+        '''
+        Calculates the gradient for given inputs.
+        
+        Parameters:
+        - x_t (tensor): Input tensor of shape (batch_size, n_input), where n_input includes the time dimension.
+        - u (tensor): Output tensor of shape (batch_size, n_output), representing the solution of the PDE.
+        
+        Returns:
+        - div (tensor): The div of the PDE of shape (batch_size, n_output).
+        '''
+        gradient = jnp.zeros((x_t.shape[0],self.n_input-1))
+        for k in range(self.n_input-1): # Accumulates laplacian and divergence over spatial dimensions.
+            gradient=gradient.at[:,k].set(dde.grad.jacobian(u, x_t, i=0, j=k)[0].flatten()) # Computes the divergence of u.
+        return gradient
+
     def PDE_loss(self, x_t, u, z):
         """
         PINN loss in the PDE, used in ScaSML to calculate epsilon.
@@ -523,7 +539,7 @@ class Linear_HJB(Equation):
         - n_output (int): The dimension of the output space. Defaults to 1.
         '''
         super().__init__(n_input, n_output)
-        self.uncertainty = 5e-3
+        self.uncertainty = 1e-1
         self.norm_estimation = 100
     
     def PDE_loss(self, x_t,u):

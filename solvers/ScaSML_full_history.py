@@ -45,7 +45,7 @@ class ScaSML_full_history(object):
         # self.evaluation_counter+=batch_size
         # self.evaluation_counter+=1
         u_hat = self.model.predict(x_t)
-        grad_u_hat_x = jax.grad(lambda tmp: jnp.sum(tmp))(x_t)[:, :-1]
+        grad_u_hat_x = self.model.predict(x_t,operator=self.equation.grad)
         # Calculate the values for the generator function
         val1 = eq.f(x_t, u_breve + u_hat, eq.sigma(x_t) * (grad_u_hat_x)+ z_breve)
         val2 = eq.f(x_t, u_hat, eq.sigma(x_t) * grad_u_hat_x)
@@ -145,7 +145,7 @@ class ScaSML_full_history(object):
         if n == 0:
             batch_size=x_t.shape[0]
             u_hat = self.model.predict(x_t)
-            grad_u_hat_x = jax.grad(lambda tmp: jnp.sum(tmp))(x_t)[:, :-1]
+            grad_u_hat_x = self.model.predict(x_t,operator=self.equation.grad)
             initial_value= jnp.concatenate((u_hat, sigma* grad_u_hat_x), axis=-1)        
             return initial_value 
         elif n < 0:
