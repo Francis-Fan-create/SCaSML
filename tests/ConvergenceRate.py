@@ -12,6 +12,7 @@ from optimizers.Adam import Adam
 # L_inf has been removed
 import jax.numpy as jnp
 from scipy.stats import t
+import matplotlib.ticker as ticker
 
 class ConvergenceRate(object):
     '''
@@ -49,7 +50,7 @@ class ConvergenceRate(object):
         self.T = equation.T  # equation.T: float
         self.is_train = is_train
 
-    def test(self, save_path, rhomax=2, train_iters = [0, 500, 1000, 1500, 2000, 2500, 3000, 3500, 4000]):
+    def test(self, save_path, rhomax=2, train_iters = [0, 500, 1000, 1500, 2000, 2500]):
         '''
         Compares solvers on different training iterations.
     

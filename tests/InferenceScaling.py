@@ -278,7 +278,7 @@ class InferenceScaling(object):
         # Aesthetic Refinements
         # ======================
         # Configure axis labels
-        ax.set_xlabel('Evaluation Steps', labelpad=3)
+        ax.set_xlabel('Realization of Normals', labelpad=3)
         ax.set_ylabel('Relative L2 Error', labelpad=3)
 
         # Set axis limits and scale
