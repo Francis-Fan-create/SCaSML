@@ -56,26 +56,36 @@ if os.path.exists(r"results_full_history/Linear_HJB/80d/model.ckpt-?"):
 else:
     #initialize the FNN
     #same layer width
-    net=dde.maps.jax.FNN([81]+[50]*5+[1], "tanh", "Glorot normal")
-    data = equation.generate_data()
-    model = dde.Model(data,net)
+    net1=dde.maps.jax.FNN([81]+[50]*5+[1], "tanh", "Glorot normal")
+    net2=dde.maps.jax.FNN([81]+[50]*5+[1], "tanh", "Glorot normal")
+    net3=dde.maps.jax.FNN([81]+[50]*5+[1], "tanh", "Glorot normal")    
+    data1 = equation.generate_data()
+    data2 = equation.generate_data()
+    data3 = equation.generate_data()
+    model1 = dde.Model(data1,net1)
+    model2 = dde.Model(data2,net2)
+    model3 = dde.Model(data3,net3)
     is_train = True
 
 
 #initialize the normal sphere test
-solver1 = model #PINN network
+solver1_1= model1 #PINN network
+solver1_2 = model2 #PINN network
+solver1_3 = model3 # PINN network
 solver2=MLP_full_history(equation=equation) #Multilevel Picard object
-solver3=ScaSML_full_history(equation=equation,PINN=solver1) #ScaSML object
+solver3_1=ScaSML_full_history(equation=equation,PINN=solver1_1) #ScaSML object
+solver3_2=ScaSML_full_history(equation=equation,PINN=solver1_2) #ScaSML object
+solver3_3=ScaSML_full_history(equation=equation,PINN=solver1_3) #ScaSML object
 
 
-#run the test for SimpleUniform
-test2=SimpleUniform(equation,solver1,solver2,solver3,is_train)
-test2.test(r"results_full_history/Linear_HJB/80d")
+# #run the test for SimpleUniform
+# test2=SimpleUniform(equation,solver1_1,solver2,solver3_1,is_train)
+# test2.test(r"results_full_history/Linear_HJB/80d")
 #run the test for ConvergenceRate
-test3=ConvergenceRate(equation,solver1,solver2,solver3, is_train)
+test3=ConvergenceRate(equation,solver1_2,solver2,solver3_2, is_train)
 test3.test(r"results_full_history/Linear_HJB/80d")
 #run the test for InferenceScaling
-test4=InferenceScaling(equation,solver1,solver2,solver3)
+test4=InferenceScaling(equation,solver1_3,solver2,solver3_3)
 test4.test(r"results_full_history/Linear_HJB/80d")
 
 #finish wandb
