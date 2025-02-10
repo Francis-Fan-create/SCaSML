@@ -199,7 +199,7 @@ class ScaSML_full_history(object):
                 z -= (T-t)[:,jnp.newaxis] * jnp.mean((y * std_normal / (delta_sqrt_t)),axis=1)  # Update z values
             else:
                 u_hat = self.model.predict(input_intermediates_flat)
-                epsilon_flat = self.equation.PDE_loss(input_terminal_flat, u_hat)
+                epsilon_flat = self.model.predict(input_intermediates_flat,operator = self.equation.PDE_loss)
                 epsilon = epsilon_flat.reshape(batch_size, MC_f, 1)
                 # Update u and z values
                 u += (T-t)[:,jnp.newaxis]* jnp.mean(epsilon, axis=1)  # Update u values

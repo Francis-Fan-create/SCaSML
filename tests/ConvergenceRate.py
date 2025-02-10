@@ -93,7 +93,7 @@ class ConvergenceRate(object):
         error3_list = []
 
         # Generate test data (fixed)
-        xt_values_domain, xt_values_boundary = eq.generate_test_data(500, 100 )
+        xt_values_domain, xt_values_boundary = eq.generate_test_data(1000, 200)
         xt_values = jnp.concatenate((xt_values_domain, xt_values_boundary), axis=0)
         exact_sol = eq.exact_solution(xt_values)
     
@@ -114,13 +114,13 @@ class ConvergenceRate(object):
                 sol3 = self.solver3.u_solve(rhomax, rhomax, xt_values)
             
                 # Compute errors
-                errors1 = jnp.linalg.norm(sol1 - exact_sol)
-                # errors2 = jnp.linalg.norm(sol2 - exact_sol)
-                errors3 = jnp.linalg.norm(sol3 - exact_sol)
+                errors1 = jnp.abs(sol1 - exact_sol).flatten()
+                # errors2 = jnp.abs(sol2 - exact_sol).flatten()
+                errors3 = jnp.abs(sol3 - exact_sol).flatten()
             
-                error_value1 = errors1 / jnp.linalg.norm(exact_sol)
-                # error_value2 = errors2 / jnp.linalg.norm(exact_sol)
-                error_value3 = errors3 / jnp.linalg.norm(exact_sol)
+                error_value1 = jnp.linalg.norm(errors1) / jnp.linalg.norm(exact_sol)
+                # error_value2 = jnp.linalg.norm(errors2) / jnp.linalg.norm(exact_sol)
+                error_value3 = jnp.linalg.norm(errors3) / jnp.linalg.norm(exact_sol)
 
                 error1_list.append(error_value1)
                 # error2_list.append(error_value2)
@@ -131,7 +131,7 @@ class ConvergenceRate(object):
             epsilon = 1e-10  # To avoid log(0)
 
             domain_sizes = jnp.array(train_iters)
-            train_sizes = domain_sizes * 2760
+            train_sizes = domain_sizes * 2600
             error1_array = jnp.array(error1_list)
             # error2_array = jnp.array(error2_list)
             error3_array = jnp.array(error3_list)

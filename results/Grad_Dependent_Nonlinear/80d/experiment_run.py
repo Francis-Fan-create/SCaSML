@@ -68,9 +68,9 @@ solver2=MLP(equation=equation) #Multilevel Picard object
 solver3=ScaSML(equation=equation,PINN=solver1) #ScaSML object
 
 
-#run the test for SimpleUniform
-test2=SimpleUniform(equation,solver1,solver2,solver3,is_train)
-test2.test(r"results/Grad_Dependent_Nonlinear/80d")
+# #run the test for SimpleUniform
+# test2=SimpleUniform(equation,solver1,solver2,solver3,is_train)
+# test2.test(r"results/Grad_Dependent_Nonlinear/80d")
 #run the test for ConvergenceRate
 test3=ConvergenceRate(equation,solver1,solver2,solver3, is_train)
 test3.test(r"results/Grad_Dependent_Nonlinear/80d")

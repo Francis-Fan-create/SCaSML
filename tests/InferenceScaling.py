@@ -87,7 +87,7 @@ class InferenceScaling(object):
     
     
         # Fix GN_steps
-        GN_steps = 1000 
+        GN_steps = 2500
         # Build a list for training sizes
         list_len = rhomax
         train_sizes_domain = 2500
@@ -286,12 +286,6 @@ class InferenceScaling(object):
         ax.set_xscale('log')
         ax.set_xlim(left=0)  # Keep linear scale per request
 
-        # Set x-ticks (manually) and rotate the labels
-        formatter = ticker.ScalarFormatter(useMathText=True)
-        formatter.set_powerlimits((0, 6))  
-        ax.xaxis.set_major_formatter(formatter)
-        ax.set_xticklabels(ax.get_xticklabels(), rotation=45)
-
         # Create minimalist legend
         legend_elements = [
             plt.Line2D([0], [0], color=COLOR_PALETTE['PINN'], lw=1.2,
@@ -313,6 +307,11 @@ class InferenceScaling(object):
         # Output Configuration
         # ======================
         plt.tight_layout()
+        # Set x-ticks (manually) and rotate the labels
+        formatter = ticker.ScalarFormatter(useMathText=True)
+        formatter.set_powerlimits((0, 6))  
+        ax.xaxis.set_major_formatter(formatter)
+        ax.set_xticklabels(ax.get_xticklabels(), rotation=45)
         plt.savefig(f'{save_path}/InferenceScaling_Verification.pdf',  # Vector format preferred
                 format='pdf', bbox_inches='tight', pad_inches=0.05)
         plt.close()

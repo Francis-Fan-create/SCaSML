@@ -118,9 +118,9 @@ class SimpleUniform(object):
         errors1 = jnp.abs(sol1 - exact_sol).flatten()
         errors2 = jnp.abs(sol2 - exact_sol).flatten()
         errors3 = jnp.abs(sol3 - exact_sol).flatten()
-        rel_error1 = jnp.linalg.norm(errors1) / jnp.linalg.norm(exact_sol+1e-6)
-        rel_error2 = jnp.linalg.norm(errors2) / jnp.linalg.norm(exact_sol+1e-6)
-        rel_error3 = jnp.linalg.norm(errors3) / jnp.linalg.norm(exact_sol+1e-6)
+        rel_error1 = jnp.linalg.norm(errors1) / jnp.linalg.norm(exact_sol)
+        rel_error2 = jnp.linalg.norm(errors2) / jnp.linalg.norm(exact_sol)
+        rel_error3 = jnp.linalg.norm(errors3) / jnp.linalg.norm(exact_sol)
         real_sol_L2 = jnp.linalg.norm(exact_sol) / jnp.sqrt(exact_sol.shape[0])
         #stop the profiler
         profiler.disable()
