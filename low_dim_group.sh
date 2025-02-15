@@ -28,4 +28,4 @@ echo "Running Group 4"
 python results/Linear_HJB/40d/experiment_run.py &
 python results_full_history/Linear_HJB/40d/experiment_run.py &
 wait
-echo "Group 4 - Task 2 completed."
+echo "Group 4 completed."
