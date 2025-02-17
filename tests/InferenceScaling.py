@@ -156,10 +156,10 @@ class InferenceScaling(object):
         # plt.plot(evaluation_counter_array, error3_array, marker='x', linestyle='-', label='ScaSML')
         
         # Fit lines to compute slopes
-        log_GN_steps = np.log10(evaluation_counter_array + epsilon)
-        log_error1 = np.log10(error1_array+ epsilon)
-        log_error2 = np.log10(error2_array+ epsilon)
-        log_error3 = np.log10(error3_array+ epsilon) 
+        log_GN_steps = np.log10(evaluation_counter_array + epsilon, dtype=np.float64)
+        log_error1 = np.log10(error1_array+ epsilon, dtype=np.float64)
+        log_error2 = np.log10(error2_array+ epsilon, dtype=np.float64)
+        log_error3 = np.log10(error3_array+ epsilon, dtype=np.float64) 
         slope1, intercept1 = np.polyfit(log_GN_steps, log_error1, 1)
         slope2, intercept2 = np.polyfit(log_GN_steps, log_error2, 1)
         slope3, intercept3 = np.polyfit(log_GN_steps, log_error3, 1)

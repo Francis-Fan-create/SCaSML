@@ -357,7 +357,10 @@ class Grad_Dependent_Nonlinear(Equation):
         du_t = dde.grad.jacobian(u,x_t,i=0,j=self.n_input-1)[0] # Computes the time derivative of u.
         laplacian=0
         div=0
-        for k in range(self.n_input-1): # Accumulates laplacian and divergence over spatial dimensions.
+        MC = 5
+        # randomly choose MC dims to compute hessian and div
+        idx_list = jnp.random.choice(self.n_input-1, MC, replace=False)
+        for k in idx_list: # Accumulates laplacian and divergence over spatial dimensions.
             laplacian +=dde.grad.hessian(u, x_t, i=k, j=k)[0] # Computes the laplacian of z.
             div += dde.grad.jacobian(u, x_t, i=0, j=k)[0] # Computes the divergence of u.
         residual=du_t + (self.sigma()**2 * u[0] - 1/(self.n_input-1) - self.sigma()**2/2) * div + self.sigma()**2/2* laplacian
@@ -556,8 +559,11 @@ class Linear_HJB(Equation):
         du_t = dde.grad.jacobian(u,x_t,i=0,j=self.n_input-1)[0] # Computes the time derivative of u.
         laplacian=0
         div=0
+        MC = 5
         dim=self.n_input-1
-        for k in range(self.n_input-1): # Accumulates laplacian and divergence over spatial dimensions.
+        # randomly choose MC dims to compute hessian and div
+        idx_list = jnp.random.choice(self.n_input-1, MC, replace=False)
+        for k in idx_list: # Accumulates laplacian and divergence over spatial dimensions.
             laplacian +=dde.grad.hessian(u, x_t, i=k, j=k)[0] # Computes the laplacian of z.
             div += dde.grad.jacobian(u, x_t, i=0, j=k)[0] # Computes the divergence of u.
         residual=du_t -(1/dim)*div+2+laplacian # Computes the residual of the PDE.

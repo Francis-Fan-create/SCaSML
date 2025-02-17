@@ -188,7 +188,7 @@ class ScaSML:
         MC = int(Mg[rho - 1, n])
 
         self.key, subkey = random.split(self.key)
-        W_random = random.normal(subkey, shape=(batch_size, MC, dim))
+        W_random = random.normal(subkey, shape=(batch_size, MC, dim), dtype=jnp.float16)
         # Monte Carlo simulation
         W = jnp.sqrt(T - t)[:, jnp.newaxis, jnp.newaxis] * W_random
         self.evaluation_counter+=MC
@@ -231,7 +231,7 @@ class ScaSML:
 
             for k in range(q):
                 self.key, subkey = random.split(self.key)
-                dW_random = random.normal(subkey, shape=(batch_size, MC, dim))
+                dW_random = random.normal(subkey, shape=(batch_size, MC, dim), dtype=jnp.float16)
                 dW = jnp.sqrt(d[:, k])[:, jnp.newaxis, jnp.newaxis] * dW_random
                 self.evaluation_counter += MC * dim
                 W += dW
@@ -285,7 +285,7 @@ class ScaSML:
         output_uz = jnp.concatenate((u, z), axis=-1)
         uncertainty = self.equation.uncertainty
         # Clip output_uz to avoid large values
-        return jnp.clip(output_uz, -uncertainty, uncertainty)
+        return jnp.clip(output_uz, -uncertainty, uncertainty).astype(jnp.float16)
 
     def u_solve(self, n, rho, x_t):
         '''

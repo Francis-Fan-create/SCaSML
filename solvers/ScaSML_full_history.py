@@ -109,7 +109,7 @@ class ScaSML_full_history(object):
         MC_g = int(M**n)  # Number of Monte Carlo samples, scalar
         
         # Generate Monte Carlo samples for backward Euler
-        std_normal = random.normal(subkey, shape=(batch_size, MC_g, dim))
+        std_normal = random.normal(subkey, shape=(batch_size, MC_g, dim), dtype=jnp.float16)
         dW = jnp.sqrt(T-t)[:, jnp.newaxis, jnp.newaxis] * std_normal  # Brownian increments, shape (batch_size, MC_g, dim)
         self.evaluation_counter+=MC_g
         X = jnp.repeat(x.reshape(x.shape[0], 1, x.shape[1]), MC_g, axis=1)  # Replicated spatial coordinates, shape (batch_size, MC_g, dim)
@@ -154,12 +154,12 @@ class ScaSML_full_history(object):
         # Recursive computation for n > 0
         for l in range(n):
             MC_f = int(M**(n-l))  # Number of Monte Carlo samples, scalar
-            tau = random.uniform(subkey, shape=(batch_size, MC_f))  # Sample a random variable tau in (0,1) with uniform distribution, shape (batch_size, MC_f)
+            tau = random.uniform(subkey, shape=(batch_size, MC_f), dtype=jnp.float16)  # Sample a random variable tau in (0,1) with uniform distribution, shape (batch_size, MC_f)
             # Multiply tau by (T-t)
             sampled_time_steps = (tau * (T-t)[:, jnp.newaxis]).reshape((batch_size, MC_f, 1))  # Sample time steps, shape (batch_size, MC_f)
             X = jnp.repeat(x.reshape(x.shape[0], 1, x.shape[1]), MC_f, axis=1)  # Replicated spatial coordinates, shape (batch_size, MC_f, dim)
             simulated = jnp.zeros((batch_size, MC_f, dim + 1))  # Initialize array for simulated values, shape (batch_size, MC_f, dim + 1)
-            std_normal = random.normal(subkey, shape=(batch_size, MC_f, dim))  # Generate standard normal samples
+            std_normal = random.normal(subkey, shape=(batch_size, MC_f, dim), dtype=jnp.float16)  # Generate standard normal samples
             dW =jnp.sqrt(sampled_time_steps) * std_normal  # Brownian increments for current time step, shape (batch_size, MC_f, dim)
             self.evaluation_counter+=MC_f*dim
             X += mu*(sampled_time_steps)+sigma * dW  # Update spatial coordinates
@@ -208,7 +208,7 @@ class ScaSML_full_history(object):
         output_uz = jnp.concatenate((u, z), axis=-1)  # Concatenate u and z values, shape (batch_size, dim + 1)
         uncertainty = self.equation.uncertainty
         # Clip output_uz to avoid large values
-        return jnp.clip(output_uz, -uncertainty, uncertainty)
+        return jnp.clip(output_uz, -uncertainty, uncertainty).astype(jnp.float16)
 
     def u_solve(self, n, rho, x_t):
         '''

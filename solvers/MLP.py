@@ -172,7 +172,7 @@ class MLP:
 
         # Generate Monte Carlo samples for backward Euler
         self.key, subkey = random.split(self.key)
-        W_random = random.normal(subkey, shape=(batch_size, MC, dim))
+        W_random = random.normal(subkey, shape=(batch_size, MC, dim), dtype=jnp.float16)
         W = jnp.sqrt(T - t)[:, jnp.newaxis, jnp.newaxis] * W_random  # Brownian increments
         self.evaluation_counter += MC
         X = jnp.repeat(x[:, jnp.newaxis, :], MC, axis=1)  # Replicated spatial coordinates
@@ -216,7 +216,7 @@ class MLP:
             # Compute simulated values for each quadrature point
             for k in range(q):
                 self.key, subkey = random.split(self.key)
-                dW_random = random.normal(subkey, shape=(batch_size, MC, dim))
+                dW_random = random.normal(subkey, shape=(batch_size, MC, dim), dtype=jnp.float16)
                 dW = jnp.sqrt(d[:, k])[:, jnp.newaxis, jnp.newaxis] * dW_random
                 self.evaluation_counter += MC * dim
                 W += dW
@@ -267,7 +267,7 @@ class MLP:
                     z -= wloc[:, k, q - 1][:, jnp.newaxis] * jnp.sum(y * W, axis=1) / (MC * delta_t)  # Adjust z values
         output_cated = jnp.concatenate((u, z), axis=-1)  # Concatenate adjusted u and z values, shape (batch_size, dim + 1)
         norm_estimation = self.equation.norm_estimation
-        return jnp.clip(output_cated, -norm_estimation, norm_estimation)  # Clip the output to avoid numerical instability
+        return jnp.clip(output_cated, -norm_estimation, norm_estimation).astype(jnp.float16)  # Clip the output to avoid numerical instability
 
     def u_solve(self, n, rho, x_t):
         '''

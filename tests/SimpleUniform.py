@@ -84,12 +84,12 @@ class SimpleUniform(object):
             self.solver3.PINN = trained_model1            
         # Generate test data
         data_domain_test, data_boundary_test = eq.generate_test_data(num_domain, num_boundary)
-        data_test = jnp.concatenate((data_domain_test, data_boundary_test), axis=0)
+        data_test = np.concatenate((data_domain_test, data_boundary_test), axis=0)
         xt_test = data_test[:, :self.dim + 1]
         exact_sol = eq.exact_solution(xt_test)
-        errors1 = jnp.zeros(num_domain)
-        errors2 = jnp.zeros(num_domain)
-        errors3 = jnp.zeros(num_domain)
+        errors1 = np.zeros(num_domain)
+        errors2 = np.zeros(num_domain)
+        errors3 = np.zeros(num_domain)
         rel_error1 = 0
         rel_error2 = 0
         rel_error3 = 0
@@ -115,13 +115,13 @@ class SimpleUniform(object):
         time3 += time.time() - start
 
         # Compute the average error and relative error
-        errors1 = jnp.abs(sol1 - exact_sol).flatten()
-        errors2 = jnp.abs(sol2 - exact_sol).flatten()
-        errors3 = jnp.abs(sol3 - exact_sol).flatten()
-        rel_error1 = jnp.linalg.norm(errors1) / jnp.linalg.norm(exact_sol)
-        rel_error2 = jnp.linalg.norm(errors2) / jnp.linalg.norm(exact_sol)
-        rel_error3 = jnp.linalg.norm(errors3) / jnp.linalg.norm(exact_sol)
-        real_sol_L2 = jnp.linalg.norm(exact_sol) / jnp.sqrt(exact_sol.shape[0])
+        errors1 = np.abs(sol1 - exact_sol).flatten()
+        errors2 = np.abs(sol2 - exact_sol).flatten()
+        errors3 = np.abs(sol3 - exact_sol).flatten()
+        rel_error1 = np.linalg.norm(errors1) / np.linalg.norm(exact_sol)
+        rel_error2 = np.linalg.norm(errors2) / np.linalg.norm(exact_sol)
+        rel_error3 = np.linalg.norm(errors3) / np.linalg.norm(exact_sol)
+        real_sol_L2 = np.linalg.norm(exact_sol) / np.sqrt(exact_sol.shape[0])
         #stop the profiler
         profiler.disable()
         #save the profiler results
@@ -356,7 +356,7 @@ class SimpleUniform(object):
         # =============================================
         def plot_spatio_temp_error(data, label, filename):
             fig, ax = plt.subplots(figsize=(5, 4))
-            norm = LogNorm(vmin=1e-6, vmax=np.max([errors1.max(), errors2.max(), errors3.max()]))
+            norm = LogNorm(vmin=1e-4, vmax=10)
             
             # Create heatmap
             im = ax.pcolormesh(x1_bins, x2_bins, data, cmap='viridis', norm=norm, shading='auto')
@@ -396,29 +396,29 @@ class SimpleUniform(object):
         print("Real Solution->", real_sol_L2)
         
 
-        print(f"PINN L1, rho={rhomax}->","min:", jnp.min(errors1), "max:", jnp.max(errors1), "mean:", jnp.mean(errors1))
+        print(f"PINN L1, rho={rhomax}->","min:", np.min(errors1), "max:", np.max(errors1), "mean:", np.mean(errors1))
         
         
-        print(f"MLP L1, rho={rhomax}->","min:", jnp.min(errors2), "max:", jnp.max(errors2), "mean:", jnp.mean(errors2))
+        print(f"MLP L1, rho={rhomax}->","min:", np.min(errors2), "max:", np.max(errors2), "mean:", np.mean(errors2))
         
         
-        print(f"ScaSML L1, rho={rhomax}->","min:", jnp.min(errors3), "max:", jnp.max(errors3), "mean:", jnp.mean(errors3))
+        print(f"ScaSML L1, rho={rhomax}->","min:", np.min(errors3), "max:", np.max(errors3), "mean:", np.mean(errors3))
         
         
         # Calculate the sums of positive and negative differences
-        positive_sum_13 = jnp.sum(errors_13[errors_13 > 0])
-        negative_sum_13 = jnp.sum(errors_13[errors_13 < 0])
-        positive_sum_23 = jnp.sum(errors_23[errors_23 > 0])
-        negative_sum_23 = jnp.sum(errors_23[errors_23 < 0])
+        positive_sum_13 = np.sum(errors_13[errors_13 > 0])
+        negative_sum_13 = np.sum(errors_13[errors_13 < 0])
+        positive_sum_23 = np.sum(errors_23[errors_23 > 0])
+        negative_sum_23 = np.sum(errors_23[errors_23 < 0])
         # Display the positive count, negative count, positive sum, and negative sum of the difference of the errors
-        print(f'PINN L2 - ScaSML L2, rho={rhomax}->','positive count:', jnp.sum(errors_13 > 0), 'negative count:', jnp.sum(errors_13 < 0), 'positive sum:', positive_sum_13, 'negative sum:', negative_sum_13)
-        print(f'MLP L2 - ScaSML L2, rho={rhomax}->','positive count:', jnp.sum(errors_23 > 0), 'negative count:', jnp.sum(errors_23 < 0), 'positive sum:', positive_sum_23, 'negative sum:', negative_sum_23)
+        print(f'PINN L2 - ScaSML L2, rho={rhomax}->','positive count:', np.sum(errors_13 > 0), 'negative count:', np.sum(errors_13 < 0), 'positive sum:', positive_sum_13, 'negative sum:', negative_sum_13)
+        print(f'MLP L2 - ScaSML L2, rho={rhomax}->','positive count:', np.sum(errors_23 > 0), 'negative count:', np.sum(errors_23 < 0), 'positive sum:', positive_sum_23, 'negative sum:', negative_sum_23)
         # Log the results to wandb
-        wandb.log({f"mean of PINN L2, rho={rhomax}": jnp.mean(errors1), f"mean of MLP L2, rho={rhomax}": jnp.mean(errors2), f"mean of ScaSML L2, rho={rhomax}": jnp.mean(errors3)})
-        wandb.log({f"min of PINN L2, rho={rhomax}": jnp.min(errors1), f"min of MLP L2, rho={rhomax}": jnp.min(errors2), f"min of ScaSML L2, rho={rhomax}": jnp.min(errors3)})
-        wandb.log({f"max of PINN L2, rho={rhomax}": jnp.max(errors1), f"max of MLP L2, rho={rhomax}": jnp.max(errors2), f"max of ScaSML L2, rho={rhomax}": jnp.max(errors3)})
-        wandb.log({f"positive count of PINN L2 - ScaSML L2, rho={rhomax}": jnp.sum(errors_13 > 0), f"negative count of PINN L2 - ScaSML L2, rho={rhomax}": jnp.sum(errors_13 < 0), f"positive sum of PINN L2 - ScaSML L2, rho={rhomax}": positive_sum_13, f"negative sum of PINN L2 - ScaSML L2, rho={rhomax}": negative_sum_13})
-        wandb.log({f"positive count of MLP L2 - ScaSML L2, rho={rhomax}": jnp.sum(errors_23 > 0), f"negative count of MLP L2 - ScaSML L2, rho={rhomax}": jnp.sum(errors_23 < 0), f"positive sum of MLP L2 - ScaSML L2, rho={rhomax}": positive_sum_23, f"negative sum of MLP L2 - ScaSML L2, rho={rhomax}": negative_sum_23})
+        wandb.log({f"mean of PINN L2, rho={rhomax}": np.mean(errors1), f"mean of MLP L2, rho={rhomax}": np.mean(errors2), f"mean of ScaSML L2, rho={rhomax}": np.mean(errors3)})
+        wandb.log({f"min of PINN L2, rho={rhomax}": np.min(errors1), f"min of MLP L2, rho={rhomax}": np.min(errors2), f"min of ScaSML L2, rho={rhomax}": np.min(errors3)})
+        wandb.log({f"max of PINN L2, rho={rhomax}": np.max(errors1), f"max of MLP L2, rho={rhomax}": np.max(errors2), f"max of ScaSML L2, rho={rhomax}": np.max(errors3)})
+        wandb.log({f"positive count of PINN L2 - ScaSML L2, rho={rhomax}": np.sum(errors_13 > 0), f"negative count of PINN L2 - ScaSML L2, rho={rhomax}": np.sum(errors_13 < 0), f"positive sum of PINN L2 - ScaSML L2, rho={rhomax}": positive_sum_13, f"negative sum of PINN L2 - ScaSML L2, rho={rhomax}": negative_sum_13})
+        wandb.log({f"positive count of MLP L2 - ScaSML L2, rho={rhomax}": np.sum(errors_23 > 0), f"negative count of MLP L2 - ScaSML L2, rho={rhomax}": np.sum(errors_23 < 0), f"positive sum of MLP L2 - ScaSML L2, rho={rhomax}": positive_sum_23, f"negative sum of MLP L2 - ScaSML L2, rho={rhomax}": negative_sum_23})
         # reset stdout and stderr
         sys.stdout = self.stdout
         sys.stderr = self.stderr

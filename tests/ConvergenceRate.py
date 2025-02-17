@@ -94,7 +94,7 @@ class ConvergenceRate(object):
 
         # Generate test data (fixed)
         xt_values_domain, xt_values_boundary = eq.generate_test_data(1000, 200)
-        xt_values = jnp.concatenate((xt_values_domain, xt_values_boundary), axis=0)
+        xt_values = np.concatenate((xt_values_domain, xt_values_boundary), axis=0)
         exact_sol = eq.exact_solution(xt_values)
     
         if is_train:
@@ -114,13 +114,13 @@ class ConvergenceRate(object):
                 sol3 = self.solver3.u_solve(rhomax, rhomax, xt_values)
             
                 # Compute errors
-                errors1 = jnp.abs(sol1 - exact_sol).flatten()
-                # errors2 = jnp.abs(sol2 - exact_sol).flatten()
-                errors3 = jnp.abs(sol3 - exact_sol).flatten()
+                errors1 = np.abs(sol1 - exact_sol).flatten()
+                # errors2 = np.abs(sol2 - exact_sol).flatten()
+                errors3 = np.abs(sol3 - exact_sol).flatten()
             
-                error_value1 = jnp.linalg.norm(errors1) / jnp.linalg.norm(exact_sol)
-                # error_value2 = jnp.linalg.norm(errors2) / jnp.linalg.norm(exact_sol)
-                error_value3 = jnp.linalg.norm(errors3) / jnp.linalg.norm(exact_sol)
+                error_value1 = np.linalg.norm(errors1) / np.linalg.norm(exact_sol)
+                # error_value2 = np.linalg.norm(errors2) / np.linalg.norm(exact_sol)
+                error_value3 = np.linalg.norm(errors3) / np.linalg.norm(exact_sol)
 
                 error1_list.append(error_value1)
                 # error2_list.append(error_value2)
@@ -130,24 +130,24 @@ class ConvergenceRate(object):
             plt.figure()
             epsilon = 1e-10  # To avoid log(0)
 
-            domain_sizes = jnp.array(train_iters)
+            domain_sizes = np.array(train_iters)
             train_sizes = domain_sizes * 2600
-            error1_array = jnp.array(error1_list)
-            # error2_array = jnp.array(error2_list)
-            error3_array = jnp.array(error3_list)
+            error1_array = np.array(error1_list)
+            # error2_array = np.array(error2_list)
+            error3_array = np.array(error3_list)
 
             # plt.plot(train_sizes, error1_array, marker='x', linestyle='-', label='PINN')
             # # plt.plot(train_sizes, error2_array, marker='x', linestyle='-', label='MLP')
             # plt.plot(train_sizes, error3_array, marker='x', linestyle='-', label='ScaSML')
             
             # Fit lines to compute slopes
-            log_GN_steps = jnp.log10(train_sizes + epsilon)
-            log_error1 = jnp.log10(error1_array+ epsilon)
-            # log_error2 = jnp.log10(error2_array+ epsilon)
-            log_error3 = jnp.log10(error3_array+ epsilon) 
-            slope1, intercept1 = jnp.polyfit(log_GN_steps, log_error1, 1)
-            # slope2, intercept2 = jnp.polyfit(log_GN_steps, log_error2, 1)
-            slope3, intercept3 = jnp.polyfit(log_GN_steps, log_error3, 1)
+            log_GN_steps = np.log10(train_sizes + epsilon, dtype=np.float64)
+            log_error1 = np.log10(error1_array+ epsilon, dtype=np.float64)
+            # log_error2 = np.log10(error2_array+ epsilon, dtype=np.float64)
+            log_error3 = np.log10(error3_array+ epsilon, dtype=np.float64) 
+            slope1, intercept1 = np.polyfit(log_GN_steps, log_error1, 1)
+            # slope2, intercept2 = np.polyfit(log_GN_steps, log_error2, 1)
+            slope3, intercept3 = np.polyfit(log_GN_steps, log_error3, 1)
             fitted_line1 = 10 ** (intercept1 + slope1 * log_GN_steps)
             # fitted_line2 = 10 ** (intercept2 + slope2 * log_GN_steps)
             fitted_line3 = 10 ** (intercept3 + slope3 * log_GN_steps)

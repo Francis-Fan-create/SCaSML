@@ -50,7 +50,7 @@ def log_variables(func):
         with open(log_file_path, 'a') as file:
             file.write(f"{func.__name__} returned {value!r}\n")
             for var, val in local_vars.items():
-                if isinstance(val, jnp.ndarray):
+                if isinstance(val, np.ndarray):
                     file.write(f"{var} shape: {val.shape}\n")
                 else:
                     file.write(f"{var}: {val}\n")
