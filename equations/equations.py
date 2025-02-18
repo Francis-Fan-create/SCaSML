@@ -359,7 +359,7 @@ class Grad_Dependent_Nonlinear(Equation):
         div=0
         MC = 5
         # randomly choose MC dims to compute hessian and div
-        idx_list = jnp.random.choice(self.n_input-1, MC, replace=False)
+        idx_list = np.random.choice(self.n_input-1, MC, replace=False)
         for k in idx_list: # Accumulates laplacian and divergence over spatial dimensions.
             laplacian +=dde.grad.hessian(u, x_t, i=k, j=k)[0] # Computes the laplacian of z.
             div += dde.grad.jacobian(u, x_t, i=0, j=k)[0] # Computes the divergence of u.
@@ -542,7 +542,7 @@ class Linear_HJB(Equation):
         - n_output (int): The dimension of the output space. Defaults to 1.
         '''
         super().__init__(n_input, n_output)
-        self.uncertainty = 1e-1
+        self.uncertainty = 1
         self.norm_estimation = 100
     
     def PDE_loss(self, x_t,u):
@@ -562,7 +562,7 @@ class Linear_HJB(Equation):
         MC = 5
         dim=self.n_input-1
         # randomly choose MC dims to compute hessian and div
-        idx_list = jnp.random.choice(self.n_input-1, MC, replace=False)
+        idx_list = np.random.choice(self.n_input-1, MC, replace=False)
         for k in idx_list: # Accumulates laplacian and divergence over spatial dimensions.
             laplacian +=dde.grad.hessian(u, x_t, i=k, j=k)[0] # Computes the laplacian of z.
             div += dde.grad.jacobian(u, x_t, i=0, j=k)[0] # Computes the divergence of u.
