@@ -712,15 +712,15 @@ class Linear_HJB(Equation):
         geom=self.geometry() # Defines the geometry of the domain.
         self.terminal_condition() # Generates terminal condition.
         self.Dirichlet_boundary_condition() # Generates Dirichlet boundary condition.
-        # self.initial_condition() # Generate initial condition
+        self.initial_condition() # Generate initial condition
         # self.data_loss() # Generates data loss.
         data = dde.data.TimePDE(
                                 geom, # Geometry of the domain.
                                 self.PDE_loss, # PDE loss function.
-                                [self.tc, self.D_bc], # Additional conditions.
+                                [self.ic, self.tc, self.D_bc], # Additional conditions.
                                 num_domain=num_domain, # Number of domain points.
                                 num_boundary=100, # Number of boundary points.
-                                num_initial=0,  # Number of initial points.
+                                num_initial=160,  # Number of initial points.
                                 solution=self.exact_solution   # Incorporates exact solution for error metrics.
                             )
         return data
