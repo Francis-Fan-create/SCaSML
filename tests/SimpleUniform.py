@@ -84,12 +84,8 @@ class SimpleUniform(object):
             self.solver3.PINN = trained_model1            
         # Generate test data
         data_domain_test, data_boundary_test = eq.generate_test_data(num_domain, num_boundary)
-        data_test = np.concatenate((data_domain_test, data_boundary_test), axis=0)
-        xt_test = data_test[:, :self.dim + 1]
+        xt_test = np.concatenate((data_domain_test, data_boundary_test), axis=0)
         exact_sol = eq.exact_solution(xt_test)
-        errors1 = np.zeros(num_domain)
-        errors2 = np.zeros(num_domain)
-        errors3 = np.zeros(num_domain)
         rel_error1 = 0
         rel_error2 = 0
         rel_error3 = 0
@@ -99,19 +95,19 @@ class SimpleUniform(object):
         # Measure the time and predict using solver1
         print("Predicting with solver1 on test data...")
         start = time.time()
-        sol1 = self.solver1.predict(data_test)
+        sol1 = self.solver1.predict(xt_test)
         time1 += time.time() - start
     
         # Measure the time and predict using solver2
         print("Predicting with solver2 on test data...")
         start = time.time()
-        sol2 = self.solver2.u_solve(n, rhomax, data_test)
+        sol2 = self.solver2.u_solve(n, rhomax, xt_test)
         time2 += time.time() - start
     
         # Measure the time and predict using solver3
         print("Predicting with solver3 on test data...")
         start = time.time()
-        sol3 = self.solver3.u_solve(n, rhomax, data_test)
+        sol3 = self.solver3.u_solve(n, rhomax, xt_test)
         time3 += time.time() - start
 
         # Compute the average error and relative error
