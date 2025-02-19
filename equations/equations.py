@@ -340,7 +340,7 @@ class Grad_Dependent_Nonlinear(Equation):
         - n_output (int): The dimension of the output space. Defaults to 1.
         '''
         super().__init__(n_input, n_output)
-        self.uncertainty = 1e-1
+        self.uncertainty = 3e-3
         self.norm_estimation = 1
     
     def PDE_loss(self, x_t,u):
@@ -542,7 +542,7 @@ class Linear_HJB(Equation):
         - n_output (int): The dimension of the output space. Defaults to 1.
         '''
         super().__init__(n_input, n_output)
-        self.uncertainty = 1e-1
+        self.uncertainty = 3e-1
         self.norm_estimation = 100
     
     def PDE_loss(self, x_t,u):
