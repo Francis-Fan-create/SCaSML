@@ -719,7 +719,7 @@ class Linear_HJB(Equation):
                                 self.PDE_loss, # PDE loss function.
                                 [self.tc, self.D_bc], # Additional conditions.
                                 num_domain=num_domain, # Number of domain points.
-                                num_boundary=100, # Number of boundary points.
+                                num_boundary=260, # Number of boundary points.
                                 num_initial=0,  # Number of initial points.
                                 solution=self.exact_solution   # Incorporates exact solution for error metrics.
                             )
