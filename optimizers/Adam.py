@@ -42,7 +42,7 @@ class Adam(object):
             dde.Model: The trained model.
         '''
         # Stabilize the training by further training with Adam
-        self.model.compile("adam", lr=1e-3, metrics=metrics)
+        self.model.compile("adam", lr=7e-4, metrics=metrics)
         # Deepxde does not implement Model.save() for jax
         loss_history, train_state = self.model.train(iterations=iters*4, display_every=10, disregard_previous_best= True)
         dde.saveplot(loss_history, train_state, issave=True, isplot=True,output_dir=save_path)

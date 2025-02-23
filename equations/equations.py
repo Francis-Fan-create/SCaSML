@@ -3,7 +3,7 @@ import numpy as np
 import torch
 import sys
 import os
-from jax import jit
+from jax import jit, random
 from functools import partial
 import jax.numpy as jnp
 #add the parent directory to the path
@@ -220,8 +220,8 @@ class Equation(object):
         if hasattr(self, 'terminal_constraint') and hasattr(self, 'geometry'):
             # use PointSetBC to enforce soft terminal condition
             # generate terminal point
-            x = self.geomx.random_points(160)  # do not use uniform !!!
-            t = self.T * jnp.ones((160, 1))
+            x =  random.normal(random.PRNGKey(0),(5000,self.n_input-1)) # do not use uniform !!!
+            t = self.T * jnp.ones((5000, 1))
             my_data = jnp.concatenate((x, t), axis=1)
             tc = dde.icbc.PointSetBC(my_data, self.terminal_constraint(my_data), 0)  # need to be enforced on generate_data method
             self.tc = tc
@@ -340,7 +340,7 @@ class Grad_Dependent_Nonlinear(Equation):
         - n_output (int): The dimension of the output space. Defaults to 1.
         '''
         super().__init__(n_input, n_output)
-        self.uncertainty = 3e-3
+        self.uncertainty = None
         self.norm_estimation = 1
     
     def PDE_loss(self, x_t,u):
@@ -357,12 +357,15 @@ class Grad_Dependent_Nonlinear(Equation):
         du_t = dde.grad.jacobian(u,x_t,i=0,j=self.n_input-1)[0] # Computes the time derivative of u.
         laplacian=0
         div=0
+        dim = self.n_input-1
         MC = 5
         # randomly choose MC dims to compute hessian and div
         idx_list = np.random.choice(self.n_input-1, MC, replace=False)
         for k in idx_list: # Accumulates laplacian and divergence over spatial dimensions.
             laplacian +=dde.grad.hessian(u, x_t, i=k, j=k)[0] # Computes the laplacian of z.
             div += dde.grad.jacobian(u, x_t, i=0, j=k)[0] # Computes the divergence of u.
+        laplacian *= dim/MC
+        div *= dim/MC
         residual=du_t + (self.sigma()**2 * u[0] - 1/(self.n_input-1) - self.sigma()**2/2) * div + self.sigma()**2/2* laplacian
         return residual
 
@@ -542,7 +545,7 @@ class Linear_HJB(Equation):
         - n_output (int): The dimension of the output space. Defaults to 1.
         '''
         super().__init__(n_input, n_output)
-        self.uncertainty = 2e-1
+        self.uncertainty = None
         self.norm_estimation = 100
     
     def PDE_loss(self, x_t,u):
@@ -566,6 +569,8 @@ class Linear_HJB(Equation):
         for k in idx_list: # Accumulates laplacian and divergence over spatial dimensions.
             laplacian +=dde.grad.hessian(u, x_t, i=k, j=k)[0] # Computes the laplacian of z.
             div += dde.grad.jacobian(u, x_t, i=0, j=k)[0] # Computes the divergence of u.
+        laplacian *= dim/MC
+        div *= dim/MC
         residual=du_t -(1/dim)*div+2+laplacian # Computes the residual of the PDE.
         return residual 
     
@@ -699,7 +704,7 @@ class Linear_HJB(Equation):
         self.geomt=timedomain
         return geom
     
-    def generate_data(self, num_domain=2500):
+    def generate_data(self, num_domain=500):
         '''
         Generates data for training the PDE model.
         
@@ -719,7 +724,7 @@ class Linear_HJB(Equation):
                                 self.PDE_loss, # PDE loss function.
                                 [self.tc, self.D_bc], # Additional conditions.
                                 num_domain=num_domain, # Number of domain points.
-                                num_boundary=260, # Number of boundary points.
+                                num_boundary=2360, # Number of boundary points.
                                 num_initial=0,  # Number of initial points.
                                 solution=self.exact_solution   # Incorporates exact solution for error metrics.
                             )

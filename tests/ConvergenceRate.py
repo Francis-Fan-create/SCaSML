@@ -111,6 +111,7 @@ class ConvergenceRate(object):
                 # sol2 = self.solver2.u_solve(rhomax, rhomax, xt_values)
             
                 # Solve with solver3 using the trained solver1
+                eq.uncertainty = np.mean(np.random.choice(np.abs(sol1 - exact_sol).flatten(), 100, replace=False))/8
                 sol3 = self.solver3.u_solve(rhomax, rhomax, xt_values)
             
                 # Compute errors

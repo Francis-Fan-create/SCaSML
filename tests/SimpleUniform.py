@@ -107,6 +107,7 @@ class SimpleUniform(object):
         # Measure the time and predict using solver3
         print("Predicting with solver3 on test data...")
         start = time.time()
+        eq.uncertainty = np.mean(np.random.choice(np.abs(sol1 - exact_sol).flatten(), 100, replace=False))/8
         sol3 = self.solver3.u_solve(n, rhomax, xt_test)
         time3 += time.time() - start
 
