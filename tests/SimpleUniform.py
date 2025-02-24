@@ -279,14 +279,10 @@ class SimpleUniform(object):
         # =============================================
         # Figure 4: Relative L2 Improvement Bar Plot
         # =============================================
-        # Calculate mean relative errors
-        mean_rel_error1 = np.mean(rel_error1)
-        mean_rel_error2 = np.mean(rel_error2)
-        mean_rel_error3 = np.mean(rel_error3)
 
         # Calculate improvements
-        improvement_gp = (mean_rel_error1 - mean_rel_error3) / mean_rel_error1 * 100
-        improvement_mlp = (mean_rel_error2 - mean_rel_error3) / mean_rel_error2 * 100
+        improvement_gp = (rel_error1 - rel_error3) / rel_error1 * 100
+        improvement_mlp = (rel_error2 - rel_error3) / rel_error2 * 100
 
         # Create bar plot
         fig, ax = plt.subplots(figsize=(3.5, 3))
@@ -294,7 +290,7 @@ class SimpleUniform(object):
         colors = ['#000000', '#A6A3A4', '#2C939A']
         
         # Plot bars
-        bars = ax.bar(methods, [mean_rel_error1, mean_rel_error2, mean_rel_error3], 
+        bars = ax.bar(methods, [rel_error1, rel_error2, rel_error3], 
                     color=colors, edgecolor='black')
         
         # Annotate improvements
@@ -303,9 +299,9 @@ class SimpleUniform(object):
             elif val < 0: return f"+{abs(val):.1f}%"
             else: return "0%"
         
-        ax.text(0, mean_rel_error1*1.05, format_improvement(improvement_gp),
+        ax.text(0, rel_error1*1.05, format_improvement(improvement_gp),
             ha='center', va='bottom', fontsize=7)
-        ax.text(1, mean_rel_error2*1.05, format_improvement(improvement_mlp),
+        ax.text(1, rel_error2*1.05, format_improvement(improvement_mlp),
             ha='center', va='bottom', fontsize=7)
 
         # Formatting
