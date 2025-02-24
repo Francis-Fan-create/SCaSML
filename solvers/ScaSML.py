@@ -284,8 +284,7 @@ class ScaSML:
                     z += wloc[:, k, q - 1][:, jnp.newaxis] * jnp.sum(epsilon * W, axis=1) / (MC * delta_t)     
         output_uz = jnp.concatenate((u, z), axis=-1)
         uncertainty = self.equation.uncertainty
-        # Clip output_uz to avoid large values
-        return jnp.clip(output_uz, -uncertainty, uncertainty).astype(jnp.float16)
+        return jnp.clip(output_uz, -uncertainty, uncertainty)
 
     def u_solve(self, n, rho, x_t):
         '''

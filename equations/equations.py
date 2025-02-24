@@ -220,8 +220,8 @@ class Equation(object):
         if hasattr(self, 'terminal_constraint') and hasattr(self, 'geometry'):
             # use PointSetBC to enforce soft terminal condition
             # generate terminal point
-            x =  random.normal(random.PRNGKey(0),(5000,self.n_input-1)) # do not use uniform !!!
-            t = self.T * jnp.ones((5000, 1))
+            x =  random.normal(random.PRNGKey(0),(500,self.n_input-1)) # do not use uniform !!!
+            t = self.T * jnp.ones((500, 1))
             my_data = jnp.concatenate((x, t), axis=1)
             tc = dde.icbc.PointSetBC(my_data, self.terminal_constraint(my_data), 0)  # need to be enforced on generate_data method
             self.tc = tc
@@ -340,7 +340,7 @@ class Grad_Dependent_Nonlinear(Equation):
         - n_output (int): The dimension of the output space. Defaults to 1.
         '''
         super().__init__(n_input, n_output)
-        self.uncertainty = None
+        self.uncertainty = 2e-3
         self.norm_estimation = 1
     
     def PDE_loss(self, x_t,u):
@@ -545,7 +545,7 @@ class Linear_HJB(Equation):
         - n_output (int): The dimension of the output space. Defaults to 1.
         '''
         super().__init__(n_input, n_output)
-        self.uncertainty = None
+        self.uncertainty = 1e-1
         self.norm_estimation = 100
     
     def PDE_loss(self, x_t,u):

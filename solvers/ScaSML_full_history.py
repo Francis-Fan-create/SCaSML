@@ -207,8 +207,7 @@ class ScaSML_full_history(object):
                 z += (T-t)[:,jnp.newaxis] * jnp.mean((epsilon * std_normal / (delta_sqrt_t)),axis=1)  # Update z values                  
         output_uz = jnp.concatenate((u, z), axis=-1)  # Concatenate u and z values, shape (batch_size, dim + 1)
         uncertainty = self.equation.uncertainty
-        # Clip output_uz to avoid large values
-        return jnp.clip(output_uz, -uncertainty, uncertainty).astype(jnp.float16)
+        return jnp.clip(output_uz, -uncertainty, uncertainty)
 
     def u_solve(self, n, rho, x_t):
         '''
