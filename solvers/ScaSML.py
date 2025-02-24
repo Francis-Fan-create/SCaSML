@@ -43,7 +43,7 @@ class ScaSML:
         eq = self.equation
         # batch_size=x_t.shape[0]
         # self.evaluation_counter+=batch_size
-        # self.evaluation_counter+=1
+        self.evaluation_counter+=1
         u_hat = self.model.predict(x_t)
         grad_u_hat_x = self.model.predict(x_t,operator=self.equation.grad)
         # Calculate the values for the generator function
@@ -64,7 +64,7 @@ class ScaSML:
         eq = self.equation
         # batch_size=x_t.shape[0]
         # self.evaluation_counter+=batch_size
-        # self.evaluation_counter+=1
+        self.evaluation_counter+=1
         u_hat = self.model.predict(x_t)
         # tensor_x_t[:, -1] = self.T
         # Calculate the result of the terminal constraint function
@@ -191,7 +191,7 @@ class ScaSML:
         W_random = random.normal(subkey, shape=(batch_size, MC, dim), dtype=jnp.float16)
         # Monte Carlo simulation
         W = jnp.sqrt(T - t)[:, jnp.newaxis, jnp.newaxis] * W_random
-        self.evaluation_counter+=MC
+        # self.evaluation_counter+=MC
         X = jnp.repeat(x.reshape(x.shape[0], 1, x.shape[1]), MC, axis=1)
         disturbed_X = X + mu*(T-t)[:, jnp.newaxis, jnp.newaxis]+ sigma * W  # Disturbed spatial coordinates, shape (batch_size, MC, dim)
 
@@ -233,7 +233,7 @@ class ScaSML:
                 self.key, subkey = random.split(self.key)
                 dW_random = random.normal(subkey, shape=(batch_size, MC, dim), dtype=jnp.float16)
                 dW = jnp.sqrt(d[:, k])[:, jnp.newaxis, jnp.newaxis] * dW_random
-                self.evaluation_counter += MC * dim
+                # self.evaluation_counter += MC * dim
                 W += dW
                 X += mu * d[:, k][:, jnp.newaxis, jnp.newaxis] + sigma * dW
 

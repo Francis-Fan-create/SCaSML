@@ -43,7 +43,7 @@ class ScaSML_full_history(object):
         eq = self.equation
         # batch_size=x_t.shape[0]
         # self.evaluation_counter+=batch_size
-        # self.evaluation_counter+=1
+        self.evaluation_counter+=1
         u_hat = self.model.predict(x_t)
         grad_u_hat_x = self.model.predict(x_t,operator=self.equation.grad)
         # Calculate the values for the generator function
@@ -64,7 +64,7 @@ class ScaSML_full_history(object):
         eq = self.equation
         # batch_size=x_t.shape[0]
         # self.evaluation_counter+=batch_size
-        # self.evaluation_counter+=1
+        self.evaluation_counter+=1
         u_hat = self.model.predict(x_t)
         # tensor_x_t[:, -1] = self.T
         # Calculate the result of the terminal constraint function
@@ -111,7 +111,7 @@ class ScaSML_full_history(object):
         # Generate Monte Carlo samples for backward Euler
         std_normal = random.normal(subkey, shape=(batch_size, MC_g, dim), dtype=jnp.float16)
         dW = jnp.sqrt(T-t)[:, jnp.newaxis, jnp.newaxis] * std_normal  # Brownian increments, shape (batch_size, MC_g, dim)
-        self.evaluation_counter+=MC_g
+        # self.evaluation_counter+=MC_g
         X = jnp.repeat(x.reshape(x.shape[0], 1, x.shape[1]), MC_g, axis=1)  # Replicated spatial coordinates, shape (batch_size, MC_g, dim)
         disturbed_X = X + mu*(T-t)[:, jnp.newaxis, jnp.newaxis]+ sigma * dW  # Disturbed spatial coordinates, shape (batch_size, MC_g, dim)
         
@@ -161,7 +161,7 @@ class ScaSML_full_history(object):
             simulated = jnp.zeros((batch_size, MC_f, dim + 1))  # Initialize array for simulated values, shape (batch_size, MC_f, dim + 1)
             std_normal = random.normal(subkey, shape=(batch_size, MC_f, dim), dtype=jnp.float16)  # Generate standard normal samples
             dW =jnp.sqrt(sampled_time_steps) * std_normal  # Brownian increments for current time step, shape (batch_size, MC_f, dim)
-            self.evaluation_counter+=MC_f*dim
+            # self.evaluation_counter+=MC_f*dim
             X += mu*(sampled_time_steps)+sigma * dW  # Update spatial coordinates
             co_solver_l = lambda X_t: self.uz_solve(n=l, rho= l, x_t=X_t)  # Co-solver for level l
             co_solver_l_minus_1 = lambda X_t: self.uz_solve(n=l - 1, rho= l, x_t=X_t)  # Co-solver for level l - 1

@@ -181,7 +181,7 @@ class InferenceScaling(object):
                 linewidth=1.5, markersize=4, label='Improvement (%)')
         
         # Configure axis labels
-        ax.set_xlabel('Realization of Normals', labelpad=3)
+        ax.set_xlabel('Evaluation Numbers', labelpad=3)
         ax.set_ylabel('Improvement (%)', labelpad=3)
         
         # Use logarithmic scale for x-axis to mimic scaling law plots

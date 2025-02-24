@@ -133,8 +133,7 @@ class ConvergenceRate(object):
             plt.figure()
             epsilon = 1e-10  # To avoid log(0)
 
-            domain_sizes = np.array(train_iters)
-            train_sizes = domain_sizes * 2600
+            train_steps = np.array(train_iters)*4
             error1_array = np.array(error1_list)
             # error2_array = np.array(error2_list)
             error3_array = np.array(error3_list)
@@ -144,7 +143,7 @@ class ConvergenceRate(object):
             # plt.plot(train_sizes, error3_array, marker='x', linestyle='-', label='ScaSML')
             
             # Fit lines to compute slopes
-            log_GN_steps = np.log10(train_sizes + epsilon, dtype=np.float64)
+            log_GN_steps = np.log10(train_steps + epsilon, dtype=np.float64)
             log_error1 = np.log10(error1_array+ epsilon, dtype=np.float64)
             # log_error2 = np.log10(error2_array+ epsilon, dtype=np.float64)
             log_error3 = np.log10(error3_array+ epsilon, dtype=np.float64) 
@@ -229,7 +228,7 @@ class ConvergenceRate(object):
             for method, ci_upper, ci_lower in zip(['PINN', 'SCaSML'],
                                                 [ci_upper1, ci_upper3],
                                                 [ci_lower1, ci_lower3]):
-                ax.fill_between(train_sizes, ci_lower, ci_upper,
+                ax.fill_between(train_steps, ci_lower, ci_upper,
                             color=COLOR_PALETTE[method], alpha=fill_alpha, 
                             linewidth=0, zorder=1)
 
@@ -241,7 +240,7 @@ class ConvergenceRate(object):
 
             for method, error_array in zip(['PINN', 'SCaSML'],
                                         [error1_array, error3_array]):
-                ax.plot(train_sizes, error_array,
+                ax.plot(train_steps, error_array,
                     color=COLOR_PALETTE[method],
                     linestyle='',  # No line connecting points
                     marker=marker_params[method]['marker'],
@@ -253,7 +252,7 @@ class ConvergenceRate(object):
             # Plot fitted lines with dashed style
             for method, line in zip(['PINN', 'SCaSML'],
                                 [fitted_line1, fitted_line3]):
-                ax.plot(train_sizes, line,
+                ax.plot(train_steps, line,
                     color=COLOR_PALETTE[method],
                     linestyle='--',
                     zorder=3)
@@ -262,7 +261,7 @@ class ConvergenceRate(object):
             # Aesthetic Refinements
             # ======================
             # Configure axis labels
-            ax.set_xlabel('Training Size', labelpad=3)
+            ax.set_xlabel('Training Steps', labelpad=3)
             ax.set_ylabel('Relative L2 Error', labelpad=3)
 
             # Set axis limits and scale
