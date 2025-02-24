@@ -123,9 +123,6 @@ class InferenceScaling(object):
         
             # # Solve with solver2 (baseline solver)
             sol2 = self.solver2.u_solve(rho, rho, xt_values)
-            sample_for_norm = np.random.choice(np.abs(sol1 - exact_sol).flatten(), 100, replace=False).flatten()
-            eq.uncertainty = np.mean(sample_for_norm)
-            eq.std = np.std(sample_for_norm)
             # Solve with solver3 using the trained solver1
             sol3 = self.solver3.u_solve(rho, rho, xt_values)
         

@@ -363,7 +363,7 @@ class Grad_Dependent_Nonlinear(Equation):
         - n_output (int): The dimension of the output space. Defaults to 1.
         '''
         super().__init__(n_input, n_output)
-        self.uncertainty = 2e-3
+        self.uncertainty = 1e-2
         self.norm_estimation = 1
     
     def PDE_loss(self, x_t,u):
@@ -381,7 +381,7 @@ class Grad_Dependent_Nonlinear(Equation):
         laplacian=0
         div=0
         dim = self.n_input-1
-        MC = 5
+        MC = int(self.n_input/4)
         # randomly choose MC dims to compute hessian and div
         idx_list = np.random.choice(self.n_input-1, MC, replace=False)
         for k in idx_list: # Accumulates laplacian and divergence over spatial dimensions.
@@ -568,8 +568,8 @@ class Linear_HJB(Equation):
         - n_output (int): The dimension of the output space. Defaults to 1.
         '''
         super().__init__(n_input, n_output)
-        self.uncertainty = 1e-4
-        self.norm_estimation = 0.5*self.n_input
+        self.uncertainty = 1e-3
+        self.norm_estimation = 100
     
     def PDE_loss(self, x_t,u):
         '''
@@ -585,7 +585,7 @@ class Linear_HJB(Equation):
         du_t = dde.grad.jacobian(u,x_t,i=0,j=self.n_input-1)[0] # Computes the time derivative of u.
         laplacian=0
         div=0
-        MC = 5
+        MC = int(self.n_input/4)
         dim=self.n_input-1
         # randomly choose MC dims to compute hessian and div
         idx_list = np.random.choice(self.n_input-1, MC, replace=False)
