@@ -48,6 +48,8 @@ if os.path.exists(r"results/Linear_HJB/80d/model.ckpt-?"):
     '''To Do: Retrain the model with new data points& Try new methods to reduce errors'''
     #load the model
     net=dde.maps.jax.FNN([81]+[50]*5+[1], "tanh", "Glorot normal")
+    terminal_transform = equation.terminal_transform
+    net.apply_output_transform(terminal_transform)
     data = equation.generate_data()
     model = dde.Model(data,net)
     model.restore(r"results/Linear_HJB/80d/model.ckpt-?",verbose=1)

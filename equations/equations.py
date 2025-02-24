@@ -209,7 +209,7 @@ class Equation(object):
         
     def terminal_condition(self):
         """
-        Terminal condition of the PDE, using hard constraint.
+        Terminal condition of the PDE, using soft constraint.
         
         Returns:
             dde.icbc.PointSetBC: The terminal condition boundary condition object.
@@ -228,6 +228,29 @@ class Equation(object):
             return tc
         else:
             raise NotImplementedError
+    
+    def terminal_transform(self,x_t,u):
+        '''
+        Hard Terminal condition in the PDE.
+
+        Args:
+            x_t (ndarray): The input data at terminal time, shape (n_samples, n_input).
+            u (ndarray): The output data of PINN, shape (n_samples, n_output).
+        
+        Returns:
+            result (ndarray): A 1D tensor of shape (n_samples,), representing the terminal constraint.
+
+        Raises:
+            NotImplementedError: If the terminal_constraint or geometry method is not implemented.
+        '''
+        if hasattr(self, 'terminal_constraint') and hasattr(self, 'geometry'):
+            t = x_t[:, -1]
+            T = self.T
+            output = ((T-t)/T)*u + (t/T)*self.terminal_constraint(x_t)
+            return output   
+        else:
+            raise NotImplementedError
+        
 
     def initial_condition(self):
         """
@@ -517,14 +540,14 @@ class Grad_Dependent_Nonlinear(Equation):
         - data (dde.data.TimePDE): A TimePDE object containing the training data.
         '''
         geom=self.geometry() # Defines the geometry of the domain.
-        self.terminal_condition() # Generates terminal condition.
+        # self.terminal_condition() # Generates terminal condition.
         self.Dirichlet_boundary_condition() # Generates Dirichlet boundary condition.
         self.initial_condition() # Generate initial condition
         # self.data_loss() # Generates data loss. 
         data = dde.data.TimePDE(
                                 geom, # Geometry of the domain.
                                 self.PDE_loss, # PDE loss function.
-                                [self.ic, self.tc, self.D_bc], # Additional conditions.
+                                [self.ic, self.D_bc], # Additional conditions.
                                 num_domain=num_domain, # Number of domain points.
                                 num_boundary=100, # Number of boundary points.
                                 num_initial=160,  # Number of initial points.
@@ -545,8 +568,8 @@ class Linear_HJB(Equation):
         - n_output (int): The dimension of the output space. Defaults to 1.
         '''
         super().__init__(n_input, n_output)
-        self.uncertainty = 1e-1
-        self.norm_estimation = 100
+        self.uncertainty = 1e-4
+        self.norm_estimation = 0.5*self.n_input
     
     def PDE_loss(self, x_t,u):
         '''
@@ -704,7 +727,7 @@ class Linear_HJB(Equation):
         self.geomt=timedomain
         return geom
     
-    def generate_data(self, num_domain=500):
+    def generate_data(self, num_domain=400):
         '''
         Generates data for training the PDE model.
         
@@ -715,18 +738,17 @@ class Linear_HJB(Equation):
         - data (dde.data.TimePDE): A TimePDE object containing the training data.
         '''
         geom=self.geometry() # Defines the geometry of the domain.
-        self.terminal_condition() # Generates terminal condition.
+        # self.terminal_condition() # Generates terminal condition.
         self.Dirichlet_boundary_condition() # Generates Dirichlet boundary condition.
         # self.initial_condition() # Generate initial condition
         # self.data_loss() # Generates data loss.
         data = dde.data.TimePDE(
                                 geom, # Geometry of the domain.
                                 self.PDE_loss, # PDE loss function.
-                                [self.tc, self.D_bc], # Additional conditions.
+                                [self.D_bc], # Additional conditions.
                                 num_domain=num_domain, # Number of domain points.
                                 num_boundary=2360, # Number of boundary points.
                                 num_initial=0,  # Number of initial points.
                                 solution=self.exact_solution   # Incorporates exact solution for error metrics.
                             )
         return data
-    
