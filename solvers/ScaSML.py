@@ -275,7 +275,6 @@ class ScaSML:
                     delta_t = (cloc[:, k, q - 1] - t + 1e-6)[:, jnp.newaxis]
                     z -= wloc[:, k, q - 1][:, jnp.newaxis] * jnp.sum(y * W, axis=1) / (MC_f * delta_t)
                 else:
-                    u_hat = self.model.predict(input_intermediates_flat)
                     epsilon_flat = self.model.predict(input_intermediates_flat,operator = self.equation.PDE_loss)
                     epsilon = epsilon_flat.reshape(batch_size, MC_f, 1)
                     # Update u and z values

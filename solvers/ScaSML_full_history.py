@@ -186,7 +186,6 @@ class ScaSML_full_history(object):
                 delta_sqrt_t = jnp.sqrt(sampled_time_steps + 1e-6)  # Avoid division by zero, shape (batch_size, 1)
                 z -= (T-t)[:,jnp.newaxis] * jnp.mean((y * std_normal / (delta_sqrt_t)),axis=1)  # Update z values
             else:
-                u_hat = self.model.predict(input_intermediates_flat)
                 epsilon_flat = self.model.predict(input_intermediates_flat,operator = self.equation.PDE_loss)
                 epsilon = epsilon_flat.reshape(batch_size, MC_f, 1)
                 # Update u and z values
