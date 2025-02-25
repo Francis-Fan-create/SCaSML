@@ -36,7 +36,7 @@ class MLP:
         Returns:
             array: The output of the generator function of shape (batch_size,).
         '''
-        # self.evaluation_counter += 1
+        self.evaluation_counter += 1
         eq = self.equation
         return eq.f(x_t, u, z)
     
@@ -50,7 +50,7 @@ class MLP:
         Returns:
             array: The output of the terminal constraint function of shape (batch_size,).
         '''
-        # self.evaluation_counter += 1
+        self.evaluation_counter += 1
         eq = self.equation
         return eq.g(x_t)[:, 0]
     
@@ -163,62 +163,63 @@ class MLP:
         g = self.g
         f = self.f
 
+        # Manage random keys of JAX
+        key = random.PRNGKey(0)  # Random key for generating Monte Carlo samples
+        subkey = random.split(key, 1)[0]  # Subkey for generating Brownian increments
+
         # Compute local time and weights
         cloc = (T - t)[:, jnp.newaxis, jnp.newaxis] * c[jnp.newaxis, :] / T + t[:, jnp.newaxis, jnp.newaxis]  # Local time, shape (batch_size, 1, 1)
         wloc = (T - t)[:, jnp.newaxis, jnp.newaxis] * w[jnp.newaxis, :] / T  # Local weights, shape (batch_size, 1)
 
         # Determine the number of Monte Carlo samples for backward Euler
-        MC = int(Mg[rho - 1, n])  # Number of Monte Carlo samples
+        MC_g = int(Mg[rho - 1, n])  # Number of Monte Carlo samples
 
         # Generate Monte Carlo samples for backward Euler
-        self.key, subkey = random.split(self.key)
-        W_random = random.normal(subkey, shape=(batch_size, MC, dim), dtype=jnp.float16)
-        W = jnp.sqrt(T - t)[:, jnp.newaxis, jnp.newaxis] * W_random  # Brownian increments
-        self.evaluation_counter += MC
-        X = jnp.repeat(x[:, jnp.newaxis, :], MC, axis=1)  # Replicated spatial coordinates
-        disturbed_X = X + mu * (T - t)[:, jnp.newaxis, jnp.newaxis] + sigma * W  # Disturbed spatial coordinates
-
+        std_normal = random.normal(subkey, shape=(batch_size, MC_g, dim), dtype=jnp.float16)
+        dW = jnp.sqrt(T-t)[:, jnp.newaxis, jnp.newaxis] * std_normal  # Brownian increments, shape (batch_size, MC_g, dim)
+        # self.evaluation_counter+=MC_g
+        X = jnp.repeat(x.reshape(x.shape[0], 1, x.shape[1]), MC_g, axis=1)  # Replicated spatial coordinates, shape (batch_size, MC_g, dim)
+        disturbed_X = X + mu*(T-t)[:, jnp.newaxis, jnp.newaxis]+ sigma * dW  # Disturbed spatial coordinates, shape (batch_size, MC_g, dim)
+        
+        
         # Prepare terminal inputs
-        input_terminal = jnp.concatenate((X, jnp.full((batch_size, MC, 1), T)), axis=2)  # Shape (batch_size, MC, n_input)
-        disturbed_input_terminal = jnp.concatenate((disturbed_X, jnp.full((batch_size, MC, 1), T)), axis=2)  # Shape (batch_size, MC, n_input)
+        disturbed_input_terminal = jnp.concatenate((disturbed_X, jnp.full((batch_size, MC_g, 1), T)), axis=2)  # Shape (batch_size, MC_g, n_input)
 
-        # Flatten inputs for function evaluation
-        input_terminal_flat = input_terminal.reshape(-1, self.n_input)
+        # Flatten inputs for vectorized function evaluation
         disturbed_input_terminal_flat = disturbed_input_terminal.reshape(-1, self.n_input)
 
-        # Evaluate g
-        terminals_flat = g(input_terminal_flat)  # Shape (batch_size * MC,)
-        differences_flat = g(disturbed_input_terminal_flat) - terminals_flat  # Shape (batch_size * MC,)
+        # Vectorized evaluation of g
+        distrubed_output_terminal_flat = g(disturbed_input_terminal_flat)  # Evaluate disturbed terminal condition, shape (batch_size * MC_g, 1)
 
-        # Reshape back to (batch_size, MC, 1)
-        terminals = terminals_flat.reshape(batch_size, MC, 1)
-        differences = differences_flat.reshape(batch_size, MC, 1)
-
+        # Reshape back to (batch_size, MC_g, 1)
+        distrubed_output_terminal =  distrubed_output_terminal_flat.reshape(batch_size, MC_g, 1)
+        
         # Compute u and z values
-        u = jnp.mean(differences + terminals, axis=1)  # Mean over Monte Carlo samples, shape (batch_size, 1)
-        delta_t = (T - t + 1e-6)[:, jnp.newaxis]  # Avoid division by zero
-        z = jnp.sum(differences * W, axis=1) / (MC * delta_t)  # Compute z values, shape (batch_size, dim)
-        cated_uz = jnp.concatenate((u, z), axis=-1)  # Concatenate u and z values
+        u = jnp.mean(distrubed_output_terminal, axis=1)  # Mean over Monte Carlo samples, shape (batch_size, 1)
 
+        delta_t = (T - t + 1e-6)[:, jnp.newaxis]  # Avoid division by zero, shape (batch_size, 1)
+        z = jnp.mean(distrubed_output_terminal * std_normal, axis=1) / (delta_t)  # Compute z values, shape (batch_size, dim)   
+        cated_uz = jnp.concatenate((u, z), axis=-1)  # Concatenate u and z values, shape (batch_size, dim + 1)     
         # Recursive call
-        if n <= 0:
-            return jnp.zeros_like(cated_uz)  # Return zeros if n < 0
+        if n == 0:
+            initial_output = jnp.zeros_like(cated_uz)
+            return initial_output 
 
         # Recursive computation for n > 0
         for l in range(n):
             q = int(Q[rho - 1, n - l - 1])  # Number of quadrature points, scalar
             d = cloc[:, :q, q - 1] - jnp.concatenate((t[:, jnp.newaxis], cloc[:, :q - 1, q - 1]), axis=1)  # Time steps, shape (batch_size, q)
-            MC = int(Mf[rho - 1, n - l - 1])  # Number of Monte Carlo samples, scalar
+            MC_f = int(Mf[rho - 1, n - l - 1])  # Number of Monte Carlo samples, scalar
 
-            X = jnp.repeat(x[:, jnp.newaxis, :], MC, axis=1)  # Replicated spatial coordinates
-            W = jnp.zeros((batch_size, MC, dim))  # Initialize Brownian increments
+            X = jnp.repeat(x[:, jnp.newaxis, :], MC_f, axis=1)  # Replicated spatial coordinates
+            W = jnp.zeros((batch_size, MC_f, dim))  # Initialize Brownian increments
 
             # Compute simulated values for each quadrature point
             for k in range(q):
                 self.key, subkey = random.split(self.key)
-                dW_random = random.normal(subkey, shape=(batch_size, MC, dim), dtype=jnp.float16)
+                dW_random = random.normal(subkey, shape=(batch_size, MC_f, dim), dtype=jnp.float16)
                 dW = jnp.sqrt(d[:, k])[:, jnp.newaxis, jnp.newaxis] * dW_random
-                self.evaluation_counter += MC * dim
+                # self.evaluation_counter += MC_f * dim
                 W += dW
                 X += mu * d[:, k][:, jnp.newaxis, jnp.newaxis] + sigma * dW
 
@@ -227,44 +228,44 @@ class MLP:
                 co_solver_l_minus_1 = lambda X_t: self.uz_solve(n=l - 1, rho=rho, x_t=X_t)  # Co-solver for level l - 1
 
                 # Prepare intermediate inputs
-                input_intermediates = jnp.concatenate((X, jnp.repeat(cloc[:, k, q - 1][:, jnp.newaxis,jnp.newaxis],MC,axis=1)), axis=2)
+                input_intermediates = jnp.concatenate((X, jnp.repeat(cloc[:, k, q - 1][:, jnp.newaxis,jnp.newaxis],MC_f,axis=1)), axis=2)
                 input_intermediates_flat = input_intermediates.reshape(-1, self.n_input)
 
                 # Co-solver for level l
                 simulated_flat = co_solver_l(input_intermediates_flat)
-                simulated = simulated_flat.reshape(batch_size, MC, -1)
-                simulated_u = simulated[:, :, 0].reshape(batch_size, MC, 1)
+                simulated = simulated_flat.reshape(batch_size, MC_f, -1)
+                simulated_u = simulated[:, :, 0].reshape(batch_size, MC_f, 1)
                 simulated_z = simulated[:, :, 1:]
 
                 # Flatten for function evaluation
                 simulated_u_flat = simulated_u.reshape(-1,1)
                 simulated_z_flat = simulated_z.reshape(-1, dim)
                 y_flat = f(input_intermediates_flat, simulated_u_flat, simulated_z_flat)
-                y = y_flat.reshape(batch_size, MC, 1)
+                y = y_flat.reshape(batch_size, MC_f, 1)
 
                 u += wloc[:, k,q-1][:, jnp.newaxis] * jnp.mean(y, axis=1)
-                z += wloc[:, k,q-1][:, jnp.newaxis] * jnp.sum(y * W, axis=1) / (MC * delta_t)
+                z += wloc[:, k,q-1][:, jnp.newaxis] * jnp.sum(y * W, axis=1) / (MC_f * delta_t)
 
                 # Adjust u and z values if l > 0
                 if l :
 
                     # Prepare intermediate inputs
-                    input_intermediates = jnp.concatenate((X, jnp.repeat(cloc[:, k, q-1][:, jnp.newaxis, jnp.newaxis],MC,axis=1)), axis=2)
+                    input_intermediates = jnp.concatenate((X, jnp.repeat(cloc[:, k, q-1][:, jnp.newaxis, jnp.newaxis],MC_f,axis=1)), axis=2)
                     input_intermediates_flat = input_intermediates.reshape(-1, self.n_input)
                     # Co-solver for level l
                     simulated_flat = co_solver_l_minus_1(input_intermediates_flat)
-                    simulated = simulated_flat.reshape(batch_size, MC, -1)
-                    simulated_u = simulated[:, :, 0].reshape(batch_size, MC, 1)
+                    simulated = simulated_flat.reshape(batch_size, MC_f, -1)
+                    simulated_u = simulated[:, :, 0].reshape(batch_size, MC_f, 1)
                     simulated_z = simulated[:, :, 1:]
 
                     simulated_u_flat = simulated_u.reshape(-1, 1)
                     simulated_z_flat = simulated_z.reshape(-1, dim)
                     y_flat = f(input_intermediates_flat, simulated_u_flat, simulated_z_flat)
-                    y = y_flat.reshape(batch_size, MC, 1)
+                    y = y_flat.reshape(batch_size, MC_f, 1)
 
                     u -= wloc[:, k, q - 1][:, jnp.newaxis] * jnp.mean(y, axis=1)  # Adjust u values
                     delta_t = (cloc[:, k, q - 1] - t + 1e-6)[:, jnp.newaxis]  # Avoid division by zero, shape (batch_size, 1)
-                    z -= wloc[:, k, q - 1][:, jnp.newaxis] * jnp.sum(y * W, axis=1) / (MC * delta_t)  # Adjust z values
+                    z -= wloc[:, k, q - 1][:, jnp.newaxis] * jnp.sum(y * W, axis=1) / (MC_f * delta_t)  # Adjust z values
         output_cated = jnp.concatenate((u, z), axis=-1)  # Concatenate adjusted u and z values, shape (batch_size, dim + 1)
         norm_estimation = self.equation.norm_estimation
         return jnp.clip(output_cated, -norm_estimation, norm_estimation).astype(jnp.float16)  # Clip the output to avoid numerical instability

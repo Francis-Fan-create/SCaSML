@@ -182,106 +182,106 @@ class ScaSML:
         f = self.f
         g = self.g
 
+        # Manage random keys of JAX
+        key = random.PRNGKey(0)  # Random key for generating Monte Carlo samples
+        subkey = random.split(key, 1)[0]  # Subkey for generating Brownian increments
+
         cloc = (T - t)[:, jnp.newaxis, jnp.newaxis] * c[jnp.newaxis, :] / T + t[:, jnp.newaxis, jnp.newaxis]  # Local time, shape (batch_size, 1, 1)
         wloc = (T - t)[:, jnp.newaxis, jnp.newaxis] * w[jnp.newaxis, :] / T  # Local weights, shape (batch_size, 1, 1)
 
-        MC = int(Mg[rho - 1, n])
+        # Determine the number of Monte Carlo samples for backward Euler
+        MC_g = int(Mg[rho - 1, n])  # Number of Monte Carlo samples
 
-        self.key, subkey = random.split(self.key)
-        W_random = random.normal(subkey, shape=(batch_size, MC, dim), dtype=jnp.float16)
-        # Monte Carlo simulation
-        W = jnp.sqrt(T - t)[:, jnp.newaxis, jnp.newaxis] * W_random
-        # self.evaluation_counter+=MC
-        X = jnp.repeat(x.reshape(x.shape[0], 1, x.shape[1]), MC, axis=1)
-        disturbed_X = X + mu*(T-t)[:, jnp.newaxis, jnp.newaxis]+ sigma * W  # Disturbed spatial coordinates, shape (batch_size, MC, dim)
+        # Generate Monte Carlo samples for backward Euler
+        std_normal = random.normal(subkey, shape=(batch_size, MC_g, dim), dtype=jnp.float16)
+        dW = jnp.sqrt(T-t)[:, jnp.newaxis, jnp.newaxis] * std_normal  # Brownian increments, shape (batch_size, MC_g, dim)
+        # self.evaluation_counter+=MC_g
+        X = jnp.repeat(x.reshape(x.shape[0], 1, x.shape[1]), MC_g, axis=1)  # Replicated spatial coordinates, shape (batch_size, MC_g, dim)
+        disturbed_X = X + mu*(T-t)[:, jnp.newaxis, jnp.newaxis]+ sigma * dW  # Disturbed spatial coordinates, shape (batch_size, MC_g, dim)
+        
+        
+        # Prepare terminal inputs
+        disturbed_input_terminal = jnp.concatenate((disturbed_X, jnp.full((batch_size, MC_g, 1), T)), axis=2)  # Shape (batch_size, MC_g, n_input)
 
-        input_terminal = jnp.concatenate((X, jnp.full((batch_size, MC, 1), T)), axis=2)
-        disturbed_input_terminal = jnp.concatenate((disturbed_X, jnp.full((batch_size, MC, 1), T)), axis=2)
-
-        input_terminal_flat = input_terminal.reshape(-1, self.n_input)
+        # Flatten inputs for vectorized function evaluation
         disturbed_input_terminal_flat = disturbed_input_terminal.reshape(-1, self.n_input)
 
-        terminals_flat = g(input_terminal_flat)
-        differences_flat = g(disturbed_input_terminal_flat) - terminals_flat
+        # Vectorized evaluation of g
+        distrubed_output_terminal_flat = g(disturbed_input_terminal_flat)  # Evaluate disturbed terminal condition, shape (batch_size * MC_g, 1)
 
-        terminals = terminals_flat.reshape(batch_size, MC, 1)
-        differences = differences_flat.reshape(batch_size, MC, 1)
+        # Reshape back to (batch_size, MC_g, 1)
+        distrubed_output_terminal =  distrubed_output_terminal_flat.reshape(batch_size, MC_g, 1)
+        
+        # Compute u and z values
+        u = jnp.mean(distrubed_output_terminal, axis=1)  # Mean over Monte Carlo samples, shape (batch_size, 1)
 
-        u = jnp.mean(differences + terminals, axis=1)
-        delta_t = (T - t + 1e-6)[:, jnp.newaxis]
-        z = jnp.sum(differences * W, axis=1) / (MC * delta_t)
-        cated_uz = jnp.concatenate((u, z), axis=-1)
-
-        # Recursive call for n > 0
+        delta_t = (T - t + 1e-6)[:, jnp.newaxis]  # Avoid division by zero, shape (batch_size, 1)
+        z = jnp.mean(distrubed_output_terminal * std_normal, axis=1) / (delta_t)  # Compute z values, shape (batch_size, dim)   
+        cated_uz = jnp.concatenate((u, z), axis=-1)  # Concatenate u and z values, shape (batch_size, dim + 1)     
+        # Recursive call
         if n == 0:
-            batch_size=x_t.shape[0]
-            u_hat = self.model.predict(x_t)
-            grad_u_hat_x = self.model.predict(x_t,operator=self.equation.grad)
-            initial_value= jnp.concatenate((u_hat, sigma* grad_u_hat_x), axis=-1)        
-            return initial_value 
-        elif n < 0:
-            return jnp.zeros_like(cated_uz)  # Return zeros if n < 0
-
+            initial_output = jnp.zeros_like(cated_uz)
+            return initial_output 
         for l in range(n):
             q = int(Q[rho - 1, n - l - 1])
             d = cloc[:, :q, q-1] - jnp.concatenate((t[:, jnp.newaxis], cloc[:, :q - 1, q-1]), axis=1)
-            MC = int(Mf[rho - 1, n - l - 1])
-            X = jnp.repeat(x[:, jnp.newaxis, :], MC, axis=1)
-            W = jnp.zeros((batch_size, MC, dim))
+            MC_f = int(Mf[rho - 1, n - l - 1])
+            X = jnp.repeat(x[:, jnp.newaxis, :], MC_f, axis=1)
+            W = jnp.zeros((batch_size, MC_f, dim))
 
             for k in range(q):
                 self.key, subkey = random.split(self.key)
-                dW_random = random.normal(subkey, shape=(batch_size, MC, dim), dtype=jnp.float16)
+                dW_random = random.normal(subkey, shape=(batch_size, MC_f, dim), dtype=jnp.float16)
                 dW = jnp.sqrt(d[:, k])[:, jnp.newaxis, jnp.newaxis] * dW_random
-                # self.evaluation_counter += MC * dim
+                # self.evaluation_counter += MC_f * dim
                 W += dW
                 X += mu * d[:, k][:, jnp.newaxis, jnp.newaxis] + sigma * dW
 
                 co_solver_l = lambda X_t: self.uz_solve(n=l, rho=rho, x_t=X_t)
                 co_solver_l_minus_1 = lambda X_t: self.uz_solve(n=l - 1, rho=rho, x_t=X_t)
 
-                input_intermediates = jnp.concatenate((X, jnp.repeat(cloc[:, k, q - 1][:, jnp.newaxis,jnp.newaxis],MC,axis=1)), axis=2)
+                input_intermediates = jnp.concatenate((X, jnp.repeat(cloc[:, k, q - 1][:, jnp.newaxis,jnp.newaxis],MC_f,axis=1)), axis=2)
                 input_intermediates_flat = input_intermediates.reshape(-1, self.n_input)
 
                 simulated_flat = co_solver_l(input_intermediates_flat)
-                simulated = simulated_flat.reshape(batch_size, MC, -1)
-                simulated_u = simulated[:, :, 0].reshape(batch_size, MC, 1)
+                simulated = simulated_flat.reshape(batch_size, MC_f, -1)
+                simulated_u = simulated[:, :, 0].reshape(batch_size, MC_f, 1)
                 simulated_z = simulated[:, :, 1:]
 
                 simulated_u_flat = simulated_u.reshape(-1, 1)
                 simulated_z_flat = simulated_z.reshape(-1, dim)
                 y_flat = f(input_intermediates_flat, simulated_u_flat, simulated_z_flat)
-                y = y_flat.reshape(batch_size, MC, 1)
+                y = y_flat.reshape(batch_size, MC_f, 1)
 
                 u += wloc[:, k, q - 1][:, jnp.newaxis] * jnp.mean(y, axis=1)
                 delta_t = (cloc[:, k, q - 1] - t + 1e-6)[:, jnp.newaxis]
-                z += wloc[:, k, q - 1][:, jnp.newaxis] * jnp.sum(y * W, axis=1) / (MC * delta_t) 
+                z += wloc[:, k, q - 1][:, jnp.newaxis] * jnp.sum(y * W, axis=1) / (MC_f * delta_t) 
 
                 if l :
-                    input_intermediates = jnp.concatenate((X, jnp.repeat(cloc[:, k, q-1][:, jnp.newaxis, jnp.newaxis],MC,axis=1)), axis=2)
+                    input_intermediates = jnp.concatenate((X, jnp.repeat(cloc[:, k, q-1][:, jnp.newaxis, jnp.newaxis],MC_f,axis=1)), axis=2)
                     input_intermediates_flat = input_intermediates.reshape(-1, self.n_input)
 
                     simulated_flat = co_solver_l_minus_1(input_intermediates_flat)
-                    simulated = simulated_flat.reshape(batch_size, MC, -1)
-                    simulated_u = simulated[:, :, 0].reshape(batch_size, MC, 1)
+                    simulated = simulated_flat.reshape(batch_size, MC_f, -1)
+                    simulated_u = simulated[:, :, 0].reshape(batch_size, MC_f, 1)
                     simulated_z = simulated[:, :, 1:]
 
                     simulated_u_flat = simulated_u.reshape(-1, 1)
                     simulated_z_flat = simulated_z.reshape(-1, dim)
                     y_flat = f(input_intermediates_flat, simulated_u_flat, simulated_z_flat)
-                    y = y_flat.reshape(batch_size, MC, 1)
+                    y = y_flat.reshape(batch_size, MC_f, 1)
 
                     u -= wloc[:, k, q - 1][:, jnp.newaxis] * jnp.mean(y, axis=1)
                     delta_t = (cloc[:, k, q - 1] - t + 1e-6)[:, jnp.newaxis]
-                    z -= wloc[:, k, q - 1][:, jnp.newaxis] * jnp.sum(y * W, axis=1) / (MC * delta_t)
+                    z -= wloc[:, k, q - 1][:, jnp.newaxis] * jnp.sum(y * W, axis=1) / (MC_f * delta_t)
                 else:
                     u_hat = self.model.predict(input_intermediates_flat)
                     epsilon_flat = self.model.predict(input_intermediates_flat,operator = self.equation.PDE_loss)
-                    epsilon = epsilon_flat.reshape(batch_size, MC, 1)
+                    epsilon = epsilon_flat.reshape(batch_size, MC_f, 1)
                     # Update u and z values
                     u += wloc[:, k, q - 1][:, jnp.newaxis] * jnp.mean(epsilon, axis=1)
                     delta_t = (cloc[:, k, q - 1] - t + 1e-6)[:, jnp.newaxis]
-                    z += wloc[:, k, q - 1][:, jnp.newaxis] * jnp.sum(epsilon * W, axis=1) / (MC * delta_t)     
+                    z += wloc[:, k, q - 1][:, jnp.newaxis] * jnp.sum(epsilon * W, axis=1) / (MC_f * delta_t)     
         output_uz = jnp.concatenate((u, z), axis=-1)
         uncertainty = self.equation.uncertainty
         return jnp.clip(output_uz, -uncertainty, uncertainty)

@@ -40,7 +40,7 @@ class MLP_full_history(object):
         '''
         # batch_size=x_t.shape[0]
         # self.evaluation_counter+=batch_size
-        # self.evaluation_counter+=1
+        self.evaluation_counter+=1
         eq = self.equation
         return eq.f(x_t, u, z)
     
@@ -56,7 +56,7 @@ class MLP_full_history(object):
         '''
         # batch_size=x_t.shape[0]
         # self.evaluation_counter+=batch_size
-        # self.evaluation_counter+=1
+        self.evaluation_counter+=1
         eq = self.equation
         return eq.g(x_t)[:,0]
     
@@ -98,39 +98,33 @@ class MLP_full_history(object):
         # Generate Monte Carlo samples for backward Euler
         std_normal = random.normal(subkey, shape=(batch_size, MC_g, dim), dtype=jnp.float16)
         dW = jnp.sqrt(T-t)[:, jnp.newaxis, jnp.newaxis] * std_normal  # Brownian increments, shape (batch_size, MC_g, dim)
-        self.evaluation_counter+=MC_g
+        # self.evaluation_counter+=MC_g
         X = jnp.repeat(x.reshape(x.shape[0], 1, x.shape[1]), MC_g, axis=1)  # Replicated spatial coordinates, shape (batch_size, MC_g, dim)
         disturbed_X = X + mu*(T-t)[:, jnp.newaxis, jnp.newaxis]+ sigma * dW  # Disturbed spatial coordinates, shape (batch_size, MC_g, dim)
         
-        # Initialize arrays for terminal and difference values
-        terminals = jnp.zeros((batch_size, MC_g, 1))  # Terminal values, shape (batch_size, MC_g, 1)
-        differences = jnp.zeros((batch_size, MC_g, 1))  # Differences, shape (batch_size, MC_g, 1)
         
         # Prepare terminal inputs
-        input_terminal = jnp.concatenate((X, jnp.full((batch_size, MC_g, 1), T)), axis=2)  # Shape (batch_size, MC_g, n_input)
         disturbed_input_terminal = jnp.concatenate((disturbed_X, jnp.full((batch_size, MC_g, 1), T)), axis=2)  # Shape (batch_size, MC_g, n_input)
 
         # Flatten inputs for vectorized function evaluation
-        input_terminal_flat = input_terminal.reshape(-1, self.n_input)
         disturbed_input_terminal_flat = disturbed_input_terminal.reshape(-1, self.n_input)
 
         # Vectorized evaluation of g
-        terminals_flat = g(input_terminal_flat)  # Evaluate terminal condition, shape (batch_size * MC_g, 1)
-        differences_flat = g(disturbed_input_terminal_flat) - terminals_flat  # Evaluate disturbed terminal condition, shape (batch_size * MC_g, 1)
+        distrubed_output_terminal_flat = g(disturbed_input_terminal_flat)  # Evaluate disturbed terminal condition, shape (batch_size * MC_g, 1)
 
         # Reshape back to (batch_size, MC_g, 1)
-        terminals = terminals_flat.reshape(batch_size, MC_g, 1)
-        differences = differences_flat.reshape(batch_size, MC_g, 1)
+        distrubed_output_terminal =  distrubed_output_terminal_flat.reshape(batch_size, MC_g, 1)
         
         # Compute u and z values
-        u = jnp.mean(differences + terminals, axis=1)  # Mean over Monte Carlo samples, shape (batch_size, 1)
+        u = jnp.mean(distrubed_output_terminal, axis=1)  # Mean over Monte Carlo samples, shape (batch_size, 1)
 
         delta_t = (T - t + 1e-6)[:, jnp.newaxis]  # Avoid division by zero, shape (batch_size, 1)
-        z = jnp.mean(differences * std_normal, axis=1) / (delta_t)  # Compute z values, shape (batch_size, dim)   
+        z = jnp.mean(distrubed_output_terminal * std_normal, axis=1) / (delta_t)  # Compute z values, shape (batch_size, dim)   
         cated_uz = jnp.concatenate((u, z), axis=-1)  # Concatenate u and z values, shape (batch_size, dim + 1)     
         # Recursive call
-        if n <= 0:
-            return jnp.zeros_like(cated_uz)  # Return zeros if n < 0
+        if n == 0:
+            initial_output = jnp.zeros_like(cated_uz)
+            return initial_output 
         
         # Recursive computation for n > 0
         for l in range(n):
@@ -142,7 +136,7 @@ class MLP_full_history(object):
             simulated = jnp.zeros((batch_size, MC_f, dim + 1))  # Initialize array for simulated values, shape (batch_size, MC_f, dim + 1)
             std_normal = random.normal(subkey, shape=(batch_size, MC_f, dim), dtype=jnp.float16)  # Generate standard normal samples
             dW =jnp.sqrt(sampled_time_steps) * std_normal  # Brownian increments for current time step, shape (batch_size, MC_f, dim)
-            self.evaluation_counter+=MC_f*dim
+            # self.evaluation_counter+=MC_f*dim
             X += mu*(sampled_time_steps)+sigma * dW  # Update spatial coordinates
             co_solver_l = lambda X_t: self.uz_solve(n=l, rho= None, x_t=X_t)  # Co-solver for level l
             co_solver_l_minus_1 = lambda X_t: self.uz_solve(n=l - 1, rho= None, x_t=X_t)  # Co-solver for level l - 1

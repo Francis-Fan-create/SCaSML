@@ -569,7 +569,7 @@ class Linear_HJB(Equation):
         '''
         super().__init__(n_input, n_output)
         self.uncertainty = 1e-3
-        self.norm_estimation = 100
+        self.norm_estimation = 0.5 * self.n_input
     
     def PDE_loss(self, x_t,u):
         '''
