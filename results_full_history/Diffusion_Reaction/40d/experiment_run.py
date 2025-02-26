@@ -85,9 +85,9 @@ test2.test(r"results_full_history/Diffusion_Reaction/40d")
 #run the test for ConvergenceRate
 test3=ConvergenceRate(equation,solver1_2,solver2,solver3_2, is_train)
 test3.test(r"results_full_history/Diffusion_Reaction/40d")
-# #run the test for InferenceScaling
-# test4=InferenceScaling(equation,solver1_3,solver2,solver3_3)
-# test4.test(r"results_full_history/Diffusion_Reaction/40d")
+#run the test for InferenceScaling
+test4=InferenceScaling(equation,solver1_3,solver2,solver3_3)
+test4.test(r"results_full_history/Diffusion_Reaction/40d")
 
 #finish wandb
 wandb.finish()
