@@ -33,12 +33,6 @@ which is our target in this section.
 Specifically, we consider the problem for
 
 $$
-d=100, \mu=-1/d,\sigma=\sqrt{2}, D=[-0.5,0.5]^{100}, s=0, T=0.5
-$$
-
-and
-
-$$
-d=20, 40, 60, 80,\mu=-1/d, \sigma=\sqrt{2}, D=[-0.5,0.5]^{250}, s=0, T=0.5
+d=20, 40, 60, 80,\mu=-1/d, \sigma=\sqrt{2}, D=[-0.5,0.5]^{20,40,60,80}, s=0, T=0.5
 $$
 
