@@ -766,7 +766,7 @@ class Diffusion_Reaction(Equation):
         - n_output (int): The dimension of the output space. Defaults to 1.
         '''
         super().__init__(n_input, n_output)
-        self.uncertainty = 1e-2
+        self.uncertainty = 2e-3
         self.norm_estimation = jnp.sqrt(jnp.e)
     
     def PDE_loss(self, x_t,u):
