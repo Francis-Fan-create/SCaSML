@@ -109,33 +109,66 @@ class InferenceScaling(object):
 
         for j in range(list_len):
 
-            rho = j + 1
+            if eq.__class__.__name__ == 'Grad_Dependent_Nonlinear' or eq.__class__.__name__ == 'Diffusion_Reaction':
 
-            # Print current rho value
-            print(f"Current rho value: {rho}")
-        
-            # Predict with solver1
-            sol1 = self.solver1.predict(xt_values)
-        
-            # # Solve with solver2 (baseline solver)
-            sol2 = self.solver2.u_solve(rho, rho, xt_values)
-            # Solve with solver3 using the trained solver1
-            sol3 = self.solver3.u_solve(rho, rho, xt_values)
-        
-            # Compute errors
-            errors1 = np.linalg.norm(sol1 - exact_sol)
-            errors2 = np.linalg.norm(sol2 - exact_sol)
-            errors3 = np.linalg.norm(sol3 - exact_sol)
-        
-            error_value1 = errors1 / np.linalg.norm(exact_sol)
-            error_value2 = errors2 / np.linalg.norm(exact_sol)
-            error_value3 = errors3 / np.linalg.norm(exact_sol)
+                rho = j + 1
 
-            error1_list.append(error_value1)
-            error2_list.append(error_value2)
-            error3_list.append(error_value3)
+                # Print current rho value
+                print(f"Current rho value: {rho}")
+            
+                # Predict with solver1
+                sol1 = self.solver1.predict(xt_values)
+            
+                # # Solve with solver2 (baseline solver)
+                sol2 = self.solver2.u_solve(rho, rho, xt_values)
+                # Solve with solver3 using the trained solver1
+                sol3 = self.solver3.u_solve(rho, rho, xt_values)
+            
+                # Compute errors
+                errors1 = np.linalg.norm(sol1 - exact_sol)
+                errors2 = np.linalg.norm(sol2 - exact_sol)
+                errors3 = np.linalg.norm(sol3 - exact_sol)
+            
+                error_value1 = errors1 / np.linalg.norm(exact_sol)
+                error_value2 = errors2 / np.linalg.norm(exact_sol)
+                error_value3 = errors3 / np.linalg.norm(exact_sol)
 
-            eval_counter_list.append(self.solver3.evaluation_counter)
+                error1_list.append(error_value1)
+                error2_list.append(error_value2)
+                error3_list.append(error_value3)
+
+                eval_counter_list.append(self.solver3.evaluation_counter)
+            
+            elif eq.__class__.__name__ == 'Linear_HJB':
+                
+                rho = 1
+                M=int(2+j)
+                # Print current exponential sample base
+                print(f"Current base: {M}")
+            
+                # Predict with solver1
+                sol1 = self.solver1.predict(xt_values)
+            
+                # # Solve with solver2 (baseline solver)
+                sol2 = self.solver2.u_solve(rho, rho, xt_values, M)
+                # Solve with solver3 using the trained solver1
+                sol3 = self.solver3.u_solve(rho, rho, xt_values, M)
+            
+                # Compute errors
+                errors1 = np.linalg.norm(sol1 - exact_sol)
+                errors2 = np.linalg.norm(sol2 - exact_sol)
+                errors3 = np.linalg.norm(sol3 - exact_sol)
+            
+                error_value1 = errors1 / np.linalg.norm(exact_sol)
+                error_value2 = errors2 / np.linalg.norm(exact_sol)
+                error_value3 = errors3 / np.linalg.norm(exact_sol)
+
+                error1_list.append(error_value1)
+                error2_list.append(error_value2)
+                error3_list.append(error_value3)
+
+                eval_counter_list.append(self.solver3.evaluation_counter)
+            
 
         # Plot error ratios
         plt.figure()

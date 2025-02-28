@@ -91,25 +91,44 @@ class SimpleUniform(object):
         rel_error3 = 0
         real_sol_L2 = 0
         time1, time2, time3 = 0, 0, 0
-    
-        # Measure the time and predict using solver1
-        print("Predicting with solver1 on test data...")
-        start = time.time()
-        sol1 = self.solver1.predict(xt_test)
-        time1 += time.time() - start
-    
-        # Measure the time and predict using solver2
-        print("Predicting with solver2 on test data...")
-        start = time.time()
-        sol2 = self.solver2.u_solve(n, rhomax, xt_test)
-        time2 += time.time() - start
-    
-        # Measure the time and predict using solver3
-        print("Predicting with solver3 on test data...")
-        start = time.time()
-        sol3 = self.solver3.u_solve(n, rhomax, xt_test)
-        time3 += time.time() - start
 
+        if eq.__class__.__name__ == "Grad_Dependent_Nonlinear" or eq.__class__.__name__ == "Diffusion_Reaction":
+            # Measure the time and predict using solver1
+            print("Predicting with solver1 on test data...")
+            start = time.time()
+            sol1 = self.solver1.predict(xt_test)
+            time1 += time.time() - start
+        
+            # Measure the time and predict using solver2
+            print("Predicting with solver2 on test data...")
+            start = time.time()
+            sol2 = self.solver2.u_solve(n, rhomax, xt_test)
+            time2 += time.time() - start
+        
+            # Measure the time and predict using solver3
+            print("Predicting with solver3 on test data...")
+            start = time.time()
+            sol3 = self.solver3.u_solve(n, rhomax, xt_test)
+            time3 += time.time() - start
+        elif eq.__class__.__name__ == "Linear_HJB":
+            rhomax =1
+            # Measure the time and predict using solver1
+            print("Predicting with solver1 on test data...")
+            start = time.time()
+            sol1 = self.solver1.predict(xt_test)
+            time1 += time.time() - start
+        
+            # Measure the time and predict using solver2
+            print("Predicting with solver2 on test data...")
+            start = time.time()
+            sol2 = self.solver2.u_solve(n, rhomax, xt_test, 5)
+            time2 += time.time() - start
+        
+            # Measure the time and predict using solver3
+            print("Predicting with solver3 on test data...")
+            start = time.time()
+            sol3 = self.solver3.u_solve(n, rhomax, xt_test, 5)
+            time3 += time.time() - start
         # Compute the average error and relative error
         errors1 = np.abs(sol1 - exact_sol).flatten()
         errors2 = np.abs(sol2 - exact_sol).flatten()

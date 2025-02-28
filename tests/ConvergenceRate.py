@@ -100,32 +100,58 @@ class ConvergenceRate(object):
         if is_train:
             for j in range(list_len):
                 #train the model
-                opt = Adam(eq.n_input,1, self.solver1, eq)
-                trained_model1= opt.train(f"{save_path}/model_weights_Adam", iters=train_iters[j] if j==0 else train_iters[j]-train_iters[j-1])
-                self.solver1 = trained_model1
-                self.solver3.PINN = trained_model1
-                # Predict with solver1
-                sol1 = self.solver1.predict(xt_values)
-            
-                # # Solve with solver2 (baseline solver)
-                # sol2 = self.solver2.u_solve(rhomax, rhomax, xt_values)
-            
-                # Solve with solver3 using the trained solver1
-                sol3 = self.solver3.u_solve(rhomax, rhomax, xt_values)
-            
-                # Compute errors
-                errors1 = np.abs(sol1 - exact_sol).flatten()
-                # errors2 = np.abs(sol2 - exact_sol).flatten()
-                errors3 = np.abs(sol3 - exact_sol).flatten()
-            
-                error_value1 = np.linalg.norm(errors1) / np.linalg.norm(exact_sol)
-                # error_value2 = np.linalg.norm(errors2) / np.linalg.norm(exact_sol)
-                error_value3 = np.linalg.norm(errors3) / np.linalg.norm(exact_sol)
+                if eq.__class__.__name__ == 'Grad_Dependent_Nonlinear' or eq.__class__.__name__ == 'Diffusion_Reaction':
+                    opt = Adam(eq.n_input,1, self.solver1, eq)
+                    trained_model1= opt.train(f"{save_path}/model_weights_Adam", iters=train_iters[j] if j==0 else train_iters[j]-train_iters[j-1])
+                    self.solver1 = trained_model1
+                    self.solver3.PINN = trained_model1
+                    # Predict with solver1
+                    sol1 = self.solver1.predict(xt_values)
+                
+                    # # Solve with solver2 (baseline solver)
+                    # sol2 = self.solver2.u_solve(rhomax, rhomax, xt_values)
+                
+                    # Solve with solver3 using the trained solver1
+                    sol3 = self.solver3.u_solve(rhomax, rhomax, xt_values)
+                
+                    # Compute errors
+                    errors1 = np.abs(sol1 - exact_sol).flatten()
+                    # errors2 = np.abs(sol2 - exact_sol).flatten()
+                    errors3 = np.abs(sol3 - exact_sol).flatten()
+                
+                    error_value1 = np.linalg.norm(errors1) / np.linalg.norm(exact_sol)
+                    # error_value2 = np.linalg.norm(errors2) / np.linalg.norm(exact_sol)
+                    error_value3 = np.linalg.norm(errors3) / np.linalg.norm(exact_sol)
 
-                error1_list.append(error_value1)
-                # error2_list.append(error_value2)
-                error3_list.append(error_value3)
-            
+                    error1_list.append(error_value1)
+                    # error2_list.append(error_value2)
+                    error3_list.append(error_value3)
+                elif eq.__class__.__name__ == 'Linear_HJB':
+                    opt = Adam(eq.n_input,1, self.solver1, eq)
+                    trained_model1= opt.train(f"{save_path}/model_weights_Adam", iters=train_iters[j] if j==0 else train_iters[j]-train_iters[j-1])
+                    self.solver1 = trained_model1
+                    self.solver3.PINN = trained_model1
+                    # Predict with solver1
+                    sol1 = self.solver1.predict(xt_values)
+                
+                    # # Solve with solver2 (baseline solver)
+                    # sol2 = self.solver2.u_solve(1, 1, xt_values, 5)
+                
+                    # Solve with solver3 using the trained solver1
+                    sol3 = self.solver3.u_solve(1, 1, xt_values, 5)
+                
+                    # Compute errors
+                    errors1 = np.abs(sol1 - exact_sol).flatten()
+                    # errors2 = np.abs(sol2 - exact_sol).flatten()
+                    errors3 = np.abs(sol3 - exact_sol).flatten()
+                
+                    error_value1 = np.linalg.norm(errors1) / np.linalg.norm(exact_sol)
+                    # error_value2 = np.linalg.norm(errors2) / np.linalg.norm(exact_sol)
+                    error_value3 = np.linalg.norm(errors3) / np.linalg.norm(exact_sol)
+
+                    error1_list.append(error_value1)
+                    # error2_list.append(error_value2)
+                    error3_list.append(error_value3)
             # Plot error ratios
             plt.figure()
             epsilon = 1e-10  # To avoid log(0)

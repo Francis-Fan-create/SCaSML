@@ -61,7 +61,7 @@ class MLP_full_history(object):
         return eq.g(x_t)[:,0]
     
     # @log_variables
-    def uz_solve(self, n, rho, x_t):
+    def uz_solve(self, n, rho, x_t, M=2):
         '''
         Approximate the solution of the PDE, return the value of u(x_t) and z(x_t), batchwisely.
         
@@ -70,6 +70,7 @@ class MLP_full_history(object):
             rho (int): Number of quadrature points, not used in this solver.
             x_t (ndarray): A batch of spatial-temporal coordinates, shape (batch_size, n_input), where
                            batch_size is the number of samples in the batch and n_input is the number of input features (spatial dimensions + 1 for time).
+            M (int): Exponential base for sample size.
         
         Returns:
             ndarray: The concatenated u and z values for each sample in the batch, shape (batch_size, 1+n_input-1).
@@ -77,7 +78,6 @@ class MLP_full_history(object):
         '''
         # Set alpha=1
         # Extract model parameters and functions
-        M = 2 # Exponential base for sample size
         T = self.T  # Terminal time
         dim = self.n_input - 1  # Spatial dimensions
         batch_size = x_t.shape[0]  # Batch size
@@ -176,7 +176,7 @@ class MLP_full_history(object):
         norm_estimation = self.equation.norm_estimation
         return jnp.clip(output_cated, -norm_estimation, norm_estimation).astype(jnp.float16)  # Clip the output to avoid numerical instability
     
-    def u_solve(self, n, rho, x_t):
+    def u_solve(self, n, rho, x_t, M=2):
         '''
         Approximate the solution of the PDE, return the value of u(x_t), batchwisely.
         
@@ -190,5 +190,5 @@ class MLP_full_history(object):
             ndarray: The u values for each sample in the batch, shape (batch_size, 1).
                      Here, u is the approximate solution of the PDE at the given coordinates.
         '''
-        return self.uz_solve(n, rho, x_t)[:, 0][:,jnp.newaxis]  # Call uz_solve and return only the u values, shape (batch_size, 1)
+        return self.uz_solve(n, rho, x_t, M)[:, 0][:,jnp.newaxis]  # Call uz_solve and return only the u values, shape (batch_size, 1)
    

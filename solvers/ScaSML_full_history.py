@@ -74,7 +74,7 @@ class ScaSML_full_history(object):
         return result[:,0]
         
     # @log_variables
-    def uz_solve(self, n, rho, x_t):
+    def uz_solve(self, n, rho, x_t, M=2):
         '''
         Approximate the solution of the PDE, return the value of u(x_t) and z(x_t), batchwisely.
         
@@ -83,6 +83,7 @@ class ScaSML_full_history(object):
             rho (int): Number of quadrature points, not used in this solver.
             x_t (ndarray): A batch of spatial-temporal coordinates, shape (batch_size, n_input), where
                            batch_size is the number of samples in the batch and n_input is the number of input features (spatial dimensions + 1 for time).
+            M (int) : Exponential base for sample size.
         
         Returns:
             ndarray: The concatenated u and z values for each sample in the batch, shape (batch_size, 1+n_input-1).
@@ -90,7 +91,6 @@ class ScaSML_full_history(object):
         '''
         # Set alpha=1
         # Extract model parameters and functions
-        M = 2 # Exponential base for sample size
         T = self.T  # Terminal time
         dim = self.n_input - 1  # Spatial dimensions
         batch_size = x_t.shape[0]  # Batch size
@@ -196,7 +196,7 @@ class ScaSML_full_history(object):
         uncertainty = self.equation.uncertainty
         return jnp.clip(output_uz, -uncertainty, uncertainty)
 
-    def u_solve(self, n, rho, x_t):
+    def u_solve(self, n, rho, x_t, M=2):
         '''
         Approximate the solution of the PDE, return the ndarray of u(x_t) only.
         
@@ -210,7 +210,7 @@ class ScaSML_full_history(object):
         '''
         eq = self.equation
         # Calculate u_breve and z_breve using uz_solve
-        u_breve_z_breve = self.uz_solve(n, rho, x_t)
+        u_breve_z_breve = self.uz_solve(n, rho, x_t, M)
         u_breve = u_breve_z_breve[:, 0][:, jnp.newaxis]
         
         u_hat = self.model.predict(x_t)

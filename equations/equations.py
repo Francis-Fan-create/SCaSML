@@ -585,7 +585,7 @@ class Linear_HJB(Equation):
         du_t = dde.grad.jacobian(u,x_t,i=0,j=self.n_input-1)[0] # Computes the time derivative of u.
         laplacian=0
         div=0
-        MC = int(self.n_input/4)
+        MC = 5
         dim=self.n_input-1
         # randomly choose MC dims to compute hessian and div
         idx_list = np.random.choice(self.n_input-1, MC, replace=False)
@@ -766,7 +766,7 @@ class Diffusion_Reaction(Equation):
         - n_output (int): The dimension of the output space. Defaults to 1.
         '''
         super().__init__(n_input, n_output)
-        self.uncertainty = 2e-3
+        self.uncertainty = 1e-2
         self.norm_estimation = jnp.sqrt(jnp.e)
     
     def PDE_loss(self, x_t,u):
