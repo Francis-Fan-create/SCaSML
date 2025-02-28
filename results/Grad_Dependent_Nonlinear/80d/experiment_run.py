@@ -47,7 +47,7 @@ equation=Grad_Dependent_Nonlinear(n_input=81,n_output=1)
 if os.path.exists(r"results/Grad_Dependent_Nonlinear/80d/model.ckpt-?"):
     '''To Do: Retrain the model with new data points& Try new methods to reduce errors'''
     #load the model
-    net=dde.maps.jax.FNN([81]+[50]*5+[1], "tanh", "Glorot normal")
+    net=dde.maps.jax.PFNN([[81]*5,[5]+[10]*3+[20],[5]+[10]*3+[20],[5]+[10]*3+[20],[5]+[10]*3+[20],[5]+[10]*3+[20],1], "tanh", "Glorot normal")
     terminal_transform = equation.terminal_transform
     net.apply_output_transform(terminal_transform)
     data = equation.generate_data()
@@ -58,8 +58,8 @@ if os.path.exists(r"results/Grad_Dependent_Nonlinear/80d/model.ckpt-?"):
 else:
     #initialize the FNN
     #same layer width
-    net1=dde.maps.jax.FNN([81]+[50]*5+[1], "tanh", "Glorot normal")
-    net2=dde.maps.jax.FNN([81]+[50]*5+[1], "tanh", "Glorot normal")
+    net1=dde.maps.jax.PFNN([[81]*5,[5]+[10]*3+[20],[5]+[10]*3+[20],[5]+[10]*3+[20],[5]+[10]*3+[20],[5]+[10]*3+[20],1], "tanh", "Glorot normal")
+    net2=dde.maps.jax.PFNN([[81]*5,[5]+[10]*3+[20],[5]+[10]*3+[20],[5]+[10]*3+[20],[5]+[10]*3+[20],[5]+[10]*3+[20],1], "tanh", "Glorot normal")
     data1 = equation.generate_data()
     data2 = equation.generate_data()
     model1 = dde.Model(data1,net1)
