@@ -135,10 +135,10 @@ class ConvergenceRate(object):
                     sol1 = self.solver1.predict(xt_values)
                 
                     # # Solve with solver2 (baseline solver)
-                    # sol2 = self.solver2.u_solve(1, 1, xt_values, 5)
+                    # sol2 = self.solver2.u_solve(1, 1, xt_values, 10)
                 
                     # Solve with solver3 using the trained solver1
-                    sol3 = self.solver3.u_solve(1, 1, xt_values, 5)
+                    sol3 = self.solver3.u_solve(1, 1, xt_values, 10)
                 
                     # Compute errors
                     errors1 = np.abs(sol1 - exact_sol).flatten()

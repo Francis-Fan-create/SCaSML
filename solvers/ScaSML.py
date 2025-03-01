@@ -43,7 +43,7 @@ class ScaSML:
         eq = self.equation
         # batch_size=x_t.shape[0]
         # self.evaluation_counter+=batch_size
-        self.evaluation_counter+=1
+        # self.evaluation_counter+=1
         u_hat = self.model.predict(x_t)
         grad_u_hat_x = self.model.predict(x_t,operator=self.equation.grad)
         # Calculate the values for the generator function
@@ -64,7 +64,7 @@ class ScaSML:
         eq = self.equation
         # batch_size=x_t.shape[0]
         # self.evaluation_counter+=batch_size
-        self.evaluation_counter+=1
+        # self.evaluation_counter+=1
         u_hat = self.model.predict(x_t)
         # tensor_x_t[:, -1] = self.T
         # Calculate the result of the terminal constraint function
@@ -208,6 +208,7 @@ class ScaSML:
 
         # Vectorized evaluation of g
         distrubed_output_terminal_flat = g(disturbed_input_terminal_flat)  # Evaluate disturbed terminal condition, shape (batch_size * MC_g, 1)
+        self.evaluation_counter+=MC_g
 
         # Reshape back to (batch_size, MC_g, 1)
         distrubed_output_terminal =  distrubed_output_terminal_flat.reshape(batch_size, MC_g, 1)
@@ -251,6 +252,7 @@ class ScaSML:
                 simulated_u_flat = simulated_u.reshape(-1, 1)
                 simulated_z_flat = simulated_z.reshape(-1, dim)
                 y_flat = f(input_intermediates_flat, simulated_u_flat, simulated_z_flat)
+                self.evaluation_counter+=MC_f
                 y = y_flat.reshape(batch_size, MC_f, 1)
 
                 u += wloc[:, k, q - 1][:, jnp.newaxis] * jnp.mean(y, axis=1)
@@ -269,6 +271,7 @@ class ScaSML:
                     simulated_u_flat = simulated_u.reshape(-1, 1)
                     simulated_z_flat = simulated_z.reshape(-1, dim)
                     y_flat = f(input_intermediates_flat, simulated_u_flat, simulated_z_flat)
+                    self.evaluation_counter+= MC_f
                     y = y_flat.reshape(batch_size, MC_f, 1)
 
                     u -= wloc[:, k, q - 1][:, jnp.newaxis] * jnp.mean(y, axis=1)

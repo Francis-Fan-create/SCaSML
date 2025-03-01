@@ -121,13 +121,13 @@ class SimpleUniform(object):
             # Measure the time and predict using solver2
             print("Predicting with solver2 on test data...")
             start = time.time()
-            sol2 = self.solver2.u_solve(n, rhomax, xt_test, 5)
+            sol2 = self.solver2.u_solve(n, rhomax, xt_test, 10)
             time2 += time.time() - start
         
             # Measure the time and predict using solver3
             print("Predicting with solver3 on test data...")
             start = time.time()
-            sol3 = self.solver3.u_solve(n, rhomax, xt_test, 5)
+            sol3 = self.solver3.u_solve(n, rhomax, xt_test, 10)
             time3 += time.time() - start
         # Compute the average error and relative error
         errors1 = np.abs(sol1 - exact_sol).flatten()
