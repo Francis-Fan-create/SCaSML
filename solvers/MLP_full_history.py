@@ -61,7 +61,7 @@ class MLP_full_history(object):
         return eq.g(x_t)[:,0]
     
     # @log_variables
-    def uz_solve(self, n, rho, x_t, M=2):
+    def uz_solve(self, n, rho, x_t, M):
         '''
         Approximate the solution of the PDE, return the value of u(x_t) and z(x_t), batchwisely.
         
@@ -139,8 +139,8 @@ class MLP_full_history(object):
             dW =jnp.sqrt(sampled_time_steps) * std_normal  # Brownian increments for current time step, shape (batch_size, MC_f, dim)
             # self.evaluation_counter+=MC_f*dim
             X += mu*(sampled_time_steps)+sigma * dW  # Update spatial coordinates
-            co_solver_l = lambda X_t: self.uz_solve(n=l, rho= None, x_t=X_t)  # Co-solver for level l
-            co_solver_l_minus_1 = lambda X_t: self.uz_solve(n=l - 1, rho= None, x_t=X_t)  # Co-solver for level l - 1
+            co_solver_l = lambda X_t: self.uz_solve(n=l, rho= None, x_t=X_t, M=M)  # Co-solver for level l
+            co_solver_l_minus_1 = lambda X_t: self.uz_solve(n=l - 1, rho= None, x_t=X_t, M=M)  # Co-solver for level l - 1
             # Compute Compute u and z values for current quadrature point using vmap
             input_intermediates = jnp.concatenate((X, sampled_time_steps), axis=2)  # Intermediate spatial-temporal coordinates, shape (batch_size, MC_f, n_input)
             input_intermediates_flat = input_intermediates.reshape(-1, self.n_input)
@@ -179,7 +179,7 @@ class MLP_full_history(object):
         norm_estimation = self.equation.norm_estimation
         return jnp.clip(output_cated, -norm_estimation, norm_estimation).astype(jnp.float16)  # Clip the output to avoid numerical instability
     
-    def u_solve(self, n, rho, x_t, M=2):
+    def u_solve(self, n, rho, x_t, M=10):
         '''
         Approximate the solution of the PDE, return the value of u(x_t), batchwisely.
         
