@@ -769,8 +769,8 @@ class Linear_Convection_Diffusion(Equation):
         - n_output (int): The dimension of the output space. Defaults to 1.
         '''
         super().__init__(n_input, n_output)
-        self.uncertainty = 1e-2
-        self.norm_estimation = jnp.sqrt(jnp.e)
+        self.uncertainty = 0.5 * self.n_input
+        self.norm_estimation = 0.5 * self.n_input
     
     def PDE_loss(self, x_t,u):
         '''
@@ -921,7 +921,7 @@ class Linear_Convection_Diffusion(Equation):
         self.geomt=timedomain
         return geom
     
-    def generate_data(self, num_domain=2500):
+    def generate_data(self, num_domain=50000):
         '''
         Generates data for training the PDE model.
         
@@ -934,15 +934,15 @@ class Linear_Convection_Diffusion(Equation):
         geom=self.geometry() # Defines the geometry of the domain.
         # self.terminal_condition() # Generates terminal condition.
         self.Dirichlet_boundary_condition() # Generates Dirichlet boundary condition.
-        self.initial_condition() # Generate initial condition
+        # self.initial_condition() # Generate initial condition
         # self.data_loss() # Generates data loss. 
         data = dde.data.TimePDE(
                                 geom, # Geometry of the domain.
                                 self.PDE_loss, # PDE loss function.
-                                [self.ic, self.D_bc], # Additional conditions.
+                                [self.D_bc], # Additional conditions.
                                 num_domain=num_domain, # Number of domain points.
                                 num_boundary=100, # Number of boundary points.
-                                num_initial=160,  # Number of initial points.
+                                num_initial=0,  # Number of initial points.
                                 solution=self.exact_solution   # Incorporates exact solution for error metrics.
                             )
         return data
