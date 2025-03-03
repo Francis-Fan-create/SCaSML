@@ -47,7 +47,7 @@ class SimpleScaling(object):
         self.t0 = equation.t0  # equation.t0: float
         self.T = equation.T  # equation.T: float
 
-    def test(self, save_path, base_max = 15, n_samples=1000):
+    def test(self, save_path, base_max = 20, n_samples=1000):
         '''
         Compares solvers on different training iterations.
     
@@ -107,7 +107,7 @@ class SimpleScaling(object):
         self.solver1 = trained_model1
         self.solver3.PINN = trained_model1
 
-        for j in range(2, list_len+1):
+        for j in range(10, list_len+1):
 
                 rho = 2
 

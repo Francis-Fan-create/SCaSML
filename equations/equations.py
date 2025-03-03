@@ -787,7 +787,7 @@ class Linear_Convection_Diffusion(Equation):
         laplacian=0
         div = 0
         d = self.n_input-1
-        MC = int(self.n_input/4)
+        MC = d 
         dim=self.n_input-1
         # randomly choose MC dims to compute hessian and div
         idx_list = np.random.choice(self.n_input-1, MC, replace=False)
