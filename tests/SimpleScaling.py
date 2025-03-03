@@ -109,7 +109,7 @@ class SimpleScaling(object):
 
         for j in range(2, list_len+1):
 
-                rho = 1
+                rho = 2
 
                 # Print current rho value
                 print(f"Current sample base: {j}")
