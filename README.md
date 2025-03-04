@@ -22,7 +22,7 @@ pip install -r requirements.txt
 ```
 ## Basic Usage
 
-You can run experiments for Grad_Dependent_Nonlinear_Equation and Linear_HJB by the following script:
+You can run experiments for Grad_Dependent_Nonlinear_Equation and Diffusion_Reaction by the following script:
 
 1. Run the experiment for 20d and 40d:
 
