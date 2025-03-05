@@ -3,7 +3,7 @@ import numpy as np
 import torch
 import sys
 import os
-from jax import jit, random
+from jax import jit, random, vmap
 from functools import partial
 import jax.numpy as jnp
 #add the parent directory to the path
@@ -959,8 +959,8 @@ class LQG(Equation):
         - n_output (int): The dimension of the output space. Defaults to 1.
         '''
         super().__init__(n_input, n_output)
-        self.uncertainty = 0.5 * self.n_input
-        self.norm_estimation = 0.5 * self.n_input
+        self.uncertainty = 1e-1
+        self.norm_estimation = 1
     
     def PDE_loss(self, x_t,u):
         '''
@@ -976,15 +976,10 @@ class LQG(Equation):
         du_t = dde.grad.jacobian(u,x_t,i=0,j=self.n_input-1)[0] # Computes the time derivative of u.
         laplacian=0
         d = self.n_input-1
-        MC = int(d/4)
         grad_norm_square = 0
-        # randomly choose MC dims to compute hessian and div
-        idx_list = np.random.choice(self.n_input-1, MC, replace=False)
-        for k in idx_list: # Accumulates laplacian and divergence over spatial dimensions.
+        for k in range(d): # Accumulates laplacian and divergence over spatial dimensions.
             laplacian +=dde.grad.hessian(u, x_t, i=k, j=k)[0] # Computes the laplacian of z.
-            grad_norm_square += dde.grad.jacobian(u, x_t, i=0, j=k)[0]**2
-        laplacian *= d/MC
-        grad_norm_square *= d/MC
+            grad_norm_square += dde.grad.jacobian(u, x_t, i=0, j=k+1)[0]**2
         residual=du_t +laplacian- grad_norm_square # Computes the residual of the PDE.
         return residual 
 
@@ -1002,6 +997,25 @@ class LQG(Equation):
         x = x_t[:, :-1]
         result = jnp.log((1+jnp.linalg.norm(x,axis=1)**2)/2)
         return result[:,jnp.newaxis]
+
+    @partial(jit,static_argnames=["self"])
+    def Dirichlet_boundary_constraint(self, x_t):
+        '''
+        Defines the Dirichlet boundary constraint for the PDE.
+        
+        Parameters:
+        - x_t (ndarray): Input tensor of shape (batch_size, n_input), where n_input includes the time dimension.
+        
+        Returns:
+        - result (ndarray): A 2D tensor of shape (batch_size, 1), representing the Dirichlet boundary constraint.
+        '''
+        sample_num = int(100 * (self.n_input-1)) 
+        x = x_t[:, jnp.newaxis, :-1]
+        t = x_t[:, jnp.newaxis, -1]
+        simulated_x = x + jnp.sqrt(2)*random.normal(random.PRNGKey(0),(x.shape[0],sample_num,x.shape[1]))*jnp.sqrt(self.T-t[:,jnp.newaxis])
+        inside = jnp.exp(-jit(vmap(self.terminal_constraint,in_axes=1,out_axes=1))(simulated_x))
+        result = -jnp.log(jnp.mean(inside,axis=1))
+        return result
 
     def mu(self, x_t=0):
         '''
@@ -1053,13 +1067,13 @@ class LQG(Equation):
         Returns:
         - result (ndarray): An arrary of shape (batch_size, n_ouput), representing the exact solution.
         '''
-        sample_num = 1000 * jnp.sqrt(self.n_input-1) 
+        sample_num = int(100 * (self.n_input-1)) 
         x = x_t[:, jnp.newaxis, :-1]
         t = x_t[:, jnp.newaxis, -1]
-        simulated_x = x + jnp.sqrt(2)*jnp.random.normal(size=(x.shape[1],sample_num,x.shape[1]))*jnp.sqrt(self.T-t)
-        inside = 2/(1+jnp.linalg.norm(simulated_x,axis=2)**2)
+        simulated_x = x + jnp.sqrt(2)*random.normal(random.PRNGKey(0),(x.shape[0],sample_num,x.shape[1]))*jnp.sqrt(self.T-t[:,jnp.newaxis])
+        inside = jnp.exp(-jit(vmap(self.terminal_constraint,in_axes=1,out_axes=1))(simulated_x))
         result = -jnp.log(jnp.mean(inside,axis=1))
-        return result[:,jnp.newaxis]
+        return result
     
     def geometry(self,t0=0,T=0.5):
         '''
@@ -1074,14 +1088,14 @@ class LQG(Equation):
         '''
         self.t0=t0
         self.T=T
-        spacedomain = dde.geometry.Hypercube([0]*(self.n_input-1), [0.5]*(self.n_input-1)) # Defines the spatial domain, for train
+        spacedomain = dde.geometry.Hypercube([0]*(self.n_input-1), [1]*(self.n_input-1)) # Defines the spatial domain, for train
         timedomain = dde.geometry.TimeDomain(t0, T) # Defines the time domain.
         geom = dde.geometry.GeometryXTime(spacedomain, timedomain) # Combines spatial and time domains.
         self.geomx=spacedomain
         self.geomt=timedomain
         return geom
     
-    def generate_data(self, num_domain=50000):
+    def generate_data(self, num_domain=25000):
         '''
         Generates data for training the PDE model.
         
@@ -1093,16 +1107,16 @@ class LQG(Equation):
         '''
         geom=self.geometry() # Defines the geometry of the domain.
         # self.terminal_condition() # Generates terminal condition.
-        # self.Dirichlet_boundary_condition() # Generates Dirichlet boundary condition.
+        self.Dirichlet_boundary_condition() # Generates Dirichlet boundary condition.
         # self.initial_condition() # Generate initial condition
         # self.data_loss() # Generates data loss. 
         data = dde.data.TimePDE(
                                 geom, # Geometry of the domain.
                                 self.PDE_loss, # PDE loss function.
-                                [], # Additional conditions.
+                                [self.D_bc], # Additional conditions.
                                 num_domain=num_domain, # Number of domain points.
-                                num_boundary=100, # Number of boundary points.
-                                num_initial=160,  # Number of initial points.
+                                num_boundary=25000, # Number of boundary points.
+                                num_initial=0,  # Number of initial points.
                                 solution=self.exact_solution   # Incorporates exact solution for error metrics.
                             )
         return data
