@@ -246,7 +246,7 @@ class Equation(object):
         if hasattr(self, 'terminal_constraint') and hasattr(self, 'geometry'):
             t = x_t[:, -1]
             T = self.T
-            output = ((T-t)/T)*u + (t/T)*self.terminal_constraint(x_t)
+            output = ((T-t[:,jnp.newaxis])/T)*u + (t[:,jnp.newaxis]/T)*self.terminal_constraint(x_t)
             return output   
         else:
             raise NotImplementedError
@@ -977,9 +977,14 @@ class LQG(Equation):
         laplacian=0
         d = self.n_input-1
         grad_norm_square = 0
+        # MC = int(self.n_input/4)
+        # # randomly choose MC dims to compute hessian and div
+        # idx_list = np.random.choice(self.n_input-1, MC, replace=False)
         for k in range(d): # Accumulates laplacian and divergence over spatial dimensions.
             laplacian +=dde.grad.hessian(u, x_t, i=k, j=k)[0] # Computes the laplacian of z.
-            grad_norm_square += dde.grad.jacobian(u, x_t, i=0, j=k+1)[0]**2
+            grad_norm_square += dde.grad.jacobian(u, x_t, i=0, j=k)[0]**2
+        # laplacian *= d/MC
+        # grad_norm_square *= d/MC
         residual=du_t +laplacian- grad_norm_square # Computes the residual of the PDE.
         return residual 
 
@@ -1088,14 +1093,14 @@ class LQG(Equation):
         '''
         self.t0=t0
         self.T=T
-        spacedomain = dde.geometry.Hypercube([0]*(self.n_input-1), [1]*(self.n_input-1)) # Defines the spatial domain, for train
+        spacedomain = dde.geometry.Hypercube([0]*(self.n_input-1), [0.5]*(self.n_input-1)) # Defines the spatial domain, for train
         timedomain = dde.geometry.TimeDomain(t0, T) # Defines the time domain.
         geom = dde.geometry.GeometryXTime(spacedomain, timedomain) # Combines spatial and time domains.
         self.geomx=spacedomain
         self.geomt=timedomain
         return geom
     
-    def generate_data(self, num_domain=25000):
+    def generate_data(self, num_domain=100):
         '''
         Generates data for training the PDE model.
         
@@ -1115,7 +1120,7 @@ class LQG(Equation):
                                 self.PDE_loss, # PDE loss function.
                                 [self.D_bc], # Additional conditions.
                                 num_domain=num_domain, # Number of domain points.
-                                num_boundary=25000, # Number of boundary points.
+                                num_boundary=100, # Number of boundary points.
                                 num_initial=0,  # Number of initial points.
                                 solution=self.exact_solution   # Incorporates exact solution for error metrics.
                             )

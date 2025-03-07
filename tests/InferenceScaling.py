@@ -47,7 +47,7 @@ class InferenceScaling(object):
         self.t0 = equation.t0  # equation.t0: float
         self.T = equation.T  # equation.T: float
 
-    def test(self, save_path, rhomax=3, n_samples=1000):
+    def test(self, save_path, rhomax=2, n_samples=1000):
         '''
         Compares solvers on different training iterations.
     
@@ -121,11 +121,12 @@ class InferenceScaling(object):
                 sol2 = self.solver2.u_solve(rho, rho, xt_values)
                 # Solve with solver3 using the trained solver1
                 sol3 = self.solver3.u_solve(rho, rho, xt_values)
-            
+                # creating mask for valid data points
+                valid_mask = ~(np.isnan(sol1) | np.isnan(sol2) | np.isnan(sol3) | np.isnan(exact_sol)).flatten()
                 # Compute errors
-                errors1 = np.linalg.norm(sol1 - exact_sol)
-                errors2 = np.linalg.norm(sol2 - exact_sol)
-                errors3 = np.linalg.norm(sol3 - exact_sol)
+                errors1 = np.linalg.norm(sol1[valid_mask] - exact_sol[valid_mask])
+                errors2 = np.linalg.norm(sol2[valid_mask] - exact_sol[valid_mask])
+                errors3 = np.linalg.norm(sol3[valid_mask] - exact_sol[valid_mask])
             
                 error_value1 = errors1 / np.linalg.norm(exact_sol)
                 error_value2 = errors2 / np.linalg.norm(exact_sol)

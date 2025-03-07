@@ -109,13 +109,26 @@ class SimpleUniform(object):
         start = time.time()
         sol3 = self.solver3.u_solve(n, rhomax, xt_test)
         time3 += time.time() - start
-        # Compute the average error and relative error
-        errors1 = np.abs(sol1 - exact_sol).flatten()
-        errors2 = np.abs(sol2 - exact_sol).flatten()
-        errors3 = np.abs(sol3 - exact_sol).flatten()
-        rel_error1 = np.linalg.norm(errors1) / np.linalg.norm(exact_sol)
-        rel_error2 = np.linalg.norm(errors2) / np.linalg.norm(exact_sol)
-        rel_error3 = np.linalg.norm(errors3) / np.linalg.norm(exact_sol)
+        # creating mask for valid data points
+        valid_mask = ~(np.isnan(sol1) | np.isnan(sol2) | np.isnan(sol3) | np.isnan(exact_sol)).flatten()
+        
+        # only calculate errors if there are valid data points
+        if np.sum(valid_mask) == 0:
+            print("Warning: All predictions are NaN. Skipping error calculation.")
+            rel_error1 = rel_error2 = rel_error3 = float('nan')
+        else:
+            # Calculate the absolute errors
+            errors1 = np.abs(sol1.flatten()[valid_mask] - exact_sol.flatten()[valid_mask])
+            errors2 = np.abs(sol2.flatten()[valid_mask] - exact_sol.flatten()[valid_mask])
+            errors3 = np.abs(sol3.flatten()[valid_mask] - exact_sol.flatten()[valid_mask])
+            
+            # Get the valid exact solution
+            exact_sol = exact_sol.flatten()[valid_mask]
+            
+            # Calculate the relative errors
+            rel_error1 = np.linalg.norm(errors1) / np.linalg.norm(exact_sol)
+            rel_error2 = np.linalg.norm(errors2) / np.linalg.norm(exact_sol)
+            rel_error3 = np.linalg.norm(errors3) / np.linalg.norm(exact_sol)
         real_sol_L2 = np.linalg.norm(exact_sol) / np.sqrt(exact_sol.shape[0])
         #stop the profiler
         profiler.disable()
@@ -144,7 +157,7 @@ class SimpleUniform(object):
         diff_mlp = errors_23
         
         # Get spatial coordinates (first two dimensions)
-        spatial_coords = xt_test[:, :2]
+        spatial_coords = xt_test[valid_mask, :2]
 
         # =============================================
         # Visualization Configuration
@@ -315,8 +328,8 @@ class SimpleUniform(object):
         # Figure 5: Spatiotemporal Error Analysis
         # =============================================
         # Compute (x1, x2) from test data
-        x1_values = xt_test[:, 0]  # First dimension is x1
-        x2_values = xt_test[:, 1]  # Second dimension is x2
+        x1_values = xt_test[valid_mask, 0]  # First dimension is x1
+        x2_values = xt_test[valid_mask, 1]  # Second dimension is x2
 
         # Create grid parameters
         x1_grid_num, x2_grid_num = 3, 3  # mesh density

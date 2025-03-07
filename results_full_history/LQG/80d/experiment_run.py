@@ -11,7 +11,7 @@ from optimizers.Adam import Adam
 # L_inf has been removed
 from tests.SimpleUniform import SimpleUniform
 from tests.ConvergenceRate import ConvergenceRate
-from tests.InferenceScaling import InferenceScaling
+from tests.SimpleScaling import SimpleScaling
 from solvers.MLP_full_history import MLP_full_history
 from solvers.ScaSML_full_history import ScaSML_full_history
 import numpy as np
@@ -61,6 +61,10 @@ else:
     net1=dde.maps.jax.FNN([81]+[50]*5+[1], "tanh", "Glorot normal")
     net2=dde.maps.jax.FNN([81]+[50]*5+[1], "tanh", "Glorot normal")
     net3=dde.maps.jax.FNN([81]+[50]*5+[1], "tanh", "Glorot normal")    
+    terminal_transform = equation.terminal_transform
+    net1.apply_output_transform(terminal_transform)   
+    net2.apply_output_transform(terminal_transform)
+    net3.apply_output_transform(terminal_transform)
     data1 = equation.generate_data()
     data2 = equation.generate_data()
     data3 = equation.generate_data()
@@ -86,8 +90,8 @@ solver3_3=ScaSML_full_history(equation=equation,PINN=solver1_3) #ScaSML object
 # #run the test for ConvergenceRate
 # test3=ConvergenceRate(equation,solver1_2,solver2,solver3_2, is_train)
 # test3.test(r"results_full_history/LQG/80d")
-#run the test for InferenceScaling
-test4=InferenceScaling(equation,solver1_3,solver2,solver3_3)
+#run the test for SimpleScaling
+test4=SimpleScaling(equation,solver1_3,solver2,solver3_3)
 test4.test(r"results_full_history/LQG/80d")
 
 #finish wandb

@@ -199,7 +199,7 @@ class ScaSML_full_history(object):
         uncertainty = self.equation.uncertainty
         return jnp.clip(output_uz, -uncertainty, uncertainty)
 
-    def u_solve(self, n, rho, x_t, M=20):
+    def u_solve(self, n, rho, x_t, M=5):
         '''
         Approximate the solution of the PDE, return the ndarray of u(x_t) only.
         

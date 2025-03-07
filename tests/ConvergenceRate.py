@@ -112,11 +112,12 @@ class ConvergenceRate(object):
             
                 # Solve with solver3 using the trained solver1
                 sol3 = self.solver3.u_solve(rhomax, rhomax, xt_values)
-            
+                # creating mask for valid data points
+                valid_mask = ~(np.isnan(sol1) | np.isnan(sol3) | np.isnan(exact_sol)).flatten()
                 # Compute errors
-                errors1 = np.abs(sol1 - exact_sol).flatten()
+                errors1 = np.abs(sol1[valid_mask] - exact_sol[valid_mask]).flatten()
                 # errors2 = np.abs(sol2 - exact_sol).flatten()
-                errors3 = np.abs(sol3 - exact_sol).flatten()
+                errors3 = np.abs(sol3[valid_mask] - exact_sol[valid_mask]).flatten()
             
                 error_value1 = np.linalg.norm(errors1) / np.linalg.norm(exact_sol)
                 # error_value2 = np.linalg.norm(errors2) / np.linalg.norm(exact_sol)
