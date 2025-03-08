@@ -977,14 +977,14 @@ class LQG(Equation):
         laplacian=0
         d = self.n_input-1
         grad_norm_square = 0
-        # MC = int(self.n_input/4)
-        # # randomly choose MC dims to compute hessian and div
-        # idx_list = np.random.choice(self.n_input-1, MC, replace=False)
-        for k in range(d): # Accumulates laplacian and divergence over spatial dimensions.
+        MC = int(self.n_input/4)
+        # randomly choose MC dims to compute hessian and div
+        idx_list = np.random.choice(self.n_input-1, MC, replace=False)
+        for k in idx_list: # Accumulates laplacian and divergence over spatial dimensions.
             laplacian +=dde.grad.hessian(u, x_t, i=k, j=k)[0] # Computes the laplacian of z.
             grad_norm_square += dde.grad.jacobian(u, x_t, i=0, j=k)[0]**2
-        # laplacian *= d/MC
-        # grad_norm_square *= d/MC
+        laplacian *= d/MC
+        grad_norm_square *= d/MC
         residual=du_t +laplacian- grad_norm_square # Computes the residual of the PDE.
         return residual 
 
@@ -1080,7 +1080,7 @@ class LQG(Equation):
         result = -jnp.log(jnp.mean(inside,axis=1))
         return result
     
-    def geometry(self,t0=0,T=0.5):
+    def geometry(self,t0=0,T=1):
         '''
         Defines the geometry of the domain for the PDE.
         
@@ -1093,7 +1093,7 @@ class LQG(Equation):
         '''
         self.t0=t0
         self.T=T
-        spacedomain = dde.geometry.Hypercube([0]*(self.n_input-1), [0.5]*(self.n_input-1)) # Defines the spatial domain, for train
+        spacedomain = dde.geometry.Hypercube([0]*(self.n_input-1), [1]*(self.n_input-1)) # Defines the spatial domain, for train
         timedomain = dde.geometry.TimeDomain(t0, T) # Defines the time domain.
         geom = dde.geometry.GeometryXTime(spacedomain, timedomain) # Combines spatial and time domains.
         self.geomx=spacedomain

@@ -42,7 +42,7 @@ class Adam(object):
             dde.Model: The trained model.
         '''
         # Stabilize the training by further training with Adam
-        self.model.compile("adam", lr=7e-4, metrics=metrics)
+        self.model.compile("adam", lr=1e-3, metrics=metrics)
         geom= self.equation.geometry()
         data_pool = geom.random_points(100*iters)
         err = 1.0
@@ -56,7 +56,7 @@ class Adam(object):
             train_data = data_pool[train_id,:][:,0,:]
             self.model.data.add_anchors(train_data)
             early_stopping = dde.callbacks.EarlyStopping(min_delta=1e-4, patience=2000)
-            self.model.compile("adam", lr=7e-4, metrics=metrics)
+            self.model.compile("adam", lr=1e-3, metrics=metrics)
             loss_history, train_state = self.model.train(iterations=iters, display_every=10, callbacks=[early_stopping], disregard_previous_best=True)
         # # Deepxde does not implement Model.save() for jax
         # loss_history, train_state = self.model.train(iterations=iters*4, display_every=10, disregard_previous_best= True)
