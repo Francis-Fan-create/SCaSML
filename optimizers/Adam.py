@@ -43,23 +43,23 @@ class Adam(object):
         '''
         # Stabilize the training by further training with Adam
         self.model.compile("adam", lr=1e-3, metrics=metrics)
-        geom= self.equation.geometry()
-        data_pool = geom.random_points(100*iters)
-        err = 1.0
-        # Adaptive Refeinement
-        for i in range(8):
-            residual = self.model.predict(data_pool,operator=self.equation.PDE_loss)
-            err_array = jnp.abs(residual)
-            err = jnp.mean(err_array)
-            print(f"Mean residual: {err}")
-            train_id = jnp.argsort(err_array, stable=True)[:1000]
-            train_data = data_pool[train_id,:][:,0,:]
-            self.model.data.add_anchors(train_data)
-            early_stopping = dde.callbacks.EarlyStopping(min_delta=1e-4, patience=2000)
-            self.model.compile("adam", lr=1e-3, metrics=metrics)
-            loss_history, train_state = self.model.train(iterations=iters, display_every=10, callbacks=[early_stopping], disregard_previous_best=True)
+        # geom= self.equation.geometry()
+        # data_pool = geom.random_points(300*iters)
+        # err = 1.0
+        # # Adaptive Refeinement
+        # for i in range(1):
+        #     residual = self.model.predict(data_pool,operator=self.equation.PDE_loss)
+        #     err_array = jnp.abs(residual)
+        #     err = jnp.mean(err_array)
+        #     print(f"Mean residual: {err}")
+        #     train_id = jnp.argsort(err_array, stable=True)[:1000]
+        #     train_data = data_pool[train_id,:][:,0,:]
+        #     self.model.data.add_anchors(train_data)
+        #     early_stopping = dde.callbacks.EarlyStopping(min_delta=1e-4, patience=2000)
+        #     self.model.compile("adam", lr=1e-3, metrics=metrics)
+        #     loss_history, train_state = self.model.train(iterations=iters, display_every=10, callbacks=[early_stopping], disregard_previous_best=True)
         # # Deepxde does not implement Model.save() for jax
-        # loss_history, train_state = self.model.train(iterations=iters*4, display_every=10, disregard_previous_best= True)
+        loss_history, train_state = self.model.train(iterations=iters, display_every=10, disregard_previous_best= True)
         dde.saveplot(loss_history, train_state, issave=True, isplot=True,output_dir=save_path)
         # Log a list of Adam losses and metrics, which are both lists, one by one
         counter1 = 0

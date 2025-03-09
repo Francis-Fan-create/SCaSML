@@ -25,8 +25,8 @@ import jax
 dde.config.set_random_seed(1234)
 #use jax backend
 dde.backend.set_default_backend('jax')
-#set default float to float16
-dde.config.set_default_float("float16")
+#set default float to float32
+dde.config.set_default_float("float32")
 # fix random seed for jax
 jax.random.PRNGKey(0)
 # device configuration
@@ -37,34 +37,34 @@ if device == 'gpu':
     gpu_name = jax.devices()[0].device_kind
 
 #initialize wandb
-wandb.init(project="LQG", notes="250 d", tags=["Adam training","L_inf_training"],mode="disabled") #debug mode
-# wandb.init(project="LQG", notes="250 d", tags=["Adam training","L_inf_training"]) #working mode
+wandb.init(project="LQG", notes="40 d", tags=["Adam training","L_inf_training"],mode="disabled") #debug mode
+# wandb.init(project="LQG", notes="40 d", tags=["Adam training","L_inf_training"]) #working mode
 wandb.config.update({"device": device}) # record device type
 
 #initialize the equation
-equation=LQG(n_input=251,n_output=1)
+equation=LQG(n_input=21,n_output=1)
 #check if trained model is already saved
-if os.path.exists(r"results_full_history/LQG/250d/model.ckpt-?"):
+if os.path.exists(r"results_full_history/LQG/40d/model.ckpt-?"):
     '''To Do: Retrain the model with new data points& Try new methods to reduce errors'''
     #load the model
-    net=dde.maps.jax.FNN([251]+[128]*4+[1], "tanh", "Glorot normal")
+    net=dde.maps.jax.FNN([41]+[128]*4+[1], "tanh", "Glorot normal")
     terminal_transform = equation.terminal_transform
     net.apply_output_transform(terminal_transform)
     data = equation.generate_data()
     model = dde.Model(data,net)
-    model.restore(r"results_full_history/LQG/250d/model.ckpt-?",verbose=1)
+    model.restore(r"results_full_history/LQG/40d/model.ckpt-?",verbose=1)
     # set is_train to False
     is_train = False
 else:
     #initialize the FNN
     #same layer width
-    net1=dde.maps.jax.FNN([251]+[128]*4+[1], "tanh", "Glorot normal")
-    net2=dde.maps.jax.FNN([251]+[128]*4+[1], "tanh", "Glorot normal")
-    net3=dde.maps.jax.FNN([251]+[128]*4+[1], "tanh", "Glorot normal")    
-    terminal_transform = equation.terminal_transform
-    net1.apply_output_transform(terminal_transform)   
-    net2.apply_output_transform(terminal_transform)
-    net3.apply_output_transform(terminal_transform)
+    net1=dde.maps.jax.FNN([41]+[128]*4+[1], "tanh", "Glorot normal")
+    net2=dde.maps.jax.FNN([41]+[128]*4+[1], "tanh", "Glorot normal")
+    net3=dde.maps.jax.FNN([41]+[128]*4+[1], "tanh", "Glorot normal")    
+    # terminal_transform = equation.terminal_transform
+    # net1.apply_output_transform(terminal_transform)   
+    # net2.apply_output_transform(terminal_transform)
+    # net3.apply_output_transform(terminal_transform)
     data1 = equation.generate_data()
     data2 = equation.generate_data()
     data3 = equation.generate_data()
@@ -86,13 +86,13 @@ solver3_3=ScaSML_full_history(equation=equation,PINN=solver1_3) #ScaSML object
 
 # #run the test for SimpleUniform
 # test2=SimpleUniform(equation,solver1_1,solver2,solver3_1,is_train)
-# test2.test(r"results_full_history/LQG/250d")
+# test2.test(r"results_full_history/LQG/40d")
 # #run the test for ConvergenceRate
 # test3=ConvergenceRate(equation,solver1_2,solver2,solver3_2, is_train)
-# test3.test(r"results_full_history/LQG/250d")
+# test3.test(r"results_full_history/LQG/40d")
 #run the test for SimpleScaling
 test4=SimpleScaling(equation,solver1_3,solver2,solver3_3)
-test4.test(r"results_full_history/LQG/250d")
+test4.test(r"results_full_history/LQG/40d")
 
 #finish wandb
 wandb.finish()

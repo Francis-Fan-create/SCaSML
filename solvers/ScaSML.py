@@ -193,7 +193,7 @@ class ScaSML:
         MC_g = int(Mg[rho - 1, n])  # Number of Monte Carlo samples
 
         # Generate Monte Carlo samples for backward Euler
-        std_normal = random.normal(subkey, shape=(batch_size, MC_g, dim), dtype=jnp.float16)
+        std_normal = random.normal(subkey, shape=(batch_size, MC_g, dim), dtype=jnp.float32)
         dW = jnp.sqrt(T-t)[:, jnp.newaxis, jnp.newaxis] * std_normal  # Brownian increments, shape (batch_size, MC_g, dim)
         # self.evaluation_counter+=MC_g
         X = jnp.repeat(x.reshape(x.shape[0], 1, x.shape[1]), MC_g, axis=1)  # Replicated spatial coordinates, shape (batch_size, MC_g, dim)
@@ -232,7 +232,7 @@ class ScaSML:
 
             for k in range(q):
                 self.key, subkey = random.split(self.key)
-                dW_random = random.normal(subkey, shape=(batch_size, MC_f, dim), dtype=jnp.float16)
+                dW_random = random.normal(subkey, shape=(batch_size, MC_f, dim), dtype=jnp.float32)
                 dW = jnp.sqrt(d[:, k])[:, jnp.newaxis, jnp.newaxis] * dW_random
                 # self.evaluation_counter += MC_f * dim
                 W += dW

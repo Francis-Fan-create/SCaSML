@@ -315,14 +315,13 @@ class Equation(object):
         - geom (dde.geometry.GeometryXTime): A GeometryXTime object representing the domain.
         '''
         self.t0 = t0
-        self.T = T
         self.test_T = T
         self.test_radius = 0.5
         spacedomain = dde.geometry.Hypercube([-self.test_radius] * (self.n_input - 1), [self.test_radius] * (self.n_input - 1))  # Defines the spatial domain, for test.
         timedomain = dde.geometry.TimeDomain(t0, self.test_T)  # Defines the time domain for test.
         geom = dde.geometry.GeometryXTime(spacedomain, timedomain)  # Combines spatial and time domains.
-        self.geomx = spacedomain
-        self.geomt = timedomain
+        self.test_geomx = spacedomain
+        self.test_geomt = timedomain
         return geom  
     
     def generate_test_data(self, num_domain=100, num_boundary=20):
@@ -959,7 +958,7 @@ class LQG(Equation):
         - n_output (int): The dimension of the output space. Defaults to 1.
         '''
         super().__init__(n_input, n_output)
-        self.uncertainty = 1e-1
+        self.uncertainty = 3e-2
         self.norm_estimation = 1
     
     def PDE_loss(self, x_t,u):
@@ -977,14 +976,14 @@ class LQG(Equation):
         laplacian=0
         d = self.n_input-1
         grad_norm_square = 0
-        MC = int(self.n_input/4)
-        # randomly choose MC dims to compute hessian and div
-        idx_list = np.random.choice(self.n_input-1, MC, replace=False)
-        for k in idx_list: # Accumulates laplacian and divergence over spatial dimensions.
+        # MC = int(self.n_input/4)
+        # # randomly choose MC dims to compute hessian and div
+        # idx_list = np.random.choice(self.n_input-1, MC, replace=False)
+        for k in range(d): # Accumulates laplacian and divergence over spatial dimensions.
             laplacian +=dde.grad.hessian(u, x_t, i=k, j=k)[0] # Computes the laplacian of z.
             grad_norm_square += dde.grad.jacobian(u, x_t, i=0, j=k)[0]**2
-        laplacian *= d/MC
-        grad_norm_square *= d/MC
+        # laplacian *= d/MC
+        # grad_norm_square *= d/MC
         residual=du_t +laplacian- grad_norm_square # Computes the residual of the PDE.
         return residual 
 
@@ -1080,7 +1079,29 @@ class LQG(Equation):
         result = -jnp.log(jnp.mean(inside,axis=1))
         return result
     
-    def geometry(self,t0=0,T=1):
+    def test_geometry(self, t0=0, T=10):
+        '''
+        Defines the geometry of the domain for the PDE.
+        
+        Parameters:
+        - t0 (float): Initial time.
+        - T (float): Terminal time.
+        
+        Returns:
+        - geom (dde.geometry.GeometryXTime): A GeometryXTime object representing the domain.
+        '''
+        self.t0 = t0
+        self.test_T = T
+        self.test_radius = 1
+        d = self.n_input -1
+        spacedomain = dde.geometry.Hypersphere([0]*d,1)
+        timedomain = dde.geometry.TimeDomain(t0, self.test_T)  # Defines the time domain for test.
+        geom = dde.geometry.GeometryXTime(spacedomain, timedomain)  # Combines spatial and time domains.
+        self.test_geomx = spacedomain
+        self.test_geomt = timedomain
+        return geom  
+
+    def geometry(self,t0=0,T=10):
         '''
         Defines the geometry of the domain for the PDE.
         
@@ -1093,7 +1114,8 @@ class LQG(Equation):
         '''
         self.t0=t0
         self.T=T
-        spacedomain = dde.geometry.Hypercube([0]*(self.n_input-1), [1]*(self.n_input-1)) # Defines the spatial domain, for train
+        d = self.n_input -1
+        spacedomain = dde.geometry.Hypersphere([0]*d,1)
         timedomain = dde.geometry.TimeDomain(t0, T) # Defines the time domain.
         geom = dde.geometry.GeometryXTime(spacedomain, timedomain) # Combines spatial and time domains.
         self.geomx=spacedomain
@@ -1120,7 +1142,7 @@ class LQG(Equation):
                                 self.PDE_loss, # PDE loss function.
                                 [self.D_bc], # Additional conditions.
                                 num_domain=num_domain, # Number of domain points.
-                                num_boundary=100, # Number of boundary points.
+                                num_boundary=5000, # Number of boundary points.
                                 num_initial=0,  # Number of initial points.
                                 solution=self.exact_solution   # Incorporates exact solution for error metrics.
                             )
