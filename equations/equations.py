@@ -998,8 +998,17 @@ class LQG(Equation):
         Returns:
         - result (ndarray): A 2D tensor of shape (batch_size, 1), representing the terminal constraint.
         '''
+        # # HJB-Log
+        # x = x_t[:, :-1]
+        # result = jnp.log((1+jnp.linalg.norm(x,axis=1)**2)/2)
+        # return result[:,jnp.newaxis]
+
+        # HJB-Rosenbrock
         x = x_t[:, :-1]
-        result = jnp.log((1+jnp.linalg.norm(x,axis=1)**2)/2)
+        # g(\boldsymbol{x})=\log\left(\frac{1+\sum_{i=1}^{d-1}\left[c_{1,i}(\boldsymbol{x}_i-\boldsymbol{x}_{i+1})^2+c_{2,i}\boldsymbol{x}_{i+1}^2\right]}{2}\right)
+        c1 = random.uniform(random.PRNGKey(0), (self.n_input-1,),minval=0.5,maxval=1.5)
+        c2 = random.uniform(random.PRNGKey(1), (self.n_input-1,),minval=0.5,maxval=1.5)
+        result = jnp.log((1+jnp.sum(c1*(x[:, :-1]-x[:, 1:])**2+c2*x[:, 1:]**2,axis=1))/2)
         return result[:,jnp.newaxis]
 
     @partial(jit,static_argnames=["self"])
@@ -1148,3 +1157,214 @@ class LQG(Equation):
                             )
         return data
     
+class Oscilating_Solution(Equation):
+    '''
+    Diffusion Reaction equation with ocilating solution.
+    '''
+    def __init__(self, n_input, n_output=1):
+        '''
+        Initializes the PDE example with specified input and output dimensions.
+        
+        Parameters:
+        - n_input (int): The dimension of the input space, including the time dimension.
+        - n_output (int): The dimension of the output space. Defaults to 1.
+        '''
+        super().__init__(n_input, n_output)
+        self.uncertainty = 3e-2
+        self.norm_estimation = 1
+    
+    def PDE_loss(self, x_t,u):
+        '''
+        Calculates the PDE loss for given inputs.
+        
+        Parameters:
+        - x_t (tensor): Input tensor of shape (batch_size, n_input), where n_input includes the time dimension.
+        - u (tensor): Output tensor of shape (batch_size, n_output), representing the solution of the PDE.
+        
+        Returns:
+        - residual (tensor): The residual of the PDE of shape (batch_size, n_output).
+        '''
+        du_t = dde.grad.jacobian(u,x_t,i=0,j=self.n_input-1)[0] # Computes the time derivative of u.
+        laplacian=0
+        d = self.n_input-1
+        # MC = int(self.n_input/4)
+        # # randomly choose MC dims to compute hessian and div
+        # idx_list = np.random.choice(self.n_input-1, MC, replace=False)
+        for k in range(d): # Accumulates laplacian and divergence over spatial dimensions.
+            laplacian +=dde.grad.hessian(u, x_t, i=k, j=k)[0] # Computes the laplacian of z.
+        # laplacian *= d/MC
+        # grad_norm_square *= d/MC
+        residual=du_t +0.5* laplacian+ jnp.minimum(1,(u-self.exact_solution(x_t))**2) # Computes the residual of the PDE.
+        return residual 
+
+    @partial(jit,static_argnames=["self"])
+    def terminal_constraint(self, x_t):
+        '''
+        Defines the terminal constraint for the PDE.
+        
+        Parameters:
+        - x_t (ndarray): Input tensor of shape (batch_size, n_input), where n_input includes the time dimension.
+        
+        Returns:
+        - result (ndarray): A 2D tensor of shape (batch_size, 1), representing the terminal constraint.
+        '''
+        # # HJB-Log
+        # x = x_t[:, :-1]
+        # result = jnp.log((1+jnp.linalg.norm(x,axis=1)**2)/2)
+        # return result[:,jnp.newaxis]
+
+        # HJB-Rosenbrock
+        x = x_t[:, :-1]
+        # g(\boldsymbol{x})=\log\left(\frac{1+\sum_{i=1}^{d-1}\left[c_{1,i}(\boldsymbol{x}_i-\boldsymbol{x}_{i+1})^2+c_{2,i}\boldsymbol{x}_{i+1}^2\right]}{2}\right)
+        c1 = random.uniform(random.PRNGKey(0), (self.n_input-1,),minval=0.5,maxval=1.5)
+        c2 = random.uniform(random.PRNGKey(1), (self.n_input-1,),minval=0.5,maxval=1.5)
+        result = jnp.log((1+jnp.sum(c1*(x[:, :-1]-x[:, 1:])**2+c2*x[:, 1:]**2,axis=1))/2)
+        return result[:,jnp.newaxis]
+
+    @partial(jit,static_argnames=["self"])
+    def Dirichlet_boundary_constraint(self, x_t):
+        '''
+        Defines the Dirichlet boundary constraint for the PDE.
+        
+        Parameters:
+        - x_t (ndarray): Input tensor of shape (batch_size, n_input), where n_input includes the time dimension.
+        
+        Returns:
+        - result (ndarray): A 2D tensor of shape (batch_size, 1), representing the Dirichlet boundary constraint.
+        '''
+        sample_num = int(100 * (self.n_input-1)) 
+        x = x_t[:, jnp.newaxis, :-1]
+        t = x_t[:, jnp.newaxis, -1]
+        simulated_x = x + jnp.sqrt(2)*random.normal(random.PRNGKey(0),(x.shape[0],sample_num,x.shape[1]))*jnp.sqrt(self.T-t[:,jnp.newaxis])
+        inside = jnp.exp(-jit(vmap(self.terminal_constraint,in_axes=1,out_axes=1))(simulated_x))
+        result = -jnp.log(jnp.mean(inside,axis=1))
+        return result
+
+    def mu(self, x_t=0):
+        '''
+        Returns the drift coefficient of the PDE. Here, it's a constant value.
+        
+        Parameters:
+        - x_t (int, optional): Not used in this implementation.
+        
+        Returns:
+        - (float): The drift coefficient.
+        '''
+        return 0
+    
+    def sigma(self, x_t=0):
+        '''
+        Returns the diffusion coefficient of the PDE. Here, it's a constant value.
+        
+        Parameters:
+        - x_t (int, optional): Not used in this implementation.
+        
+        Returns:
+        - (float): The diffusion coefficient.
+        '''
+        return 1
+    
+    @partial(jit,static_argnames=["self"])    
+    def f(self, x_t,u,z):
+        '''
+        Defines the generator term for the PDE.
+        
+        Parameters:
+        - x_t (ndarray): Input tensor of shape (batch_size, n_input), where n_input includes the time dimension.
+        - u (ndarray): Output tensor of shape (batch_size, n_output), representing the solution of the PDE.
+        - z (ndarray): Tensor of shape (batch_size, n_input-1), representing gradients.
+        
+        Returns:
+        - result (ndarray): A 2D array of shape (batch_size, n_output), representing the generator term.
+        '''
+        return jnp.minimum(1,(u-self.exact_solution(x_t))**2)
+    
+    @partial(jit,static_argnames=["self"])    
+    def exact_solution(self, x_t):
+        '''
+        Computes the exact solution of the PDE for given inputs.
+        
+        Parameters:
+        - x_t (ndarray): Input tensor of shape (batch_size, n_input), where n_input includes the time dimension.
+        
+        Returns:
+        - result (ndarray): An arrary of shape (batch_size, n_ouput), representing the exact solution.
+        '''
+        kappa = 1.6
+        lamb = 0.1 
+        T = self.T
+        d = self.n_input-1
+        # u^\star(t,x)=\kappa+\sin\left(\lambda\sum_{i=1}^dx_i\right)\exp\left(\frac{\lambda^2d(t-T)}{2}\right)
+        x = x_t[:, :-1]
+        t = x_t[:, -1]
+        result = kappa + jnp.sin(lamb*jnp.sum(x,axis=1))*jnp.exp(lamb**2*d*(t-T)/2)
+        return result
+    
+    def test_geometry(self, t0=0, T=1):
+        '''
+        Defines the geometry of the domain for the PDE.
+        
+        Parameters:
+        - t0 (float): Initial time.
+        - T (float): Terminal time.
+        
+        Returns:
+        - geom (dde.geometry.GeometryXTime): A GeometryXTime object representing the domain.
+        '''
+        self.t0 = t0
+        self.test_T = T
+        self.test_radius = 1
+        d = self.n_input -1
+        spacedomain = dde.geometry.Hypersphere([0]*d,1)
+        timedomain = dde.geometry.TimeDomain(t0, self.test_T)  # Defines the time domain for test.
+        geom = dde.geometry.GeometryXTime(spacedomain, timedomain)  # Combines spatial and time domains.
+        self.test_geomx = spacedomain
+        self.test_geomt = timedomain
+        return geom  
+
+    def geometry(self,t0=0,T=1):
+        '''
+        Defines the geometry of the domain for the PDE.
+        
+        Parameters:
+        - t0 (float): Initial time.
+        - T (float): Terminal time.
+        
+        Returns:
+        - geom (dde.geometry.GeometryXTime): A GeometryXTime object representing the domain.
+        '''
+        self.t0=t0
+        self.T=T
+        d = self.n_input -1
+        spacedomain = dde.geometry.Hypersphere([0]*d,1)
+        timedomain = dde.geometry.TimeDomain(t0, T) # Defines the time domain.
+        geom = dde.geometry.GeometryXTime(spacedomain, timedomain) # Combines spatial and time domains.
+        self.geomx=spacedomain
+        self.geomt=timedomain
+        return geom
+    
+    def generate_data(self, num_domain=100):
+        '''
+        Generates data for training the PDE model.
+        
+        Parameters:
+        - num_domain (int): Number of points to sample in the domain.
+        
+        Returns:
+        - data (dde.data.TimePDE): A TimePDE object containing the training data.
+        '''
+        geom=self.geometry() # Defines the geometry of the domain.
+        # self.terminal_condition() # Generates terminal condition.
+        self.Dirichlet_boundary_condition() # Generates Dirichlet boundary condition.
+        # self.initial_condition() # Generate initial condition
+        # self.data_loss() # Generates data loss. 
+        data = dde.data.TimePDE(
+                                geom, # Geometry of the domain.
+                                self.PDE_loss, # PDE loss function.
+                                [self.D_bc], # Additional conditions.
+                                num_domain=num_domain, # Number of domain points.
+                                num_boundary=1000, # Number of boundary points.
+                                num_initial=0,  # Number of initial points.
+                                solution=self.exact_solution   # Incorporates exact solution for error metrics.
+                            )
+        return data
