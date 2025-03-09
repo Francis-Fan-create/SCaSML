@@ -1147,3 +1147,4 @@ class LQG(Equation):
                                 solution=self.exact_solution   # Incorporates exact solution for error metrics.
                             )
         return data
+    

@@ -132,8 +132,8 @@ class ScaSML_full_history(object):
         # Compute u and z values
         u = jnp.mean(distrubed_output_terminal, axis=1)  # Mean over Monte Carlo samples, shape (batch_size, 1)
 
-        delta_t = (T - t + 1e-6)[:, jnp.newaxis]  # Avoid division by zero, shape (batch_size, 1)
-        z = jnp.mean(distrubed_output_terminal * std_normal, axis=1) / (delta_t)  # Compute z values, shape (batch_size, dim)   
+        delta_sqrt_t = jnp.sqrt(T-t)[:, jnp.newaxis]  # Square root of time increment, shape (batch_size, 1)
+        z = jnp.mean(distrubed_output_terminal * std_normal, axis=1) / (delta_sqrt_t)  # Compute z values, shape (batch_size, dim) 
         cated_uz = jnp.concatenate((u, z), axis=-1)  # Concatenate u and z values, shape (batch_size, dim + 1)     
         # Recursive call
         if n == 0:
@@ -155,7 +155,7 @@ class ScaSML_full_history(object):
             co_solver_l = lambda X_t: self.uz_solve(n=l, rho= l, x_t=X_t,M=M)  # Co-solver for level l
             co_solver_l_minus_1 = lambda X_t: self.uz_solve(n=l - 1, rho= l, x_t=X_t,M=M)  # Co-solver for level l - 1
             # Compute Compute u and z values for current quadrature point using vmap
-            input_intermediates = jnp.concatenate((X, sampled_time_steps), axis=2)  # Intermediate spatial-temporal coordinates, shape (batch_size, MC_f, n_input)
+            input_intermediates = jnp.concatenate((X, t[:,jnp.newaxis]+sampled_time_steps), axis=2)  # Intermediate spatial-temporal coordinates, shape (batch_size, MC_f, n_input)
             input_intermediates_flat = input_intermediates.reshape(-1, self.n_input)
             simulated_flat = co_solver_l(input_intermediates_flat)
             simulated = simulated_flat.reshape(batch_size, MC_f, dim + 1)
@@ -173,7 +173,7 @@ class ScaSML_full_history(object):
             # Adjust u and z values if l > 0
             if l:
                 # Compute Compute u and z values for current quadrature point using vmap
-                input_intermediates = jnp.concatenate((X, sampled_time_steps), axis=2)  # Intermediate spatial-temporal coordinates, shape (batch_size, MC_f, n_input)
+                input_intermediates = jnp.concatenate((X, t[:,jnp.newaxis]+sampled_time_steps), axis=2)  # Intermediate spatial-temporal coordinates, shape (batch_size, MC_f, n_input)
                 input_intermediates_flat = input_intermediates.reshape(-1, self.n_input)
                 simulated_flat = co_solver_l_minus_1(input_intermediates_flat)
                 simulated = simulated_flat.reshape(batch_size, MC_f, dim + 1)
@@ -218,4 +218,4 @@ class ScaSML_full_history(object):
         
         u_hat = self.model.predict(x_t)
         
-        return u_hat - u_breve
+        return u_hat + u_breve
