@@ -1079,7 +1079,7 @@ class LQG(Equation):
         result = -jnp.log(jnp.mean(inside,axis=1))
         return result
     
-    def test_geometry(self, t0=0, T=10):
+    def test_geometry(self, t0=0, T=1):
         '''
         Defines the geometry of the domain for the PDE.
         
@@ -1101,7 +1101,7 @@ class LQG(Equation):
         self.test_geomt = timedomain
         return geom  
 
-    def geometry(self,t0=0,T=10):
+    def geometry(self,t0=0,T=1):
         '''
         Defines the geometry of the domain for the PDE.
         
@@ -1142,7 +1142,7 @@ class LQG(Equation):
                                 self.PDE_loss, # PDE loss function.
                                 [self.D_bc], # Additional conditions.
                                 num_domain=num_domain, # Number of domain points.
-                                num_boundary=5000, # Number of boundary points.
+                                num_boundary=1000, # Number of boundary points.
                                 num_initial=0,  # Number of initial points.
                                 solution=self.exact_solution   # Incorporates exact solution for error metrics.
                             )
