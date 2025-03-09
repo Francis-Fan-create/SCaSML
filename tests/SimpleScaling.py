@@ -47,7 +47,7 @@ class SimpleScaling(object):
         self.t0 = equation.t0  # equation.t0: float
         self.T = equation.T  # equation.T: float
 
-    def test(self, save_path, base_max = 15, n_samples=1000):
+    def test(self, save_path, base_max = 25, n_samples=1000):
         '''
         Compares solvers on different training iterations.
     

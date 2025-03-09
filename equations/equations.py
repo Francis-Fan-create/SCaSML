@@ -958,7 +958,7 @@ class LQG(Equation):
         - n_output (int): The dimension of the output space. Defaults to 1.
         '''
         super().__init__(n_input, n_output)
-        self.uncertainty = 3e-2
+        self.uncertainty = 1e-1
         self.norm_estimation = 1
     
     def PDE_loss(self, x_t,u):
@@ -1006,8 +1006,8 @@ class LQG(Equation):
         # HJB-Rosenbrock
         x = x_t[:, :-1]
         # g(\boldsymbol{x})=\log\left(\frac{1+\sum_{i=1}^{d-1}\left[c_{1,i}(\boldsymbol{x}_i-\boldsymbol{x}_{i+1})^2+c_{2,i}\boldsymbol{x}_{i+1}^2\right]}{2}\right)
-        c1 = random.uniform(random.PRNGKey(0), (self.n_input-1,),minval=0.5,maxval=1.5)
-        c2 = random.uniform(random.PRNGKey(1), (self.n_input-1,),minval=0.5,maxval=1.5)
+        c1 = random.uniform(random.PRNGKey(0), (x.shape[0],x.shape[1]-1),minval=0.5,maxval=1.5)
+        c2 = random.uniform(random.PRNGKey(1), (x.shape[0],x.shape[1]-1),minval=0.5,maxval=1.5)
         result = jnp.log((1+jnp.sum(c1*(x[:, :-1]-x[:, 1:])**2+c2*x[:, 1:]**2,axis=1))/2)
         return result[:,jnp.newaxis]
 
@@ -1170,7 +1170,7 @@ class Oscilating_Solution(Equation):
         - n_output (int): The dimension of the output space. Defaults to 1.
         '''
         super().__init__(n_input, n_output)
-        self.uncertainty = 3e-2
+        self.uncertainty = 1e-2
         self.norm_estimation = 1
     
     def PDE_loss(self, x_t,u):
@@ -1194,7 +1194,7 @@ class Oscilating_Solution(Equation):
             laplacian +=dde.grad.hessian(u, x_t, i=k, j=k)[0] # Computes the laplacian of z.
         # laplacian *= d/MC
         # grad_norm_square *= d/MC
-        residual=du_t +0.5* laplacian+ jnp.minimum(1,(u-self.exact_solution(x_t))**2) # Computes the residual of the PDE.
+        residual=du_t +0.5* laplacian+ jnp.minimum(1,(u[0]-self.exact_solution(x_t))**2) # Computes the residual of the PDE.
         return residual 
 
     @partial(jit,static_argnames=["self"])
@@ -1208,17 +1208,14 @@ class Oscilating_Solution(Equation):
         Returns:
         - result (ndarray): A 2D tensor of shape (batch_size, 1), representing the terminal constraint.
         '''
-        # # HJB-Log
-        # x = x_t[:, :-1]
-        # result = jnp.log((1+jnp.linalg.norm(x,axis=1)**2)/2)
-        # return result[:,jnp.newaxis]
-
-        # HJB-Rosenbrock
+        kappa = 1.6
+        lamb = 0.1 
+        T = self.T
+        d = self.n_input-1
+        # u^\star(t,x)=\kappa+\sin\left(\lambda\sum_{i=1}^dx_i\right)\exp\left(\frac{\lambda^2d(t-T)}{2}\right)
         x = x_t[:, :-1]
-        # g(\boldsymbol{x})=\log\left(\frac{1+\sum_{i=1}^{d-1}\left[c_{1,i}(\boldsymbol{x}_i-\boldsymbol{x}_{i+1})^2+c_{2,i}\boldsymbol{x}_{i+1}^2\right]}{2}\right)
-        c1 = random.uniform(random.PRNGKey(0), (self.n_input-1,),minval=0.5,maxval=1.5)
-        c2 = random.uniform(random.PRNGKey(1), (self.n_input-1,),minval=0.5,maxval=1.5)
-        result = jnp.log((1+jnp.sum(c1*(x[:, :-1]-x[:, 1:])**2+c2*x[:, 1:]**2,axis=1))/2)
+        t = x_t[:, -1]
+        result = kappa + jnp.sin(lamb*jnp.sum(x,axis=1))*jnp.exp(lamb**2*d*(t-T)/2)
         return result[:,jnp.newaxis]
 
     @partial(jit,static_argnames=["self"])
@@ -1232,13 +1229,15 @@ class Oscilating_Solution(Equation):
         Returns:
         - result (ndarray): A 2D tensor of shape (batch_size, 1), representing the Dirichlet boundary constraint.
         '''
-        sample_num = int(100 * (self.n_input-1)) 
-        x = x_t[:, jnp.newaxis, :-1]
-        t = x_t[:, jnp.newaxis, -1]
-        simulated_x = x + jnp.sqrt(2)*random.normal(random.PRNGKey(0),(x.shape[0],sample_num,x.shape[1]))*jnp.sqrt(self.T-t[:,jnp.newaxis])
-        inside = jnp.exp(-jit(vmap(self.terminal_constraint,in_axes=1,out_axes=1))(simulated_x))
-        result = -jnp.log(jnp.mean(inside,axis=1))
-        return result
+        kappa = 1.6
+        lamb = 0.1 
+        T = self.T
+        d = self.n_input-1
+        # u^\star(t,x)=\kappa+\sin\left(\lambda\sum_{i=1}^dx_i\right)\exp\left(\frac{\lambda^2d(t-T)}{2}\right)
+        x = x_t[:, :-1]
+        t = x_t[:, -1]
+        result = kappa + jnp.sin(lamb*jnp.sum(x,axis=1))*jnp.exp(lamb**2*d*(t-T)/2)
+        return result[:,jnp.newaxis]
 
     def mu(self, x_t=0):
         '''
@@ -1298,7 +1297,7 @@ class Oscilating_Solution(Equation):
         x = x_t[:, :-1]
         t = x_t[:, -1]
         result = kappa + jnp.sin(lamb*jnp.sum(x,axis=1))*jnp.exp(lamb**2*d*(t-T)/2)
-        return result
+        return result[:,jnp.newaxis]
     
     def test_geometry(self, t0=0, T=1):
         '''
@@ -1343,7 +1342,7 @@ class Oscilating_Solution(Equation):
         self.geomt=timedomain
         return geom
     
-    def generate_data(self, num_domain=100):
+    def generate_data(self, num_domain=1000):
         '''
         Generates data for training the PDE model.
         
