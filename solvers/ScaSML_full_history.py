@@ -218,4 +218,4 @@ class ScaSML_full_history(object):
         
         u_hat = self.model.predict(x_t)
         
-        return u_hat + u_breve
+        return u_hat - u_breve
