@@ -1157,7 +1157,7 @@ class LQG(Equation):
                             )
         return data
     
-class Oscilating_Solution(Equation):
+class OScillating_Solution(Equation):
     '''
     Diffusion Reaction equation with ocilating solution.
     '''
