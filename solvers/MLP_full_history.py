@@ -179,7 +179,7 @@ class MLP_full_history(object):
         norm_estimation = self.equation.norm_estimation
         return jnp.clip(output_cated, -norm_estimation, norm_estimation).astype(jnp.float32)  # Clip the output to avoid numerical instability
     
-    def u_solve(self, n, rho, x_t, M=10):
+    def u_solve(self, n, rho, x_t, M=20):
         '''
         Approximate the solution of the PDE, return the value of u(x_t), batchwisely.
         
