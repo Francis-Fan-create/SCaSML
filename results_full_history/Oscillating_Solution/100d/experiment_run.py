@@ -6,7 +6,7 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..', '..'))
 
 
 # import the required libraries
-from equations.equations import OScillating_Solution
+from equations.equations import Oscillating_Solution
 from optimizers.Adam import Adam 
 # L_inf has been removed
 from tests.SimpleUniform import SimpleUniform
@@ -37,14 +37,14 @@ if device == 'gpu':
     gpu_name = jax.devices()[0].device_kind
 
 #initialize wandb
-wandb.init(project="OScillating_Solution", notes="100 d", tags=["Adam training","L_inf_training"],mode="disabled") #debug mode
-# wandb.init(project="OScillating_Solution", notes="100 d", tags=["Adam training","L_inf_training"]) #working mode
+wandb.init(project="Oscillating_Solution", notes="100 d", tags=["Adam training","L_inf_training"],mode="disabled") #debug mode
+# wandb.init(project="Oscillating_Solution", notes="100 d", tags=["Adam training","L_inf_training"]) #working mode
 wandb.config.update({"device": device}) # record device type
 
 #initialize the equation
-equation=OScillating_Solution(n_input=101,n_output=1)
+equation=Oscillating_Solution(n_input=101,n_output=1)
 #check if trained model is already saved
-if os.path.exists(r"results_full_history/OScillating_Solution/100d/model.ckpt-?"):
+if os.path.exists(r"results_full_history/Oscillating_Solution/100d/model.ckpt-?"):
     '''To Do: Retrain the model with new data points& Try new methods to reduce errors'''
     #load the model
     net=dde.maps.jax.FNN([101]+[50]*5+[1], "tanh", "Glorot normal")
@@ -52,7 +52,7 @@ if os.path.exists(r"results_full_history/OScillating_Solution/100d/model.ckpt-?"
     net.apply_output_transform(terminal_transform)
     data = equation.generate_data()
     model = dde.Model(data,net)
-    model.restore(r"results_full_history/OScillating_Solution/100d/model.ckpt-?",verbose=1)
+    model.restore(r"results_full_history/Oscillating_Solution/100d/model.ckpt-?",verbose=1)
     # set is_train to False
     is_train = False
 else:
@@ -82,10 +82,10 @@ solver3_3=ScaSML_full_history(equation=equation,PINN=solver1_3) #ScaSML object
 
 #run the test for SimpleUniform
 test2=SimpleUniform(equation,solver1_1,solver2,solver3_1,is_train)
-test2.test(r"results_full_history/OScillating_Solution/100d")
+test2.test(r"results_full_history/Oscillating_Solution/100d")
 # #run the test for SimpleScaling
 # test4=SimpleScaling(equation,solver1_3,solver2,solver3_3)
-# test4.test(r"results_full_history/OScillating_Solution/100d")
+# test4.test(r"results_full_history/Oscillating_Solution/100d")
 
 
 #finish wandb

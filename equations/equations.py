@@ -959,7 +959,7 @@ class LQG(Equation):
         '''
         super().__init__(n_input, n_output)
         self.uncertainty = 1e-1
-        self.norm_estimation = 1
+        self.norm_estimation = 10
     
     def PDE_loss(self, x_t,u):
         '''
@@ -1157,7 +1157,7 @@ class LQG(Equation):
                             )
         return data
     
-class OScillating_Solution(Equation):
+class Oscillating_Solution(Equation):
     '''
     Diffusion Reaction equation with ocilating solution.
     '''
@@ -1171,7 +1171,7 @@ class OScillating_Solution(Equation):
         '''
         super().__init__(n_input, n_output)
         self.uncertainty = 1e-2
-        self.norm_estimation = 1
+        self.norm_estimation = 5
     
     def PDE_loss(self, x_t,u):
         '''
