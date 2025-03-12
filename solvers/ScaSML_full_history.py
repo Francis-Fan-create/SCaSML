@@ -132,8 +132,8 @@ class ScaSML_full_history(object):
         # Compute u and z values
         u = jnp.mean(distrubed_output_terminal, axis=1)  # Mean over Monte Carlo samples, shape (batch_size, 1)
 
-        delta_sqrt_t = jnp.sqrt(T-t)[:, jnp.newaxis]  # Square root of time increment, shape (batch_size, 1)
-        z = jnp.mean(distrubed_output_terminal * std_normal, axis=1) / (delta_sqrt_t)  # Compute z values, shape (batch_size, dim) 
+        delta_t = (T-t)[:, jnp.newaxis]  # Square root of time increment, shape (batch_size, 1)
+        z = jnp.mean(distrubed_output_terminal * std_normal, axis=1) / (delta_t)  # Compute z values, shape (batch_size, dim) 
         cated_uz = jnp.concatenate((u, z), axis=-1)  # Concatenate u and z values, shape (batch_size, dim + 1)     
         # Recursive call
         if n == 0:
