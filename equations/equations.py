@@ -1171,7 +1171,7 @@ class Oscillating_Solution(Equation):
         '''
         super().__init__(n_input, n_output)
         self.uncertainty = 1e-2
-        self.norm_estimation = 5
+        self.norm_estimation = 10
     
     def PDE_loss(self, x_t,u):
         '''
@@ -1187,12 +1187,12 @@ class Oscillating_Solution(Equation):
         du_t = dde.grad.jacobian(u,x_t,i=0,j=self.n_input-1)[0] # Computes the time derivative of u.
         laplacian=0
         d = self.n_input-1
-        MC = int(self.n_input/4)
+        # MC = int(self.n_input/2)
         # randomly choose MC dims to compute hessian and div
-        idx_list = np.random.choice(self.n_input-1, MC, replace=False)
-        for k in idx_list: # Accumulates laplacian and divergence over spatial dimensions.
+        # idx_list = np.random.choice(self.n_input-1, MC, replace=False)
+        for k in range(d): # Accumulates laplacian and divergence over spatial dimensions.
             laplacian +=dde.grad.hessian(u, x_t, i=k, j=k)[0] # Computes the laplacian of z.
-        laplacian *= d/MC
+        # laplacian *= d/MC
         residual=du_t +0.5* laplacian+ jnp.minimum(1,(u[0]-self.exact_solution(x_t))**2) # Computes the residual of the PDE.
         return residual 
 
