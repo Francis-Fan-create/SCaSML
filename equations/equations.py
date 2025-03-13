@@ -364,6 +364,9 @@ class Grad_Dependent_Nonlinear(Equation):
         super().__init__(n_input, n_output)
         self.uncertainty = 1e-2
         self.norm_estimation = 1
+        self.lr = 7e-4
+        self.iters = 10000
+        self.level = 2
     
     def PDE_loss(self, x_t,u):
         '''
@@ -553,207 +556,6 @@ class Grad_Dependent_Nonlinear(Equation):
                                 solution=self.exact_solution   # Incorporates exact solution for error metrics.
                             )
         return data
-
-class Diffusion_Reaction(Equation):
-    '''
-    Diffusion Reaction equation.
-    '''
-    def __init__(self, n_input, n_output=1):
-        '''
-        Initializes the PDE example with specified input and output dimensions.
-        
-        Parameters:
-        - n_input (int): The dimension of the input space, including the time dimension.
-        - n_output (int): The dimension of the output space. Defaults to 1.
-        '''
-        super().__init__(n_input, n_output)
-        self.uncertainty = 1e-2
-        self.norm_estimation = jnp.sqrt(jnp.e)
-    
-    def PDE_loss(self, x_t,u):
-        '''
-        Calculates the PDE loss for given inputs.
-        
-        Parameters:
-        - x_t (tensor): Input tensor of shape (batch_size, n_input), where n_input includes the time dimension.
-        - u (tensor): Output tensor of shape (batch_size, n_output), representing the solution of the PDE.
-        
-        Returns:
-        - residual (tensor): The residual of the PDE of shape (batch_size, n_output).
-        '''
-        du_t = dde.grad.jacobian(u,x_t,i=0,j=self.n_input-1)[0] # Computes the time derivative of u.
-        laplacian=0
-        MC = int(self.n_input/4)
-        dim=self.n_input-1
-        # randomly choose MC dims to compute hessian and div
-        idx_list = np.random.choice(self.n_input-1, MC, replace=False)
-        for k in idx_list: # Accumulates laplacian and divergence over spatial dimensions.
-            laplacian +=dde.grad.hessian(u, x_t, i=k, j=k)[0] # Computes the laplacian of z.
-        laplacian *= dim/MC
-        x_1 = x_t[:, 0]
-        x_2 = x_t[:, 1]
-        t = x_t[:, -1]
-        f_val = (jnp.pi**2-2)*jnp.sin(jnp.pi*x_1/2)*jnp.cos(jnp.pi*x_2/2)*jnp.exp(-t) - 4* (jnp.sin(jnp.pi*x_1/2)**2)*jnp.cos(jnp.pi*x_2/2)*jnp.exp(-2*t)
-        f_val = f_val[:,jnp.newaxis]
-        residual=du_t +laplacian+u[0]**2+f_val # Computes the residual of the PDE.
-        return residual 
-    
-    @partial(jit,static_argnames=["self"])
-    def initial_constraint(self, x_t):
-        '''
-        Defines the initial constraint for the PDE.
-        
-        Parameters:
-        - x_t (ndarray): Input tensor of shape (batch_size, n_input), where n_input includes the time dimension.
-        
-        Returns:
-        - result (ndarray): A 2D tensor of shape (batch_size, 1), representing the initial constraint.
-        '''
-        t = x_t[:, -1]
-        x_1 = x_t[:, 0]
-        x_2 = x_t[:, 1]
-        result = -jnp.sin(jnp.pi*x_1/2)*jnp.cos(jnp.pi*x_2/2)*jnp.exp(-t)
-        return result[:,jnp.newaxis]
-
-    @partial(jit,static_argnames=["self"])
-    def terminal_constraint(self, x_t):
-        '''
-        Defines the terminal constraint for the PDE.
-        
-        Parameters:
-        - x_t (ndarray): Input tensor of shape (batch_size, n_input), where n_input includes the time dimension.
-        
-        Returns:
-        - result (ndarray): A 2D tensor of shape (batch_size, 1), representing the terminal constraint.
-        '''
-        t = x_t[:, -1]
-        x_1 = x_t[:, 0]
-        x_2 = x_t[:, 1]
-        result = -jnp.sin(jnp.pi*x_1/2)*jnp.cos(jnp.pi*x_2/2)*jnp.exp(-t)
-        return result[:,jnp.newaxis]
-    
-    @partial(jit,static_argnames=["self"])
-    def Dirichlet_boundary_constraint(self, x_t):
-        '''
-        Defines the Dirichlet boundary constraint for the PDE.
-        
-        Parameters:
-        - x_t (ndarray): Input tensor of shape (batch_size, n_input), where n_input includes the time dimension.
-        
-        Returns:
-        - result (ndarray): A 2D tensor of shape (batch_size, 1), representing the Dirichlet boundary constraint.
-        '''
-        t = x_t[:, -1]
-        x_1 = x_t[:, 0]
-        x_2 = x_t[:, 1]
-        result = -jnp.sin(jnp.pi*x_1/2)*jnp.cos(jnp.pi*x_2/2)*jnp.exp(-t)
-        return result[:,jnp.newaxis]
-
-    def mu(self, x_t=0):
-        '''
-        Returns the drift coefficient of the PDE. Here, it's a constant value.
-        
-        Parameters:
-        - x_t (int, optional): Not used in this implementation.
-        
-        Returns:
-        - (float): The drift coefficient.
-        '''
-        return 0
-    
-    def sigma(self, x_t=0):
-        '''
-        Returns the diffusion coefficient of the PDE. Here, it's a constant value.
-        
-        Parameters:
-        - x_t (int, optional): Not used in this implementation.
-        
-        Returns:
-        - (float): The diffusion coefficient.
-        '''
-        return jnp.sqrt(2)
-    
-    @partial(jit,static_argnames=["self"])    
-    def f(self, x_t,u,z):
-        '''
-        Defines the generator term for the PDE.
-        
-        Parameters:
-        - x_t (ndarray): Input tensor of shape (batch_size, n_input), where n_input includes the time dimension.
-        - u (ndarray): Output tensor of shape (batch_size, n_output), representing the solution of the PDE.
-        - z (ndarray): Tensor of shape (batch_size, n_input-1), representing gradients.
-        
-        Returns:
-        - result (ndarray): A 2D array of shape (batch_size, n_output), representing the generator term.
-        '''
-        x_1 = x_t[:, 0]
-        x_2 = x_t[:, 1]
-        t = x_t[:, -1]
-        f_val = (jnp.pi**2-2)*jnp.sin(jnp.pi*x_1/2)*jnp.cos(jnp.pi*x_2/2)*jnp.exp(-t) - 4* (jnp.sin(jnp.pi*x_1/2)**2)*jnp.cos(jnp.pi*x_2/2)*jnp.exp(-2*t)
-        return f_val[:,jnp.newaxis]+u**2
-    
-    @partial(jit,static_argnames=["self"])    
-    def exact_solution(self, x_t):
-        '''
-        Computes the exact solution of the PDE for given inputs.
-        
-        Parameters:
-        - x_t (ndarray): Input tensor of shape (batch_size, n_input), where n_input includes the time dimension.
-        
-        Returns:
-        - result (ndarray): An arrary of shape (batch_size, n_ouput), representing the exact solution.
-        '''
-        t = x_t[:, -1]
-        x_1 = x_t[:, 0]
-        x_2 = x_t[:, 1]
-        result = -jnp.sin(jnp.pi*x_1/2)*jnp.cos(jnp.pi*x_2/2)*jnp.exp(-t)
-        return result[:,jnp.newaxis]
-    
-    def geometry(self,t0=0,T=0.5):
-        '''
-        Defines the geometry of the domain for the PDE.
-        
-        Parameters:
-        - t0 (float): Initial time.
-        - T (float): Terminal time.
-        
-        Returns:
-        - geom (dde.geometry.GeometryXTime): A GeometryXTime object representing the domain.
-        '''
-        self.t0=t0
-        self.T=T
-        spacedomain = dde.geometry.Hypercube([-0.5]*(self.n_input-1), [0.5]*(self.n_input-1)) # Defines the spatial domain, for train
-        timedomain = dde.geometry.TimeDomain(t0, T) # Defines the time domain.
-        geom = dde.geometry.GeometryXTime(spacedomain, timedomain) # Combines spatial and time domains.
-        self.geomx=spacedomain
-        self.geomt=timedomain
-        return geom
-    
-    def generate_data(self, num_domain=2500):
-        '''
-        Generates data for training the PDE model.
-        
-        Parameters:
-        - num_domain (int): Number of points to sample in the domain.
-        
-        Returns:
-        - data (dde.data.TimePDE): A TimePDE object containing the training data.
-        '''
-        geom=self.geometry() # Defines the geometry of the domain.
-        # self.terminal_condition() # Generates terminal condition.
-        self.Dirichlet_boundary_condition() # Generates Dirichlet boundary condition.
-        self.initial_condition() # Generate initial condition
-        # self.data_loss() # Generates data loss. 
-        data = dde.data.TimePDE(
-                                geom, # Geometry of the domain.
-                                self.PDE_loss, # PDE loss function.
-                                [self.ic, self.D_bc], # Additional conditions.
-                                num_domain=num_domain, # Number of domain points.
-                                num_boundary=100, # Number of boundary points.
-                                num_initial=160,  # Number of initial points.
-                                solution=self.exact_solution   # Incorporates exact solution for error metrics.
-                            )
-        return data
     
 class Linear_Convection_Diffusion(Equation):
     '''
@@ -770,6 +572,11 @@ class Linear_Convection_Diffusion(Equation):
         super().__init__(n_input, n_output)
         self.uncertainty = 0.5 * self.n_input
         self.norm_estimation = 0.5 * self.n_input
+        self.lr = 7e-4
+        self.iters = 10000
+        self.basemin = 10
+        self.basemax = 18
+        self.level = 2
     
     def PDE_loss(self, x_t,u):
         '''
@@ -786,14 +593,14 @@ class Linear_Convection_Diffusion(Equation):
         laplacian=0
         div = 0
         d = self.n_input-1
-        MC = int(d/4)
-        # randomly choose MC dims to compute hessian and div
-        idx_list = np.random.choice(self.n_input-1, MC, replace=False)
-        for k in idx_list: # Accumulates laplacian and divergence over spatial dimensions.
+        # MC = int(d/4)
+        # # randomly choose MC dims to compute hessian and div
+        # idx_list = np.random.choice(self.n_input-1, MC, replace=False)
+        for k in range(d): # Accumulates laplacian and divergence over spatial dimensions.
             laplacian +=dde.grad.hessian(u, x_t, i=k, j=k)[0] # Computes the laplacian of z.
             div += dde.grad.jacobian(u, x_t, i=0, j=k)[0] # Computes the divergence of u.
-        laplacian *= d/MC
-        div *= d/MC
+        # laplacian *= d/MC
+        # div *= d/MC
         residual=du_t +laplacian- (1/d)*div # Computes the residual of the PDE.
         return residual 
     
@@ -960,6 +767,11 @@ class LQG(Equation):
         super().__init__(n_input, n_output)
         self.uncertainty = 1e-1
         self.norm_estimation = 10
+        self.lr = 1e-3
+        self.iters = 2500
+        self.basemin = 2
+        self.basemax = 15
+        self.level = 2
     
     def PDE_loss(self, x_t,u):
         '''
@@ -1172,6 +984,11 @@ class Oscillating_Solution(Equation):
         super().__init__(n_input, n_output)
         self.uncertainty = 1e-2
         self.norm_estimation = 10
+        self.lr = 1e-3
+        self.iters = 2500
+        self.basemin = 2
+        self.basemax = 15
+        self.level = 2
     
     def PDE_loss(self, x_t,u):
         '''
@@ -1187,7 +1004,7 @@ class Oscillating_Solution(Equation):
         du_t = dde.grad.jacobian(u,x_t,i=0,j=self.n_input-1)[0] # Computes the time derivative of u.
         laplacian=0
         d = self.n_input-1
-        # MC = int(self.n_input/2)
+        # MC = int(self.n_input/4)
         # randomly choose MC dims to compute hessian and div
         # idx_list = np.random.choice(self.n_input-1, MC, replace=False)
         for k in range(d): # Accumulates laplacian and divergence over spatial dimensions.

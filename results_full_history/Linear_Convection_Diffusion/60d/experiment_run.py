@@ -44,7 +44,7 @@ wandb.config.update({"device": device}) # record device type
 #initialize the equation
 equation=Linear_Convection_Diffusion(n_input=61,n_output=1)
 #check if trained model is already saved
-if os.path.exists(r"results_full_history/Linear_Convection_Diffusion/60d/model.ckpt-?"):
+if os.path.exists(r"results_full_history/Linear_Convection_Diffusion/10d/model.ckpt-?"):
     '''To Do: Retrain the model with new data points& Try new methods to reduce errors'''
     #load the model
     net=dde.maps.jax.FNN([61]+[50]*5+[1], "tanh", "Glorot normal")

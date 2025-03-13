@@ -47,13 +47,12 @@ class SimpleScaling(object):
         self.t0 = equation.t0  # equation.t0: float
         self.T = equation.T  # equation.T: float
 
-    def test(self, save_path, base_max = 15, n_samples=1000):
+    def test(self, save_path, n_samples=1000):
         '''
         Compares solvers on different training iterations.
     
         Parameters:
         save_path (str): The path to save the results.
-        base_max (int): Maximum exponential base of samples.
         n_samples (int): The number of samples for testing (test set).
         '''
         # Initialize the profiler
@@ -87,7 +86,8 @@ class SimpleScaling(object):
     
     
         # Build a list for training sizes
-        list_len = base_max
+        basemin = self.equation.basemin
+        basemax = self.equation.basemax
         eval_counter_list = []
         error1_list = []
         error2_list = []
@@ -107,9 +107,9 @@ class SimpleScaling(object):
         self.solver1 = trained_model1
         self.solver3.PINN = trained_model1
 
-        for j in range(2, list_len+1):
+        for j in range(basemin, basemax+1):
 
-                rho = 2
+                rho = self.equation.level
 
                 # Print current rho value
                 print(f"Current sample base: {j}")
@@ -202,4 +202,4 @@ class SimpleScaling(object):
         profiler.disable()
         profiler.print_stats(sort='cumtime')
     
-        return base_max
+        return 0
