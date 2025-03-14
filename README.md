@@ -1,6 +1,6 @@
 # Simulation-Calibrated Scientific Machine Learning (SCaSML)
 
-SCaSML is a novel approach for solving high-dimensional partial differential equations (PDEs) that combines the dimension insensitivity of neural networks with the transparent, unbiased, and physical estimation from simulation solvers, leveragin inference time computation for scalable and refined predictions. This repo is a PINN implementation of this algorithm, another Gaussian Kernel Regression implementation is on https://github.com/Francis-Fan-create/SCaSML_GP.git .
+SCaSML is a novel approach for solving high-dimensional partial differential equations (PDEs) that combines the dimension insensitivity of neural networks with the transparent, unbiased, and physical estimation from simulation solvers, leveraging inference time computation for scalable and refined predictions. This repo is a PINN implementation of this algorithm, another Gaussian Kernel Regression implementation is on https://github.com/Francis-Fan-create/SCaSML_GP.git .
 
 ## Abstract
 
@@ -20,24 +20,6 @@ cd scasml
 ```bash
 pip install -r requirements.txt
 ```
-## Basic Usage
-
-You can run experiments for Grad_Dependent_Nonlinear_Equation and Diffusion_Reaction by the following script:
-
-1. Run the experiment for 20d and 40d:
-
-```bash
-chmod +x low_dim_group.sh
-./low_dim_group.sh
-```
-
-2. Run the experiment for 60d and 80d:
-
-```bash
-chmod +x high_dim_group.sh
-./high_dim_group.sh
-```
-
 ## Custom Usage
 
 To set up a new SCaSML solver for specific equations, follow these steps:
@@ -93,14 +75,13 @@ Contributions to SCaSML are welcome! Please follow these steps:
 
 **Maintainer&First Author:**
 
-Zexi Fan: 2200010816@stu.pku.edu.cn
+Zexi Fan: fanzexi_francis@stu.pku.edu.cn
 
 **Collaborators:**
 
 Yan Sun: yansun414@gmail.com
 
 Yiping Lu: yiping.lu@northwestern.edu
-
 
 
 
