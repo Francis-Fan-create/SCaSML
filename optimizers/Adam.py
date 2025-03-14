@@ -47,7 +47,7 @@ class Adam(object):
         real_iters = self.equation.iters
         # Deepxde does not implement Model.save() for jax
         loss_history, train_state = self.model.train(iterations=real_iters, display_every=10, disregard_previous_best= True)
-        dde.saveplot(loss_history, train_state, issave=True, isplot=True,output_dir=save_path)
+        # dde.saveplot(loss_history, train_state, issave=True, isplot=True,output_dir=save_path)
         # Log a list of Adam losses and metrics, which are both lists, one by one
         counter1 = 0
         for loss in self.model.train_state.loss_train:
