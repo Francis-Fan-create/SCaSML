@@ -37,30 +37,30 @@ if device == 'gpu':
     gpu_name = jax.devices()[0].device_kind
 
 #initialize wandb
-wandb.init(project="Linear_Convection_Diffusion", notes="80 d", tags=["Adam training","L_inf_training"],mode="disabled") #debug mode
-# wandb.init(project="Linear_Convection_Diffusion", notes="80 d", tags=["Adam training","L_inf_training"]) #working mode
+wandb.init(project="Linear_Convection_Diffusion", notes="30 d", tags=["Adam training","L_inf_training"],mode="disabled") #debug mode
+# wandb.init(project="Linear_Convection_Diffusion", notes="30 d", tags=["Adam training","L_inf_training"]) #working mode
 wandb.config.update({"device": device}) # record device type
 
 #initialize the equation
-equation=Linear_Convection_Diffusion(n_input=81,n_output=1)
+equation=Linear_Convection_Diffusion(n_input=31,n_output=1)
 #check if trained model is already saved
-if os.path.exists(r"results_full_history/Linear_Convection_Diffusion/80d/model.ckpt-?"):
+if os.path.exists(r"results_full_history/Linear_Convection_Diffusion/30d/model.ckpt-?"):
     '''To Do: Retrain the model with new data points& Try new methods to reduce errors'''
     #load the model
-    net=dde.maps.jax.FNN([81]+[50]*5+[1], "tanh", "Glorot normal")
+    net=dde.maps.jax.FNN([31]+[50]*5+[1], "tanh", "Glorot normal")
     terminal_transform = equation.terminal_transform
     net.apply_output_transform(terminal_transform)
     data = equation.generate_data()
     model = dde.Model(data,net)
-    model.restore(r"results_full_history/Linear_Convection_Diffusion/80d/model.ckpt-?",verbose=1)
+    model.restore(r"results_full_history/Linear_Convection_Diffusion/30d/model.ckpt-?",verbose=1)
     # set is_train to False
     is_train = False
 else:
     #initialize the FNN
     #same layer width
-    net1=dde.maps.jax.FNN([81]+[50]*5+[1], "tanh", "Glorot normal")
-    net2=dde.maps.jax.FNN([81]+[50]*5+[1], "tanh", "Glorot normal")
-    net3=dde.maps.jax.FNN([81]+[50]*5+[1], "tanh", "Glorot normal")    
+    net1=dde.maps.jax.FNN([31]+[50]*5+[1], "tanh", "Glorot normal")
+    net2=dde.maps.jax.FNN([31]+[50]*5+[1], "tanh", "Glorot normal")
+    net3=dde.maps.jax.FNN([31]+[50]*5+[1], "tanh", "Glorot normal")    
     data1 = equation.generate_data()
     data2 = equation.generate_data()
     data3 = equation.generate_data()
@@ -82,10 +82,11 @@ solver3_3=ScaSML_full_history(equation=equation,PINN=solver1_3) #ScaSML object
 
 # #run the test for SimpleUniform
 # test2=SimpleUniform(equation,solver1_1,solver2,solver3_1,is_train)
-# test2.test(r"results_full_history/Linear_Convection_Diffusion/80d")
+# test2.test(r"results_full_history/Linear_Convection_Diffusion/30d")
 #run the test for SimpleScaling
 test4=SimpleScaling(equation,solver1_3,solver2,solver3_3)
-test4.test(r"results_full_history/Linear_Convection_Diffusion/80d")
+test4.test(r"results_full_history/Linear_Convection_Diffusion/30d")
 
 #finish wandb
 wandb.finish()
+                                                                                            
