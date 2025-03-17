@@ -25,8 +25,8 @@ import jax
 dde.config.set_random_seed(1234)
 #use jax backend
 dde.backend.set_default_backend('jax')
-#set default float to float32
-dde.config.set_default_float("float32")
+#set default float to float16
+dde.config.set_default_float("float16")
 # fix random seed for jax
 jax.random.PRNGKey(0)
 # device configuration
