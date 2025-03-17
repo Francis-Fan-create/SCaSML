@@ -726,7 +726,7 @@ class Linear_Convection_Diffusion(Equation):
         self.geomt=timedomain
         return geom
     
-    def generate_data(self, num_domain=50000):
+    def generate_data(self, num_domain=2500):
         '''
         Generates data for training the PDE model.
         
