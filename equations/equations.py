@@ -575,7 +575,7 @@ class Linear_Convection_Diffusion(Equation):
         self.lr = 7e-4
         self.iters = 10000
         self.basemin = 10
-        self.basemax = 18
+        self.basemax = 16
         self.level = 2
     
     def PDE_loss(self, x_t,u):
