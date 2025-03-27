@@ -74,9 +74,9 @@ solver3_1=ScaSML(equation=equation,PINN=solver1_1) #ScaSML object
 solver3_2=ScaSML(equation=equation,PINN=solver1_2) #ScaSML object
 
 
-#run the test for SimpleUniform
-test2=SimpleUniform(equation,solver1_1,solver2,solver3_1,is_train)
-test2.test(r"results/Grad_Dependent_Nonlinear/40d")
+# #run the test for SimpleUniform
+# test2=SimpleUniform(equation,solver1_1,solver2,solver3_1,is_train)
+# test2.test(r"results/Grad_Dependent_Nonlinear/40d")
 #run the test for ConvergenceRate
 test3=ConvergenceRate(equation,solver1_2,solver2,solver3_2, is_train)
 test3.test(r"results/Grad_Dependent_Nonlinear/40d")

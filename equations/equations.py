@@ -366,6 +366,8 @@ class Grad_Dependent_Nonlinear(Equation):
         self.norm_estimation = 1
         self.lr = 7e-4
         self.iters = 10000
+        self.basemin = 2
+        self.basemax = 10
         self.level = 2
     
     def PDE_loss(self, x_t,u):

@@ -12,6 +12,7 @@ from optimizers.Adam import Adam
 from tests.SimpleUniform import SimpleUniform
 from tests.ConvergenceRate import ConvergenceRate
 from tests.InferenceScaling import InferenceScaling
+from tests.SimpleScaling import SimpleScaling
 from solvers.MLP_full_history import MLP_full_history
 from solvers.ScaSML_full_history import ScaSML_full_history
 import numpy as np
@@ -86,9 +87,12 @@ solver3_3=ScaSML_full_history(equation=equation,PINN=solver1_3) #ScaSML object
 # #run the test for ConvergenceRate
 # test3=ConvergenceRate(equation,solver1_2,solver2,solver3_2, is_train)
 # test3.test(r"results_full_history/Grad_Dependent_Nonlinear/80d")
-#run the test for InferenceScaling
-test4=InferenceScaling(equation,solver1_3,solver2,solver3_3)
-test4.test(r"results_full_history/Grad_Dependent_Nonlinear/80d")
+# #run the test for InferenceScaling
+# test4=InferenceScaling(equation,solver1_3,solver2,solver3_3)
+# test4.test(r"results_full_history/Grad_Dependent_Nonlinear/80d")
+#run the test for SimpleScaling
+test5=SimpleScaling(equation,solver1_3,solver2,solver3_3)
+test5.test(r"results_full_history/Grad_Dependent_Nonlinear/80d")
 
 #finish wandb
 wandb.finish()

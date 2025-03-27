@@ -263,6 +263,7 @@ class ConvergenceRate(object):
 
             # Set axis limits and scale
             ax.set_yscale('log')
+            ax.set_xscale('log')
             ax.set_xlim(left=0)  # Keep linear scale per request
 
             # Create minimalist legend
