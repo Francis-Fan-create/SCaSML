@@ -50,7 +50,7 @@ class ConvergenceRate(object):
         self.T = equation.T  # equation.T: float
         self.is_train = is_train
 
-    def test(self, save_path, rhomax=2, train_iters = [0, 500, 1000, 1500, 2000, 2500]):
+    def test(self, save_path, train_iters = [100, 500, 1000, 1500, 2000, 2500]):
         '''
         Compares solvers on different training iterations.
     
@@ -58,7 +58,6 @@ class ConvergenceRate(object):
         save_path (str): The path to save the results.
         opt1 (object): The first optimizer object.
         opt2 (object): The second optimizer object.
-        rhomax (int): The fixed value of rho for approximation parameters.
         train_iters (list): The list of training iterations.
         '''
         # Initialize the profiler
@@ -88,6 +87,7 @@ class ConvergenceRate(object):
         # Set the approximation parameters
         eq = self.equation
         list_len = len(train_iters)
+        d = eq.n_input - 1
         error1_list = []
         # error2_list = []
         error3_list = []
@@ -101,17 +101,22 @@ class ConvergenceRate(object):
             for j in range(list_len):
                 #train the model
                 opt = Adam(eq.n_input,1, self.solver1, eq)
-                trained_model1= opt.train(f"{save_path}/model_weights_Adam", iters=train_iters[j] if j==0 else train_iters[j]-train_iters[j-1])
+                train_iter = train_iters[j] if j==0 else train_iters[j]-train_iters[j-1]
+                trained_model1= opt.train(f"{save_path}/model_weights_Adam", iters=train_iter)
+                infer_train_iter = train_iters[j]//(d+1) if j==0 else (train_iters[j]-train_iters[j-1])//(d+1)
+                trained_model2 = opt.train(f"{save_path}/model_weights_Adam", iters=infer_train_iter)
                 self.solver1 = trained_model1
-                self.solver3.PINN = trained_model1
+                self.solver3.PINN = trained_model2
+                rho = int(np.log(train_iter)/np.log(np.log(train_iter)))
+
                 # Predict with solver1
                 sol1 = self.solver1.predict(xt_values)
             
                 # # Solve with solver2 (baseline solver)
-                # sol2 = self.solver2.u_solve(rhomax, rhomax, xt_values)
+                # sol2 = self.solver2.u_solve(rho, rho, xt_values)
             
                 # Solve with solver3 using the trained solver1
-                sol3 = self.solver3.u_solve(rhomax, rhomax, xt_values)
+                sol3 = self.solver3.u_solve(rho, rho, xt_values)
                 # creating mask for valid data points
                 valid_mask = ~(np.isnan(sol1) | np.isnan(sol3) | np.isnan(exact_sol)).flatten()
                 # Compute errors
@@ -269,9 +274,9 @@ class ConvergenceRate(object):
             # Create minimalist legend
             legend_elements = [
                 plt.Line2D([0], [0], color=COLOR_PALETTE['PINN'], lw=1.2,
-                        label=f'PINN (m={slope1:.2f})'),
+                        label=f'PINN ($\\gamma$={-slope1:.2f})'),
                 plt.Line2D([0], [0], color=COLOR_PALETTE['SCaSML'], lw=1.2,
-                        label=f'SCaSML (m={slope3:.2f})')
+                        label=f'SCaSML ($\\gamma$={-slope3:.2f})')
             ]
             ax.legend(handles=legend_elements, frameon=False,
                     loc='upper right', bbox_to_anchor=(1, 1),
@@ -292,6 +297,6 @@ class ConvergenceRate(object):
             profiler.disable()
             profiler.print_stats(sort='cumtime')
             is_train = False
-            return rhomax
+            return rho
         else:
             print("Please delete the model weights and run the test again.")
