@@ -135,7 +135,7 @@ class ConvergenceRate(object):
             plt.figure()
             epsilon = 1e-10  # To avoid log(0)
 
-            train_steps = np.array(train_iters)*4
+            train_steps = np.array(train_iters)
             error1_array = np.array(error1_list)
             # error2_array = np.array(error2_list)
             error3_array = np.array(error3_list)
