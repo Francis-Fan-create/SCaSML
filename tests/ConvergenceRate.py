@@ -50,7 +50,7 @@ class ConvergenceRate(object):
         self.T = equation.T  # equation.T: float
         self.is_train = is_train
 
-    def test(self, save_path, train_iters = [100, 500, 1000, 1500, 2000, 2500]):
+    def test(self, save_path, train_iters = [400, 2000, 4000, 4500, 8000, 10000]):
         '''
         Compares solvers on different training iterations.
     
