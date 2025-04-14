@@ -73,7 +73,7 @@ palette_default = {"SR": "#888888", "MLP": "#66a3d2", "SCaSML": "#1f4e79"}
 custom_palette = {"SR": "#000000", "MLP": "#A6A3A4", "SCaSML": "#2C939A"}
 
 # Output folder
-output_dir = "exported_figures"
+output_dir = "BarAndHeat"
 os.makedirs(output_dir, exist_ok=True)
 
 # # ---------------------------
