@@ -9,3 +9,5 @@ jax[cuda12]
 optax
 flax
 jaxopt
+pandas
+seaborn

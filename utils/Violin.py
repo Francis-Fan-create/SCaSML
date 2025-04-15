@@ -1,18 +1,17 @@
-import numpy as np
-import matplotlib.pyplot as plt
-import wandb
-import torch
-import time
 import sys
 import os
-import cProfile
-import shutil
-import jax.numpy as jnp
-from optimizers.Adam import Adam
-from matplotlib.colors import LogNorm
+# Add the parent directory to the path
+sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+
+import numpy as np
+import matplotlib.pyplot as plt
+import os
 import deepxde as dde
 import jax
-from solvers import MLP_full_history, ScaSML_full_history
+import wandb
+from solvers.MLP_full_history import MLP_full_history
+from solvers.ScaSML_full_history import ScaSML_full_history
+from optimizers.Adam import Adam
 from equations.equations import Grad_Dependent_Nonlinear, Linear_Convection_Diffusion, LQG, Oscillating_Solution
 
 def plot_combined_violin(equations_results, save_path):
@@ -88,33 +87,43 @@ def plot_combined_violin(equations_results, save_path):
     ax.set_yscale('log')
     ax.set_ylabel('Absolute Error', labelpad=2)
     
-    # Set x-ticks for equation groups
+    # Get current y limits for positioning labels
+    # y_min = ax.get_ylim()[0] # No longer needed for method label positioning
+    
+    # Set x-ticks for equation groups with adjusted padding
     eq_group_centers = [i * 4 + 2 for i in range(num_equations)]
     eq_labels = [eq['name'] for eq in equations_results]
     ax.set_xticks(eq_group_centers)
     ax.set_xticklabels(eq_labels)
     
-    # Add method labels at the bottom
+    # Remove the ylim adjustment based on y_min
+    # ax.set_ylim(bottom=y_min * 3.0) 
+    
+    # Add method labels below the x-axis, without rotation
     method_positions = [1, 2, 3]
+    # Define a vertical offset in axis coordinates (e.g., 15% below the axis)
+    y_offset = -0.02
     for i in range(num_equations):
         offset = i * 4
         for j, method in enumerate(['PINN', 'MLP', 'SCaSML']):
             pos = offset + method_positions[j]
-            ax.text(pos, ax.get_ylim()[0] * 1.2, method, ha='center', va='top', 
-                    fontsize=6, rotation=45)
+            # Use axis coordinates for y positioning (ax.transAxes)
+            # Place text below the axis (y < 0), centered horizontally, no rotation
+            ax.text(pos, y_offset, method, 
+                    transform=ax.get_xaxis_transform(), # Use x data coords, y axis coords
+                    ha='center', va='top', 
+                    fontsize=4) # Removed rotation, adjusted font size if needed
     
-    # Add vertical separators between equation groups
-    for i in range(1, num_equations):
-        ax.axvline(x=i*4 - 0.5, color='gray', linestyle='--', alpha=0.3, linewidth=0.5)
+    # ... [existing code for vertical separators, grid, spines] ...
     
-    # Grid and spines
-    ax.grid(axis='y', linestyle='--', alpha=0.4)
-    ax.spines[['top', 'right']].set_visible(False)
+    # Adjust equation labels position (x-axis tick labels)
+    ax.tick_params(axis='x', pad=5) # Adjust padding as needed (maybe less now)
     
-    # Final touches
-    plt.tight_layout()
+    # Final touches - adjust bottom margin
+    plt.tight_layout(pad=1.5) # Adjust overall padding
+    plt.subplots_adjust(bottom=0.2) # Ensure enough space for labels below axis
     plt.savefig(f"{save_path}/Combined_Error_Distribution.pdf", 
-                bbox_inches='tight', pad_inches=0.05)
+                bbox_inches='tight', pad_inches=0.1) # Adjust savefig padding
     plt.close()
 
 
@@ -133,104 +142,67 @@ if __name__ == "__main__":
     if device == 'gpu':
         # get PINNU name
         gpu_name = jax.devices()[0].device_kind
+    #initialize wandb
+    wandb.init(project="Violin", notes="All", tags=["Adam training","L_inf_training"],mode="disabled") #debug mode
+    wandb.config.update({"device": device}) # record device type
 
-    '''Equation 1: Grad_Dependent_Nonlinear, 20d. Denoted as: VB-PINN, 20d'''
+    '''Equation 1: Grad_Dependent_Nonlinear, 80d. Denoted as: VB-PINN, 80d'''
     #initialize the equation
-    equation=Grad_Dependent_Nonlinear(n_input=21,n_output=1)
+    equation1=Grad_Dependent_Nonlinear(n_input=81,n_output=1)
     #initialize the FNN
     #same layer width
-    net1=dde.maps.jax.FNN([21]+[50]*5+[1], "tanh", "Glorot normal")
-    net2=dde.maps.jax.FNN([21]+[50]*5+[1], "tanh", "Glorot normal")
-    net3=dde.maps.jax.FNN([21]+[50]*5+[1], "tanh", "Glorot normal")    
-    data1 = equation.generate_data()
-    data2 = equation.generate_data()
-    data3 = equation.generate_data()
+    net1=dde.maps.jax.FNN([81]+[50]*5+[1], "tanh", "Glorot normal") 
+    data1 = equation1.generate_data()
     model1 = dde.Model(data1,net1)
-    model2 = dde.Model(data2,net2)
-    model3 = dde.Model(data3,net3)
     is_train = True
     #initialize the normal sphere test
     solver1_1= model1 #PINN network
-    solver1_2 = model2 #PINN network
-    solver1_3 = model3 # PINN network
-    solver2=MLP_full_history(equation=equation) #Multilevel Picard object
-    solver3_1=ScaSML_full_history(equation=equation,PINN=solver1_1) #ScaSML object
-    solver3_2=ScaSML_full_history(equation=equation,PINN=solver1_2) #ScaSML object
-    solver3_3=ScaSML_full_history(equation=equation,PINN=solver1_3) #ScaSML object
+    solver2_1=MLP_full_history(equation=equation1) #Multilevel Picard object
+    solver3_1=ScaSML_full_history(equation=equation1,PINN=solver1_1) #ScaSML object
 
-    '''Equation 2: Linear_Convection_Diffusion, 10d. Denoted as: LCD, 10d'''
+    '''Equation 2: Linear_Convection_Diffusion, 60d. Denoted as: LCD, 60d'''
     #initialize the equation
-    equation=Linear_Convection_Diffusion(n_input=11,n_output=1)
+    equation2=Linear_Convection_Diffusion(n_input=61,n_output=1)
     #initialize the FNN
     #same layer width
-    net1=dde.maps.jax.FNN([11]+[50]*5+[1], "tanh", "Glorot normal")
-    net2=dde.maps.jax.FNN([11]+[50]*5+[1], "tanh", "Glorot normal")
-    net3=dde.maps.jax.FNN([11]+[50]*5+[1], "tanh", "Glorot normal")    
-    data1 = equation.generate_data()
-    data2 = equation.generate_data()
-    data3 = equation.generate_data()
-    model1 = dde.Model(data1,net1)
+    net2=dde.maps.jax.FNN([61]+[50]*5+[1], "tanh", "Glorot normal") 
+    data2 = equation2.generate_data()
     model2 = dde.Model(data2,net2)
+    is_train = True
+    #initialize the normal sphere test
+    solver1_2 = model2 #PINN network
+    solver2_2=MLP_full_history(equation=equation2) #Multilevel Picard object
+    solver3_2=ScaSML_full_history(equation=equation2,PINN=solver1_2) #ScaSML object
+
+
+    '''Equation 3: LQG, 160d. Denoted as: LQG, 160d'''
+    #initialize the equation
+    equation3=LQG(n_input=161,n_output=1)
+    #initialize the FNN
+    #same layer width
+    net3=dde.maps.jax.FNN([161]+[50]*5+[1], "tanh", "Glorot normal")    
+    data3 = equation3.generate_data()
     model3 = dde.Model(data3,net3)
     is_train = True
     #initialize the normal sphere test
-    solver1_1= model1 #PINN network
-    solver1_2 = model2 #PINN network
-    solver1_3 = model3 # PINN network
-    solver2=MLP_full_history(equation=equation) #Multilevel Picard object
-    solver3_1=ScaSML_full_history(equation=equation,PINN=solver1_1) #ScaSML object
-    solver3_2=ScaSML_full_history(equation=equation,PINN=solver1_2) #ScaSML object
-    solver3_3=ScaSML_full_history(equation=equation,PINN=solver1_3) #ScaSML object
+    solver1_3= model3 #PINN network
+    solver2_3=MLP_full_history(equation=equation3) #Multilevel Picard object
+    solver3_3=ScaSML_full_history(equation=equation3,PINN=solver1_3) #ScaSML object
 
 
-    '''Equation 3: LQG, 100d. Denoted as: LQG, 100d'''
+    '''Equation 4: Oscillating_Solution, 160d. Denoted as: DR, 160d'''
     #initialize the equation
-    equation=LQG(n_input=101,n_output=1)
+    equation4=Oscillating_Solution(n_input=161,n_output=1)
     #initialize the FNN
     #same layer width
-    net1=dde.maps.jax.FNN([101]+[50]*5+[1], "tanh", "Glorot normal")
-    net2=dde.maps.jax.FNN([101]+[50]*5+[1], "tanh", "Glorot normal")
-    net3=dde.maps.jax.FNN([101]+[50]*5+[1], "tanh", "Glorot normal")    
-    data1 = equation.generate_data()
-    data2 = equation.generate_data()
-    data3 = equation.generate_data()
-    model1 = dde.Model(data1,net1)
-    model2 = dde.Model(data2,net2)
-    model3 = dde.Model(data3,net3)
+    net4=dde.maps.jax.FNN([161]+[50]*5+[1], "tanh", "Glorot normal") 
+    data4 = equation4.generate_data()
+    model4 = dde.Model(data4,net4)
     is_train = True
     #initialize the normal sphere test
-    solver1_1= model1 #PINN network
-    solver1_2 = model2 #PINN network
-    solver1_3 = model3 # PINN network
-    solver2=MLP_full_history(equation=equation) #Multilevel Picard object
-    solver3_1=ScaSML_full_history(equation=equation,PINN=solver1_1) #ScaSML object
-    solver3_2=ScaSML_full_history(equation=equation,PINN=solver1_2) #ScaSML object
-    solver3_3=ScaSML_full_history(equation=equation,PINN=solver1_3) #ScaSML object
-
-
-    '''Equation 4: Oscillating_Solution, 100d. Denoted as: DR, 100d'''
-    #initialize the equation
-    equation=Oscillating_Solution(n_input=101,n_output=1)
-    #initialize the FNN
-    #same layer width
-    net1=dde.maps.jax.FNN([101]+[50]*5+[1], "tanh", "Glorot normal")
-    net2=dde.maps.jax.FNN([101]+[50]*5+[1], "tanh", "Glorot normal")
-    net3=dde.maps.jax.FNN([101]+[50]*5+[1], "tanh", "Glorot normal")    
-    data1 = equation.generate_data()
-    data2 = equation.generate_data()
-    data3 = equation.generate_data()
-    model1 = dde.Model(data1,net1)
-    model2 = dde.Model(data2,net2)
-    model3 = dde.Model(data3,net3)
-    is_train = True
-    #initialize the normal sphere test
-    solver1_1= model1 #PINN network
-    solver1_2 = model2 #PINN network
-    solver1_3 = model3 # PINN network
-    solver2=MLP_full_history(equation=equation) #Multilevel Picard object
-    solver3_1=ScaSML_full_history(equation=equation,PINN=solver1_1) #ScaSML object
-    solver3_2=ScaSML_full_history(equation=equation,PINN=solver1_2) #ScaSML object
-    solver3_3=ScaSML_full_history(equation=equation,PINN=solver1_3) #ScaSML object
+    solver1_4= model4 #PINN network
+    solver2_4=MLP_full_history(equation=equation4) #Multilevel Picard object
+    solver3_4=ScaSML_full_history(equation=equation4,PINN=solver1_4) #ScaSML object
 
     # Make the plot
 
@@ -241,61 +213,77 @@ if __name__ == "__main__":
     # Collect results for all equations
     all_equations_results = []
     
-    # Equation 1: VB-PINN, 20d
-    equation = Grad_Dependent_Nonlinear(n_input=21, n_output=1)
-    data_domain_test, data_boundary_test = equation.generate_test_data(1000, 200)
+    # Equation 1: VB-PINN, 80d
+    if is_train:
+        opt = Adam(equation1.n_input, 1, solver1_1, equation1)
+        trained_model1= opt.train(f"{results_path}/model_weights_Adam")
+        solver1_1 = trained_model1
+        solver3_1.PINN = trained_model1     
+    data_domain_test, data_boundary_test = equation1.generate_test_data(1000, 200)
     xt_test = np.concatenate((data_domain_test, data_boundary_test), axis=0)
-    exact_sol = equation.exact_solution(xt_test)
+    exact_sol = equation1.exact_solution(xt_test)
     sol1 = solver1_1.predict(xt_test)
-    sol2 = solver2.u_solve(2, 2, xt_test)  
+    sol2 = solver2_1.u_solve(2, 2, xt_test)  
     sol3 = solver3_1.u_solve(2, 2, xt_test)  
     valid_mask = ~(np.isnan(sol1) | np.isnan(sol2) | np.isnan(sol3) | np.isnan(exact_sol)).flatten()
     errors1 = np.abs(sol1.flatten()[valid_mask] - exact_sol.flatten()[valid_mask])
     errors2 = np.abs(sol2.flatten()[valid_mask] - exact_sol.flatten()[valid_mask])
     errors3 = np.abs(sol3.flatten()[valid_mask] - exact_sol.flatten()[valid_mask])
-    all_equations_results.append({"name": "VB-PINN, 20d", "errors1": errors1, "errors2": errors2, "errors3": errors3})
+    all_equations_results.append({"name": "VB-PINN, 80d", "errors1": errors1, "errors2": errors2, "errors3": errors3})
     
-    # Equation 2: LCD, 10d
-    equation = Linear_Convection_Diffusion(n_input=11, n_output=1)
-    data_domain_test, data_boundary_test = equation.generate_test_data(1000, 200)
+    # Equation 2: LCD, 60d
+    if is_train:
+        opt = Adam(equation2.n_input, 1, solver1_2, equation2)
+        trained_model2= opt.train(f"{results_path}/model_weights_Adam")
+        solver1_2 = trained_model2
+        solver3_2.PINN = trained_model2  
+    data_domain_test, data_boundary_test = equation2.generate_test_data(1000, 200)
     xt_test = np.concatenate((data_domain_test, data_boundary_test), axis=0)
-    exact_sol = equation.exact_solution(xt_test)
+    exact_sol = equation2.exact_solution(xt_test)
     sol1 = solver1_2.predict(xt_test)
-    sol2 = solver2.u_solve(2, 2, xt_test)
+    sol2 = solver2_2.u_solve(2, 2, xt_test)
     sol3 = solver3_2.u_solve(2, 2, xt_test)
     valid_mask = ~(np.isnan(sol1) | np.isnan(sol2) | np.isnan(sol3) | np.isnan(exact_sol)).flatten()
     errors1 = np.abs(sol1.flatten()[valid_mask] - exact_sol.flatten()[valid_mask])
     errors2 = np.abs(sol2.flatten()[valid_mask] - exact_sol.flatten()[valid_mask])
     errors3 = np.abs(sol3.flatten()[valid_mask] - exact_sol.flatten()[valid_mask])
-    all_equations_results.append({"name": "LCD, 10d", "errors1": errors1, "errors2": errors2, "errors3": errors3})
+    all_equations_results.append({"name": "LCD, 60d", "errors1": errors1, "errors2": errors2, "errors3": errors3})
     
-    # Equation 3: LQG, 100d
-    equation = LQG(n_input=101, n_output=1)
-    data_domain_test, data_boundary_test = equation.generate_test_data(1000, 200)
+    # Equation 3: LQG, 160d
+    if is_train:
+        opt = Adam(equation1.n_input, 1, solver1_3, equation3)
+        trained_model3= opt.train(f"{results_path}/model_weights_Adam")
+        solver1_3 = trained_model3
+        solver3_3.PINN = trained_model3  
+    data_domain_test, data_boundary_test = equation3.generate_test_data(1000, 200)
     xt_test = np.concatenate((data_domain_test, data_boundary_test), axis=0)
-    exact_sol = equation.exact_solution(xt_test)
+    exact_sol = equation3.exact_solution(xt_test)
     sol1 = solver1_3.predict(xt_test)
-    sol2 = solver2.u_solve(2, 2, xt_test)
+    sol2 = solver2_3.u_solve(2, 2, xt_test)
     sol3 = solver3_3.u_solve(2, 2, xt_test)
     valid_mask = ~(np.isnan(sol1) | np.isnan(sol2) | np.isnan(sol3) | np.isnan(exact_sol)).flatten()
     errors1 = np.abs(sol1.flatten()[valid_mask] - exact_sol.flatten()[valid_mask])
     errors2 = np.abs(sol2.flatten()[valid_mask] - exact_sol.flatten()[valid_mask])
     errors3 = np.abs(sol3.flatten()[valid_mask] - exact_sol.flatten()[valid_mask])
-    all_equations_results.append({"name": "LQG, 100d", "errors1": errors1, "errors2": errors2, "errors3": errors3})
+    all_equations_results.append({"name": "LQG, 160d", "errors1": errors1, "errors2": errors2, "errors3": errors3})
     
-    # Equation 4: DR, 100d
-    equation = Oscillating_Solution(n_input=101, n_output=1)
-    data_domain_test, data_boundary_test = equation.generate_test_data(1000, 200)
+    # Equation 4: DR, 160d
+    if is_train:
+        opt = Adam(equation1.n_input, 1, solver1_4, equation4)
+        trained_model4= opt.train(f"{results_path}/model_weights_Adam")
+        solver1_4 = trained_model4
+        solver3_4.PINN = trained_model4  
+    data_domain_test, data_boundary_test = equation4.generate_test_data(1000, 200)
     xt_test = np.concatenate((data_domain_test, data_boundary_test), axis=0)
-    exact_sol = equation.exact_solution(xt_test)
-    sol1 = solver1_3.predict(xt_test)
-    sol2 = solver2.u_solve(2, 2, xt_test)
-    sol3 = solver3_3.u_solve(2, 2, xt_test)
+    exact_sol = equation4.exact_solution(xt_test)
+    sol1 = solver1_4.predict(xt_test)
+    sol2 = solver2_4.u_solve(2, 2, xt_test)
+    sol3 = solver3_4.u_solve(2, 2, xt_test)
     valid_mask = ~(np.isnan(sol1) | np.isnan(sol2) | np.isnan(sol3) | np.isnan(exact_sol)).flatten()
     errors1 = np.abs(sol1.flatten()[valid_mask] - exact_sol.flatten()[valid_mask])
     errors2 = np.abs(sol2.flatten()[valid_mask] - exact_sol.flatten()[valid_mask])
     errors3 = np.abs(sol3.flatten()[valid_mask] - exact_sol.flatten()[valid_mask])
-    all_equations_results.append({"name": "DR, 100d", "errors1": errors1, "errors2": errors2, "errors3": errors3})
+    all_equations_results.append({"name": "DR, 160d", "errors1": errors1, "errors2": errors2, "errors3": errors3})
     
     # Plot combined violin plot
     plot_combined_violin(all_equations_results, results_path)
