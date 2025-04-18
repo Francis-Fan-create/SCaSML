@@ -65,12 +65,12 @@ for sys_idx, system in enumerate(systems):
 plt.style.use('seaborn-v0_8-whitegrid')
 plt.rcParams.update({
     'font.family': 'DejaVu Sans',
-    'font.size': 8,           # Base font size
-    'axes.labelsize': 8,      # Axis labels (like metric names on radar)
-    'axes.titlesize': 9,      # Subplot titles
-    'xtick.labelsize': 7,     # X-tick labels (metric names here)
-    'ytick.labelsize': 6,     # Y-tick labels (radial axis)
-    'legend.fontsize': 7,     # Legend font size
+    'font.size': 15,           # Base font size
+    'axes.labelsize': 16,      # Axis labels (like metric names on radar)
+    'axes.titlesize': 18,      # Subplot titles
+    'xtick.labelsize': 14,     # X-tick labels (metric names here)
+    'ytick.labelsize': 12,     # Y-tick labels (radial axis)
+    'legend.fontsize': 14,     # Legend font size
     'axes.linewidth': 0.7,    # Thinner axis lines
     'grid.linewidth': 0.4,    # Thinner grid lines
     'lines.linewidth': 1.2,   # Slightly thinner plot lines
