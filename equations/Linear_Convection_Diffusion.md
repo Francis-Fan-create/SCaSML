@@ -26,6 +26,6 @@ which is our target in this section.
 
 Specifically, we consider the problem for
 $$
-d=10, 20, 30, 40, \mu=-\frac1d,\sigma=\sqrt{2}, D=[0,0.5]^{10,20,30,40}, s=0, T=0.5
+d=10, 20, 30, 40, \mu=-\frac1d,\sigma=\sqrt{2}, D=[0,0.5]^{10,20,30,60}, s=0, T=0.5
 $$
 
