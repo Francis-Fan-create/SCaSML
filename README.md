@@ -20,36 +20,31 @@ cd scasml
 ```bash
 pip install -r requirements.txt
 ```
+
+## Basic Usage
+Find `experiment_run.py` under `results/(example equation)/(certain dimension)/` or `results_full_history/(your equation)/(certain dimension)/`
+
 ## Custom Usage
 
 To set up a new SCaSML solver for specific equations, follow these steps:
 
-1. Configure your equation in `equations/equations.py` using the `Grad_Dependent_Nonlinear` class as a guide.
-
-2. In the `optimizers/` directory, create a new `.py` file to customize your training process, following the `Adam.py` template.
-
-3. To use test methods other than `tests/SimpleUniform.py`, create a new one in the `tests/` directory using the `SimpleUniform.py` format.
-
-4. Copy `experiment_run.py` (Adam training) from `results/Grad_Dependent_Nonlinear/(certain dimension)/` to `results/(your equation)/(certain dimension)/`, replacing all "Grad_Dependent_Nonlinear" with your equation's name.
-
-5. Review beginning lines to enable or disable wandb online logging.
-
-6. Run the experiment:
-
-```bash
-python results/(your equation)/(certain dimension)/experiment_run.py
-```
-
-9. View your results in the `results/(your equation)/(certain dimension)/` folder and on wandb
-
-10. Replace `results/` by `results_full_history/` to replace the quadrature MLP solver by the full_history MLP solver.
-    
-11. If you still have problems, please submit it to **Issues**.
+1.  **Configure Equation:** Define your equation in `equations/equations.py`. Use the `Grad_Dependent_Nonlinear` class as a template.
+2.  **Customize Training:** In the `optimizers/` directory, create a new Python file for your custom training process. Follow the structure of `Adam.py`.
+3.  **Define Test Method:** If you need a test method different from `tests/SimpleUniform.py`, create a new one in the `tests/` directory, using `SimpleUniform.py` as a guide.
+4.  **Set Up Experiment Script:** Copy `experiment_run.py` from `results/Grad_Dependent_Nonlinear/(certain dimension)/` to `results/(your equation)/(certain dimension)/`. Replace all occurrences of "Grad_Dependent_Nonlinear" with the name of your equation, and add your customized test in it.
+5.  **Configure Logging:** Review the beginning lines of your new `experiment_run.py` to enable or disable Weights & Biases (wandb) online logging.
+6.  **Run Experiment:** Execute the script from your terminal:
+    ```bash
+    python results/(your equation)/(certain dimension)/experiment_run.py
+    ```
+7.  **View Results:** Check the output in the `results/(your equation)/(certain dimension)/` folder and on the wandb dashboard (if enabled).
+8.  **Use Full History Solver (Optional):** To use the full history MLP solver instead of the quadrature MLP solver, replace `results/` with `results_full_history/` in the paths mentioned above (steps 4, 6, 7).
+9.  **Troubleshooting:** If you encounter issues, please submit them to the project's **Issues** page on GitHub.
 
 ## Project Structure
 
 - `equations/`: Contains equation definitions
-- `utils/`: Some decorators to log callings of functions(No longer supported)
+- `utils/`: Includes logging and plotting tools
 - `optimizers/`: Custom optimization algorithms
 - `tests/`: Test methods for evaluating the solver
 - `results/`: Experiment results for quadrature MLP
