@@ -63,7 +63,6 @@ Contributions to SCaSML are welcome! Please follow these steps:
 6. Create a new Pull Request
 
 ## Citation
-## Citation
 
 If you find SCaSML useful in your research, please consider citing the following paper:
 
