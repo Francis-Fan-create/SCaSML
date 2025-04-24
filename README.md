@@ -63,8 +63,11 @@ Contributions to SCaSML are welcome! Please follow these steps:
 6. Create a new Pull Request
 
 ## Citation
+## Citation
 
+If you find SCaSML useful in your research, please consider citing the following paper:
 
+Zexi Fan, Yan Sun, Shihao Yang, Yiping Lu. (2025). *Physics-Informed Inference Time Scaling via Simulation-Calibrated Scientific Machine Learning*. arXiv preprint arXiv:2504.16172. [https://arxiv.org/abs/2504.16172](https://arxiv.org/abs/2504.16172)
 
 ## Contact
 
