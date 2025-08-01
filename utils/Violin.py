@@ -112,7 +112,7 @@ def plot_combined_violin(equations_results, save_path):
             ax.text(pos, y_offset, method, 
                     transform=ax.get_xaxis_transform(), # Use x data coords, y axis coords
                     ha='center', va='top', 
-                    fontsize=4) # Removed rotation, adjusted font size if needed
+                    fontsize=6) # Removed rotation, adjusted font size if needed
     
     # ... [existing code for vertical separators, grid, spines] ...
     
@@ -123,7 +123,7 @@ def plot_combined_violin(equations_results, save_path):
     plt.tight_layout(pad=1.5) # Adjust overall padding
     plt.subplots_adjust(bottom=0.2) # Ensure enough space for labels below axis
     plt.savefig(f"{save_path}/Combined_Error_Distribution.pdf", 
-                bbox_inches='tight', pad_inches=0.1) # Adjust savefig padding
+                bbox_inches='tight', pad_inches=0.1,dpi=1000) # Adjust savefig padding
     plt.close()
 
 

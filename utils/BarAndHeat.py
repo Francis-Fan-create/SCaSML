@@ -126,7 +126,7 @@ second_legend = ax_comb.legend(handles2, labels2, loc="upper center",
                               bbox_to_anchor=(0.5, -0.2), ncol=3, frameon=True)
 plt.tight_layout()
 plt.subplots_adjust(bottom=0.3, right=0.88)
-fig1.savefig(os.path.join(output_dir, "l2_error_time_figure.png"), dpi=300)
+fig1.savefig(os.path.join(output_dir, "l2_error_time_figure.pdf"), dpi=1000)
 plt.close(fig1)
 
 # Figure 2: Error Metrics Heatmap
@@ -151,7 +151,7 @@ ax_heatmap.set_title("Error Metrics Across Methods and Systems")
 ax_heatmap.set_ylabel("Method-System")
 ax_heatmap.set_xlabel("Metric")
 plt.tight_layout()
-fig2.savefig(os.path.join(output_dir, "error_metrics_heatmap.png"), dpi=300)
+fig2.savefig(os.path.join(output_dir, "error_metrics_heatmap.pdf"), dpi=1000)
 plt.close(fig2)
 
 print("Previous figures saved.")

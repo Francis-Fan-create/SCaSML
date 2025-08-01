@@ -372,7 +372,7 @@ class SimpleUniform(object):
                         x1_center = (x1_bins[j] + x1_bins[j+1])/2
                         x2_center = (x2_bins[i] + x2_bins[i+1])/2
                         ax.text(x1_center, x2_center, f'{data[i, j]:.2e}', 
-                                ha='center', va='center', color='black', fontsize=6)
+                                ha='center', va='center', color='black', fontsize=12)
             
             # Formatting
             cb = fig.colorbar(im, ax=ax, label='L1 Error (log scale)')
