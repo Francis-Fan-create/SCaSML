@@ -400,13 +400,34 @@ class SimpleUniform(object):
         print("Real Solution->", real_sol_L2)
         
 
-        print(f"PINN L1, rho={rhomax}->","min:", np.min(errors1), "max:", np.max(errors1), "mean:", np.mean(errors1))
+        # Calculate statistics with confidence intervals (95% CI using 1.96 * std / sqrt(n))
+        from scipy import stats
+        
+        # PINN statistics
+        pinn_mean = np.mean(errors1)
+        pinn_std = np.std(errors1)
+        pinn_ci = 1.96 * pinn_std / np.sqrt(len(errors1))
+        
+        # MLP statistics
+        mlp_mean = np.mean(errors2)
+        mlp_std = np.std(errors2)
+        mlp_ci = 1.96 * mlp_std / np.sqrt(len(errors2))
+        
+        # ScaSML statistics
+        scasml_mean = np.mean(errors3)
+        scasml_std = np.std(errors3)
+        scasml_ci = 1.96 * scasml_std / np.sqrt(len(errors3))
+        
+        print(f"PINN L1, rho={rhomax}->","min:", np.min(errors1), "max:", np.max(errors1), 
+              "mean:", pinn_mean, "std:", pinn_std, "95% CI:", f"±{pinn_ci:.6e}")
         
         
-        print(f"MLP L1, rho={rhomax}->","min:", np.min(errors2), "max:", np.max(errors2), "mean:", np.mean(errors2))
+        print(f"MLP L1, rho={rhomax}->","min:", np.min(errors2), "max:", np.max(errors2), 
+              "mean:", mlp_mean, "std:", mlp_std, "95% CI:", f"±{mlp_ci:.6e}")
         
         
-        print(f"ScaSML L1, rho={rhomax}->","min:", np.min(errors3), "max:", np.max(errors3), "mean:", np.mean(errors3))
+        print(f"ScaSML L1, rho={rhomax}->","min:", np.min(errors3), "max:", np.max(errors3), 
+              "mean:", scasml_mean, "std:", scasml_std, "95% CI:", f"±{scasml_ci:.6e}")
         
         
         # Calculate the sums of positive and negative differences
