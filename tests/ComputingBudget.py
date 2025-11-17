@@ -101,34 +101,14 @@ class ComputingBudget(object):
         # Base iterations for budget=1.0
         base_iterations = 2000
         
-        # Open log file
-        log_file = open(f"{save_path}/ComputingBudget.log", "w")
-        sys.stdout = log_file
-        sys.stderr = log_file
-        
-        print("=" * 80)
-        print("COMPUTING BUDGET TEST")
-        print("=" * 80)
-        print(f"Equation: {eq_name}")
-        print(f"Dimension: {d+1}")
-        print(f"Test points: {len(xt_test)}")
-        print(f"Budget levels: {budget_levels}")
-        print("=" * 80)
-        print()
-        
         if is_train:
             for budget in budget_levels:
-                print(f"\n{'='*80}")
-                print(f"Budget Level: {budget}x")
-                print(f"{'='*80}")
-                
                 # Calculate iterations for this budget
                 train_iters = int(base_iterations * budget)
                 
                 # ==========================================
                 # PINN: Train and measure time
                 # ==========================================
-                print(f"\n--- PINN (budget={budget}x) ---")
                 solver1_copy = copy.deepcopy(self.solver1)
                 opt1 = Adam(eq.n_input, 1, solver1_copy, eq)
                 
@@ -145,7 +125,6 @@ class ComputingBudget(object):
                 # ==========================================
                 # MLP: Adjust training to match budget
                 # ==========================================
-                print(f"\n--- MLP (budget={budget}x) ---")
                 solver2_copy = copy.deepcopy(self.solver2)
                 
                 # MLP inference is slower, so we adjust training iterations
@@ -165,7 +144,6 @@ class ComputingBudget(object):
                 # ==========================================
                 # ScaSML: Optimize training/inference split
                 # ==========================================
-                print(f"\n--- ScaSML (budget={budget}x) ---")
                 solver3_copy = copy.deepcopy(self.solver3)
                 
                 # ScaSML uses less training for PINN backbone
@@ -194,7 +172,6 @@ class ComputingBudget(object):
                               np.isnan(sol_scasml) | np.isnan(exact_sol)).flatten()
                 
                 if np.sum(valid_mask) == 0:
-                    print("Warning: All predictions are NaN. Skipping this budget level.")
                     continue
                 
                 errors_pinn = np.abs(sol_pinn.flatten()[valid_mask] - exact_sol.flatten()[valid_mask])
@@ -231,36 +208,9 @@ class ComputingBudget(object):
                 t_mlp_scasml, p_mlp_scasml = stats.ttest_rel(errors_mlp, errors_scasml)
                 t_pinn_mlp, p_pinn_mlp = stats.ttest_rel(errors_pinn, errors_mlp)
                 
-                # Print results
-                print(f"\nResults for Budget={budget}x:")
-                print(f"{'-'*60}")
-                print(f"{'Method':<15} {'Time (s)':<15} {'Rel L2 Error':<20}")
-                print(f"{'-'*60}")
-                print(f"{'PINN':<15} {total_time_pinn:<15.3f} {rel_error_pinn:<20.6e}")
-                print(f"  Train: {train_time_pinn:.3f}s, Inference: {inference_time_pinn:.3f}s")
-                print(f"  Mean L1: {pinn_mean:.6e}, Std: {pinn_std:.6e}")
-                print()
-                print(f"{'MLP':<15} {total_time_mlp:<15.3f} {rel_error_mlp:<20.6e}")
-                print(f"  Train: {train_time_mlp:.3f}s, Inference: {inference_time_mlp:.3f}s")
-                print(f"  Mean L1: {mlp_mean:.6e}, Std: {mlp_std:.6e}")
-                print()
-                print(f"{'SCaSML':<15} {total_time_scasml:<15.3f} {rel_error_scasml:<20.6e}")
-                print(f"  Train: {train_time_scasml:.3f}s, Inference: {inference_time_scasml:.3f}s")
-                print(f"  Mean L1: {scasml_mean:.6e}, Std: {scasml_std:.6e}")
-                print(f"{'-'*60}")
-                
-                print(f"\nStatistical Significance (Paired t-test):")
-                print(f"  PINN vs SCaSML: p-value = {p_pinn_scasml:.6e}")
-                print(f"  MLP vs SCaSML: p-value = {p_mlp_scasml:.6e}")
-                print(f"  PINN vs MLP: p-value = {p_pinn_mlp:.6e}")
-                
                 # Improvement percentages
                 improvement_pinn = (rel_error_pinn - rel_error_scasml) / rel_error_pinn * 100
                 improvement_mlp = (rel_error_mlp - rel_error_scasml) / rel_error_mlp * 100
-                
-                print(f"\nImprovement:")
-                print(f"  SCaSML vs PINN: {improvement_pinn:+.2f}%")
-                print(f"  SCaSML vs MLP: {improvement_mlp:+.2f}%")
                 
                 # Log to wandb
                 wandb.log({
@@ -279,10 +229,6 @@ class ComputingBudget(object):
             # ==========================================
             # Visualization
             # ==========================================
-            print(f"\n{'='*80}")
-            print("GENERATING VISUALIZATIONS")
-            print(f"{'='*80}")
-            
             # Color scheme
             COLOR_SCHEME = {
                 'PINN': '#000000',     # Black
@@ -341,37 +287,7 @@ class ComputingBudget(object):
             plt.close()
             
             # ==========================================
-            # Figure 2: Error vs Actual Time
-            # ==========================================
-            fig, ax = plt.subplots(figsize=(3.5, 3))
-            
-            ax.plot(pinn_times, pinn_errors, color=COLOR_SCHEME['PINN'], 
-                   marker='o', linestyle='-', label='PINN',
-                   markerfacecolor='none', markeredgewidth=0.8)
-            ax.plot(mlp_times, mlp_errors, color=COLOR_SCHEME['MLP'], 
-                   marker='s', linestyle='-', label='MLP',
-                   markerfacecolor='none', markeredgewidth=0.8)
-            ax.plot(scasml_times, scasml_errors, color=COLOR_SCHEME['SCaSML'], 
-                   marker='^', linestyle='-', label='SCaSML',
-                   markerfacecolor='none', markeredgewidth=0.8)
-            
-            ax.set_xlabel('Total Time (seconds)', labelpad=3)
-            ax.set_ylabel('Relative L2 Error', labelpad=3)
-            ax.set_yscale('log')
-            ax.set_xscale('log')
-            ax.legend(frameon=False, loc='upper right')
-            ax.grid(True, which='major', axis='both', linestyle='--', 
-                   linewidth=0.5, alpha=0.4)
-            ax.spines['top'].set_visible(False)
-            ax.spines['right'].set_visible(False)
-            
-            plt.tight_layout()
-            plt.savefig(f'{save_path}/Error_vs_Time.pdf', 
-                       bbox_inches='tight', pad_inches=0.05)
-            plt.close()
-            
-            # ==========================================
-            # Figure 3: Improvement Bar Chart
+            # Figure 2: Improvement Bar Chart
             # ==========================================
             fig, ax = plt.subplots(figsize=(3.5, 3))
             
@@ -408,35 +324,52 @@ class ComputingBudget(object):
             plt.close()
             
             # ==========================================
-            # Summary Statistics
+            # Summary Statistics and Final Log Output
             # ==========================================
-            print(f"\n{'='*80}")
-            print("SUMMARY STATISTICS")
-            print(f"{'='*80}")
-            
             avg_improvement_pinn = np.mean(improvements_vs_pinn)
             avg_improvement_mlp = np.mean(improvements_vs_mlp)
-            
-            print(f"\nAverage improvement across all budgets:")
-            print(f"  SCaSML vs PINN: {avg_improvement_pinn:+.2f}%")
-            print(f"  SCaSML vs MLP: {avg_improvement_mlp:+.2f}%")
-            
-            print(f"\nFinal budget level ({budget_array[-1]}×):")
-            print(f"  PINN error: {pinn_errors[-1]:.6e}")
-            print(f"  MLP error: {mlp_errors[-1]:.6e}")
-            print(f"  SCaSML error: {scasml_errors[-1]:.6e}")
-            print(f"  Improvement vs PINN: {improvements_vs_pinn[-1]:+.2f}%")
-            print(f"  Improvement vs MLP: {improvements_vs_mlp[-1]:+.2f}%")
             
             wandb.log({
                 "avg_improvement_vs_pinn": avg_improvement_pinn,
                 "avg_improvement_vs_mlp": avg_improvement_mlp,
             })
-        
-        # Reset stdout and stderr
-        sys.stdout = self.stdout
-        sys.stderr = self.stderr
-        log_file.close()
+            
+            # Write final results to log file
+            log_file = open(f"{save_path}/ComputingBudget.log", "w")
+            sys.stdout = log_file
+            sys.stderr = log_file
+            
+            print("=" * 80)
+            print("COMPUTING BUDGET TEST - FINAL RESULTS")
+            print("=" * 80)
+            print(f"Equation: {eq_name}")
+            print(f"Dimension: {d+1}")
+            print(f"Budget levels tested: {budget_array.tolist()}")
+            print("=" * 80)
+            print()
+            
+            print(f"{'Budget':<12} {'PINN Error':<15} {'MLP Error':<15} {'SCaSML Error':<15}")
+            print("-" * 60)
+            for i, budget in enumerate(budget_array):
+                print(f"{budget:<12.1f} {pinn_errors[i]:<15.6e} {mlp_errors[i]:<15.6e} {scasml_errors[i]:<15.6e}")
+            print()
+            
+            print("Average Improvement:")
+            print(f"  SCaSML vs PINN: {avg_improvement_pinn:+.2f}%")
+            print(f"  SCaSML vs MLP: {avg_improvement_mlp:+.2f}%")
+            print()
+            
+            print(f"Final Budget Level ({budget_array[-1]:.1f}×):")
+            print(f"  PINN error: {pinn_errors[-1]:.6e}")
+            print(f"  MLP error: {mlp_errors[-1]:.6e}")
+            print(f"  SCaSML error: {scasml_errors[-1]:.6e}")
+            print(f"  Improvement vs PINN: {improvements_vs_pinn[-1]:+.2f}%")
+            print(f"  Improvement vs MLP: {improvements_vs_mlp[-1]:+.2f}%")
+            print("=" * 80)
+            
+            sys.stdout = self.stdout
+            sys.stderr = self.stderr
+            log_file.close()
         
         # Stop profiler
         profiler.disable()
