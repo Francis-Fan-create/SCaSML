@@ -418,6 +418,14 @@ class SimpleUniform(object):
         scasml_std = np.std(errors3)
         scasml_ci = 1.96 * scasml_std / np.sqrt(len(errors3))
         
+        # Perform paired t-tests to compare solvers
+        # PINN vs ScaSML
+        t_stat_pinn_scasml, p_value_pinn_scasml = stats.ttest_rel(errors1, errors3)
+        # MLP vs ScaSML
+        t_stat_mlp_scasml, p_value_mlp_scasml = stats.ttest_rel(errors2, errors3)
+        # PINN vs MLP
+        t_stat_pinn_mlp, p_value_pinn_mlp = stats.ttest_rel(errors1, errors2)
+        
         print(f"PINN L1, rho={rhomax}->","min:", np.min(errors1), "max:", np.max(errors1), 
               "mean:", pinn_mean, "std:", pinn_std, "95% CI:", f"±{pinn_ci:.6e}")
         
@@ -430,6 +438,13 @@ class SimpleUniform(object):
               "mean:", scasml_mean, "std:", scasml_std, "95% CI:", f"±{scasml_ci:.6e}")
         
         
+        # Print p-values for statistical significance tests
+        print(f"\nStatistical Significance Tests (Paired t-test):")
+        print(f"PINN vs ScaSML: t-statistic={t_stat_pinn_scasml:.6f}, p-value={p_value_pinn_scasml:.6e}")
+        print(f"MLP vs ScaSML: t-statistic={t_stat_mlp_scasml:.6f}, p-value={p_value_mlp_scasml:.6e}")
+        print(f"PINN vs MLP: t-statistic={t_stat_pinn_mlp:.6f}, p-value={p_value_pinn_mlp:.6e}")
+        
+        
         # Calculate the sums of positive and negative differences
         positive_sum_13 = np.sum(errors_13[errors_13 > 0])
         negative_sum_13 = np.sum(errors_13[errors_13 < 0])
@@ -440,8 +455,10 @@ class SimpleUniform(object):
         print(f'MLP L2 - ScaSML L2, rho={rhomax}->','positive count:', np.sum(errors_23 > 0), 'negative count:', np.sum(errors_23 < 0), 'positive sum:', positive_sum_23, 'negative sum:', negative_sum_23)
         # Log the results to wandb
         wandb.log({f"mean of PINN L2, rho={rhomax}": np.mean(errors1), f"mean of MLP L2, rho={rhomax}": np.mean(errors2), f"mean of ScaSML L2, rho={rhomax}": np.mean(errors3)})
+        wandb.log({f"std of PINN L2, rho={rhomax}": pinn_std, f"std of MLP L2, rho={rhomax}": mlp_std, f"std of ScaSML L2, rho={rhomax}": scasml_std})
         wandb.log({f"min of PINN L2, rho={rhomax}": np.min(errors1), f"min of MLP L2, rho={rhomax}": np.min(errors2), f"min of ScaSML L2, rho={rhomax}": np.min(errors3)})
         wandb.log({f"max of PINN L2, rho={rhomax}": np.max(errors1), f"max of MLP L2, rho={rhomax}": np.max(errors2), f"max of ScaSML L2, rho={rhomax}": np.max(errors3)})
+        wandb.log({f"p-value PINN vs ScaSML, rho={rhomax}": p_value_pinn_scasml, f"p-value MLP vs ScaSML, rho={rhomax}": p_value_mlp_scasml, f"p-value PINN vs MLP, rho={rhomax}": p_value_pinn_mlp})
         wandb.log({f"positive count of PINN L2 - ScaSML L2, rho={rhomax}": np.sum(errors_13 > 0), f"negative count of PINN L2 - ScaSML L2, rho={rhomax}": np.sum(errors_13 < 0), f"positive sum of PINN L2 - ScaSML L2, rho={rhomax}": positive_sum_13, f"negative sum of PINN L2 - ScaSML L2, rho={rhomax}": negative_sum_13})
         wandb.log({f"positive count of MLP L2 - ScaSML L2, rho={rhomax}": np.sum(errors_23 > 0), f"negative count of MLP L2 - ScaSML L2, rho={rhomax}": np.sum(errors_23 < 0), f"positive sum of MLP L2 - ScaSML L2, rho={rhomax}": positive_sum_23, f"negative sum of MLP L2 - ScaSML L2, rho={rhomax}": negative_sum_23})
         # reset stdout and stderr
