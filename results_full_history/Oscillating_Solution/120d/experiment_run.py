@@ -12,6 +12,7 @@ from optimizers.Adam import Adam
 from tests.SimpleUniform import SimpleUniform
 from tests.ConvergenceRate import ConvergenceRate
 from tests.SimpleScaling import SimpleScaling
+from tests.ComputingBudget import ComputingBudget
 from solvers.MLP_full_history import MLP_full_history
 from solvers.ScaSML_full_history import ScaSML_full_history
 import numpy as np
@@ -86,6 +87,9 @@ test2.test(r"results_full_history/Oscillating_Solution/120d")
 # #run the test for SimpleScaling
 # test4=SimpleScaling(equation,solver1_3,solver2,solver3_3)
 # test4.test(r"results_full_history/Oscillating_Solution/120d")
+#run the test for ComputingBudget
+test4=ComputingBudget(equation,solver1_1,solver2,solver3_1,is_train)
+test4.test(r"results_full_history/Oscillating_Solution/120d")
 
 
 #finish wandb
