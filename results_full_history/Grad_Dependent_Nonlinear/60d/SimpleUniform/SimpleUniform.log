@@ -10,3 +10,10 @@ MLP L1, rho=2-> min: 0.0 max: 0.3926 mean: 0.0482 std: 0.05637 95% CI: ±3.18909
 ScaSML L1, rho=2-> min: 7.748604e-07 max: 0.071994334 mean: 0.012236017 std: 0.013482279 95% CI: ±7.628318e-04
 PINN L2 - ScaSML L2, rho=2-> positive count: 1087 negative count: 113 positive sum: 8.889003 negative sum: -0.31563246
 MLP L2 - ScaSML L2, rho=2-> positive count: 894 negative count: 306 positive sum: 47.066784 negative sum: -3.941869
+
+Statistical Significance Tests (Paired t-test):
+PINN vs ScaSML: t-statistic=34.414872, p-value=4.347884e-181
+MLP vs ScaSML: t-statistic=27.002207, p-value=7.715397e-126
+PINN vs MLP: t-statistic=-24.777783, p-value=8.877964e-110
+PINN L2 - ScaSML L2, rho=2-> positive count: 991 negative count: 209 positive sum: 8.268639 negative sum: -1.1162896
+MLP L2 - ScaSML L2, rho=2-> positive count: 1024 negative count: 176 positive sum: 103.6127 negative sum: -1.8864607
