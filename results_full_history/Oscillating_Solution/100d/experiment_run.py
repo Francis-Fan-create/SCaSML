@@ -82,14 +82,14 @@ solver3_3=ScaSML_full_history(equation=equation,PINN=solver1_3) #ScaSML object
 
 
 #run the test for SimpleUniform
-test2=SimpleUniform(equation,solver1_1,solver2,solver3_1,is_train)
-test2.test(r"results_full_history/Oscillating_Solution/100d")
+test1=SimpleUniform(equation,solver1_1,solver2,solver3_1,is_train)
+test1.test(r"results_full_history/Oscillating_Solution/100d")
 # #run the test for SimpleScaling
-# test4=SimpleScaling(equation,solver1_3,solver2,solver3_3)
-# test4.test(r"results_full_history/Oscillating_Solution/100d")
+# test2=SimpleScaling(equation,solver1_3,solver2,solver3_3)
+# test2.test(r"results_full_history/Oscillating_Solution/100d")
 #run the test for ComputingBudget
-test4=ComputingBudget(equation,solver1_1,solver2,solver3_1,is_train)
-test4.test(r"results_full_history/Oscillating_Solution/100d")
+test3=ComputingBudget(equation,solver1_1,solver2,solver3_1,is_train)
+test3.test(r"results_full_history/Oscillating_Solution/100d")
 
 
 #finish wandb
