@@ -87,9 +87,9 @@ test2.test(r"results_full_history/LQG/120d")
 # #run the test for SimpleScaling
 # test4=SimpleScaling(equation,solver1_3,solver2,solver3_3)
 # test4.test(r"results_full_history/LQG/120d")
-#run the test for ComputingBudget
-test4=ComputingBudget(equation,solver1_1,solver2,solver3_1,is_train)
-test4.test(r"results_full_history/LQG/120d")
+# #run the test for ComputingBudget
+# test4=ComputingBudget(equation,solver1_1,solver2,solver3_1,is_train)
+# test4.test(r"results_full_history/LQG/120d")
 
 #finish wandb
 wandb.finish()
