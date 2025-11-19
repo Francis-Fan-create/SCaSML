@@ -15,6 +15,7 @@ from tests.InferenceScaling import InferenceScaling
 from tests.ComputingBudget import ComputingBudget
 from solvers.MLP import MLP
 from solvers.ScaSML import ScaSML
+from tests.InferenceTime import InferenceTime
 import numpy as np
 import torch
 import wandb
@@ -75,17 +76,21 @@ solver3_1=ScaSML(equation=equation,PINN=solver1_1) #ScaSML object
 solver3_2=ScaSML(equation=equation,PINN=solver1_2) #ScaSML object
 
 
-#run the test for SimpleUniform
-test2=SimpleUniform(equation,solver1_1,solver2,solver3_1,is_train)
-test2.test(r"results/Grad_Dependent_Nonlinear/80d")
+# #run the test for SimpleUniform
+# test2=SimpleUniform(equation,solver1_1,solver2,solver3_1,is_train)
+# test2.test(r"results/Grad_Dependent_Nonlinear/80d")
 # #run the test for ConvergenceRate
 # test3=ConvergenceRate(equation,solver1_2,solver2,solver3_2, is_train)
 # test3.test(r"results/Grad_Dependent_Nonlinear/80d")
 
 
-#run the test for ComputingBudget
-test4=ComputingBudget(equation,solver1_1,solver2,solver3_1,is_train)
-test4.test(r"results/Grad_Dependent_Nonlinear/80d")
+# #run the test for ComputingBudget
+# test4=ComputingBudget(equation,solver1_1,solver2,solver3_1,is_train)
+# test4.test(r"results/Grad_Dependent_Nonlinear/80d")
+
+# run the test for InferenceTime
+test5=InferenceTime(equation,solver1_1,solver1_2,solver2,solver3_2,is_train)
+test5.test(r"results/Grad_Dependent_Nonlinear/80d")
 
 #finish wandb
 wandb.finish()

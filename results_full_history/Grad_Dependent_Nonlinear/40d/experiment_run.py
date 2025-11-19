@@ -14,6 +14,7 @@ from tests.ConvergenceRate import ConvergenceRate
 from tests.InferenceScaling import InferenceScaling
 from tests.SimpleScaling import SimpleScaling
 from tests.ComputingBudget import ComputingBudget
+from tests.InferenceTime import InferenceTime
 from solvers.MLP_full_history import MLP_full_history
 from solvers.ScaSML_full_history import ScaSML_full_history
 import numpy as np
@@ -81,21 +82,25 @@ solver3_1=ScaSML_full_history(equation=equation,PINN=solver1_1) #ScaSML object
 solver3_2=ScaSML_full_history(equation=equation,PINN=solver1_2) #ScaSML object
 solver3_3=ScaSML_full_history(equation=equation,PINN=solver1_3) #ScaSML object
 
-#run the test for SimpleUniform
-test1=SimpleUniform(equation,solver1_1,solver2,solver3_1,is_train)
-test1.test(r"results_full_history/Grad_Dependent_Nonlinear/40d")
+# #run the test for SimpleUniform
+# test1=SimpleUniform(equation,solver1_1,solver2,solver3_1,is_train)
+# test1.test(r"results_full_history/Grad_Dependent_Nonlinear/40d")
 # #run the test for ConvergenceRate
 # test2=ConvergenceRate(equation,solver1_2,solver2,solver3_2, is_train)
 # test2.test(r"results_full_history/Grad_Dependent_Nonlinear/40d")
 # #run the test for InferenceScaling
 # test3=InferenceScaling(equation,solver1_3,solver2,solver3_3)
 # test3.test(r"results_full_history/Grad_Dependent_Nonlinear/40d")
-#run the test for ComputingBudget
-test4=ComputingBudget(equation,solver1_1,solver2,solver3_1,is_train)
-test4.test(r"results_full_history/Grad_Dependent_Nonlinear/40d")
+# #run the test for ComputingBudget
+# test4=ComputingBudget(equation,solver1_1,solver2,solver3_1,is_train)
+# test4.test(r"results_full_history/Grad_Dependent_Nonlinear/40d")
+
+# run the test for InferenceTime (ensure unique index)
+test5=InferenceTime(equation,solver1_1,solver1_2,solver2,solver3_2,is_train)
+test5.test(r"results_full_history/Grad_Dependent_Nonlinear/40d")
 # #run the test for SimpleScaling
-# test5=SimpleScaling(equation,solver1_3,solver2,solver3_3)
-# test5.test(r"results_full_history/Grad_Dependent_Nonlinear/40d")
+# test6=SimpleScaling(equation,solver1_3,solver2,solver3_3)
+# test6.test(r"results_full_history/Grad_Dependent_Nonlinear/40d")
 
 #finish wandb
 wandb.finish()
