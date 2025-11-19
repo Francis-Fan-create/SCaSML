@@ -14,7 +14,6 @@ from tests.ConvergenceRate import ConvergenceRate
 from tests.InferenceScaling import InferenceScaling
 from tests.SimpleScaling import SimpleScaling
 from tests.ComputingBudget import ComputingBudget
-from tests.InferenceTime import InferenceTime
 from solvers.MLP_full_history import MLP_full_history
 from solvers.ScaSML_full_history import ScaSML_full_history
 import numpy as np
@@ -98,9 +97,6 @@ test4.test(r"results_full_history/Grad_Dependent_Nonlinear/80d")
 # #run the test for SimpleScaling
 # test5=SimpleScaling(equation,solver1_3,solver2,solver3_3)
 # test5.test(r"results_full_history/Grad_Dependent_Nonlinear/80d")
-# run the test for InferenceTime (ensure unique index)
-test6=InferenceTime(equation,solver1_1,solver1_2,solver2,solver3_2,is_train)
-test6.test(r"results_full_history/Grad_Dependent_Nonlinear/80d")
 
 #finish wandb
 wandb.finish()
