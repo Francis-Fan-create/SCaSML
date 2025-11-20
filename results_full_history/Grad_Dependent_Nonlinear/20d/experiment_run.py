@@ -14,6 +14,7 @@ from tests.ConvergenceRate import ConvergenceRate
 from tests.InferenceScaling import InferenceScaling
 from tests.SimpleScaling import SimpleScaling
 from tests.ComputingBudget import ComputingBudget
+from tests.RepeatedExperiment import RepeatedExperiment
 from solvers.MLP_full_history import MLP_full_history
 from solvers.ScaSML_full_history import ScaSML_full_history
 import numpy as np
@@ -82,9 +83,9 @@ solver3_2=ScaSML_full_history(equation=equation,PINN=solver1_2) #ScaSML object
 solver3_3=ScaSML_full_history(equation=equation,PINN=solver1_3) #ScaSML object
 
 
-#run the test for SimpleUniform
-test1=SimpleUniform(equation,solver1_1,solver2,solver3_1,is_train)
-test1.test(r"results_full_history/Grad_Dependent_Nonlinear/20d")
+# #run the test for SimpleUniform
+# test1=SimpleUniform(equation,solver1_1,solver2,solver3_1,is_train)
+# test1.test(r"results_full_history/Grad_Dependent_Nonlinear/20d")
 # #run the test for ConvergenceRate
 # test2=ConvergenceRate(equation,solver1_2,solver2,solver3_2, is_train)
 # test2.test(r"results_full_history/Grad_Dependent_Nonlinear/20d")
@@ -97,6 +98,9 @@ test1.test(r"results_full_history/Grad_Dependent_Nonlinear/20d")
 # #run the test for SimpleScaling
 # test5=SimpleScaling(equation,solver1_3,solver2,solver3_3)
 # test5.test(r"results_full_history/Grad_Dependent_Nonlinear/20d")
+#run the test for RepeatedExperiment
+test6=RepeatedExperiment(equation,solver1_2,solver2,solver3_2,is_train)
+test6.test(r"results_full_history/Grad_Dependent_Nonlinear/20d", num_repetitions=10)
 
 #finish wandb
 wandb.finish()

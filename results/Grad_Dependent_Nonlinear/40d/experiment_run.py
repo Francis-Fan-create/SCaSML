@@ -13,6 +13,7 @@ from tests.SimpleUniform import SimpleUniform
 from tests.ConvergenceRate import ConvergenceRate
 from tests.InferenceScaling import InferenceScaling
 from tests.ComputingBudget import ComputingBudget
+from tests.RepeatedExperiment import RepeatedExperiment
 from solvers.MLP import MLP
 from solvers.ScaSML import ScaSML
 import numpy as np
@@ -86,6 +87,9 @@ test2.test(r"results/Grad_Dependent_Nonlinear/40d")
 # #run the test for ComputingBudget
 # test4=ComputingBudget(equation,solver1_1,solver2,solver3_1,is_train)
 # test4.test(r"results/Grad_Dependent_Nonlinear/40d")
+#run the test for RepeatedExperiment
+test5=RepeatedExperiment(equation,solver1_2,solver2,solver3_2,is_train)
+test5.test(r"results/Grad_Dependent_Nonlinear/40d", num_repetitions=10)
 
 #finish wandb
 wandb.finish()
