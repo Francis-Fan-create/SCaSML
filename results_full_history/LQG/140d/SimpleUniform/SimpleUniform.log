@@ -1,17 +1,28 @@
-Total time for PINN: 0.39512085914611816 seconds
-Total time for MLP: 8.652888059616089 seconds
-Total time for ScaSML: 27.308526277542114 seconds
-PINN rel L2, rho=2-> 0.09868891
+Total time for PINN: 4.812985420227051 seconds
+Total time for MLP: 14.358181476593018 seconds
+Total time for ScaSML: 59.29409193992615 seconds
+PINN rel L2, rho=2-> 0.09866996
 MLP rel L2, rho=2-> 5.368658
-ScaSML rel L2, rho=2-> 0.068388596
+ScaSML rel L2, rho=2-> 0.06825082
 Real Solution-> 2.283046679554875
-PINN L1, rho=2-> min: 0.0019564629 max: 0.9959966 mean: 0.19253966 std: 0.11702006 95% CI: ±6.637648e-03
+PINN L1, rho=2-> min: 0.0009627342 max: 0.9808857 mean: 0.19299002 std: 0.11619202 95% CI: ±6.590680e-03
 MLP L1, rho=2-> min: 9.899488 max: 12.748483 mean: 12.251008 std: 0.37989768 95% CI: ±2.154867e-02
-ScaSML L1, rho=2-> min: 4.029274e-05 max: 0.8959966 mean: 0.112119995 std: 0.10866021 95% CI: ±6.163459e-03
+ScaSML L1, rho=2-> min: 5.888939e-05 max: 0.8808857 mean: 0.11245831 std: 0.10785609 95% CI: ±6.117846e-03
 
 Statistical Significance Tests (Paired t-test):
-PINN vs ScaSML: t-statistic=53.877513, p-value=7.905050e-322
-MLP vs ScaSML: t-statistic=952.096960, p-value=0.000000e+00
-PINN vs MLP: t-statistic=-968.820221, p-value=0.000000e+00
-PINN L2 - ScaSML L2, rho=2-> positive count: 1088 negative count: 106 positive sum: 103.85546 negative sum: -7.8343816
-MLP L2 - ScaSML L2, rho=2-> positive count: 1194 negative count: 0 positive sum: 14493.833 negative sum: 0.0
+PINN vs ScaSML: t-statistic=54.008390, p-value=9.881313e-323
+MLP vs ScaSML: t-statistic=954.401220, p-value=0.000000e+00
+PINN vs MLP: t-statistic=-971.597735, p-value=0.000000e+00
+
+PINN L2, rho=2-> min: 9.268572e-07 max: 0.96213675 mean: 0.050745737 std: 0.07781698 95% CI: ±4.413959e-03
+MLP L2, rho=2-> min: 97.99987 max: 162.5238 mean: 150.23154 std: 9.10551 95% CI: ±5.164856e-01
+ScaSML L2, rho=2-> min: 3.4679601e-09 max: 0.7759597 mean: 0.024279807 std: 0.059556328 95% CI: ±3.378172e-03
+
+Statistical Significance Tests for L2 (Paired t-test):
+PINN vs ScaSML: t-statistic=34.627792, p-value=1.945434e-182
+MLP vs ScaSML: t-statistic=568.191917, p-value=0.000000e+00
+PINN vs MLP: t-statistic=-567.943856, p-value=0.000000e+00
+PINN L2 - ScaSML L2, rho=2-> positive count: 1088 negative count: 106 positive sum: 103.95636 negative sum: -7.8015046
+MLP L2 - ScaSML L2, rho=2-> positive count: 1194 negative count: 0 positive sum: 14493.429 negative sum: 0.0
+PINN (L2) - ScaSML (L2), squared errors, rho=2-> positive count: 1088 negative count: 106 positive sum: 33.637222 negative sum: -2.036904
+MLP (L2) - ScaSML (L2), squared errors, rho=2-> positive count: 1194 negative count: 0 positive sum: 179347.47 negative sum: 0.0

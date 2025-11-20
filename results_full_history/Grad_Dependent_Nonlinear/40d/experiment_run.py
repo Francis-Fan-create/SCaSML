@@ -90,9 +90,9 @@ test1.test(r"results_full_history/Grad_Dependent_Nonlinear/40d")
 # #run the test for InferenceScaling
 # test3=InferenceScaling(equation,solver1_3,solver2,solver3_3)
 # test3.test(r"results_full_history/Grad_Dependent_Nonlinear/40d")
-#run the test for ComputingBudget
-test4=ComputingBudget(equation,solver1_1,solver2,solver3_1,is_train)
-test4.test(r"results_full_history/Grad_Dependent_Nonlinear/40d")
+# #run the test for ComputingBudget
+# test4=ComputingBudget(equation,solver1_1,solver2,solver3_1,is_train)
+# test4.test(r"results_full_history/Grad_Dependent_Nonlinear/40d")
 # #run the test for SimpleScaling
 # test5=SimpleScaling(equation,solver1_3,solver2,solver3_3)
 # test5.test(r"results_full_history/Grad_Dependent_Nonlinear/40d")

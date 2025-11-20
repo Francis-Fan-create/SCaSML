@@ -87,9 +87,9 @@ test1.test(r"results_full_history/Linear_Convection_Diffusion/30d")
 # #run the test for SimpleScaling
 # test2=SimpleScaling(equation,solver1_3,solver2,solver3_3)
 # test2.test(r"results_full_history/Linear_Convection_Diffusion/30d")
-#run the test for ComputingBudget
-test3=ComputingBudget(equation,solver1_1,solver2,solver3_1,is_train)
-test3.test(r"results_full_history/Linear_Convection_Diffusion/30d")
+# #run the test for ComputingBudget
+# test3=ComputingBudget(equation,solver1_1,solver2,solver3_1,is_train)
+# test3.test(r"results_full_history/Linear_Convection_Diffusion/30d")
 
 #finish wandb
 wandb.finish()

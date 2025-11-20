@@ -40,6 +40,7 @@ To set up a new SCaSML solver for specific equations, follow these steps:
 7.  **View Results:** Check the output in the `results/(your equation)/(certain dimension)/` folder and on the wandb dashboard (if enabled).
 8.  **Use Full History Solver (Optional):** To use the full history MLP solver instead of the quadrature MLP solver, replace `results/` with `results_full_history/` in the paths mentioned above (steps 4, 6, 7).
 9.  **Troubleshooting:** If you encounter issues, please submit them to the project's **Issues** page on GitHub.
+10. **Caveat:** Sometimes DeepXDE cannot find the jax backend in the first run. When such an error occurs, please relaunch the program again. 
 
 ## Project Structure
 

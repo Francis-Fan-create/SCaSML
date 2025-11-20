@@ -83,9 +83,9 @@ test2.test(r"results/Grad_Dependent_Nonlinear/60d")
 # test3.test(r"results/Grad_Dependent_Nonlinear/60d")
 
 
-#run the test for ComputingBudget
-test4=ComputingBudget(equation,solver1_1,solver2,solver3_1,is_train)
-test4.test(r"results/Grad_Dependent_Nonlinear/60d")
+# #run the test for ComputingBudget
+# test4=ComputingBudget(equation,solver1_1,solver2,solver3_1,is_train)
+# test4.test(r"results/Grad_Dependent_Nonlinear/60d")
 
 #finish wandb
 wandb.finish()
