@@ -117,13 +117,26 @@ class SimpleUniform(object):
             print("Warning: All predictions are NaN. Skipping error calculation.")
             rel_error1 = rel_error2 = rel_error3 = float('nan')
         else:
-            # Calculate the absolute errors
-            errors1 = np.abs(sol1.flatten()[valid_mask] - exact_sol.flatten()[valid_mask])
-            errors2 = np.abs(sol2.flatten()[valid_mask] - exact_sol.flatten()[valid_mask])
-            errors3 = np.abs(sol3.flatten()[valid_mask] - exact_sol.flatten()[valid_mask])
+            # Calculate absolute and squared errors
+            sol1_valid = sol1.flatten()[valid_mask]
+            sol2_valid = sol2.flatten()[valid_mask]
+            sol3_valid = sol3.flatten()[valid_mask]
+            exact_sol_valid = exact_sol.flatten()[valid_mask]
+
+            diff1 = sol1_valid - exact_sol_valid
+            diff2 = sol2_valid - exact_sol_valid
+            diff3 = sol3_valid - exact_sol_valid
+
+            errors1 = np.abs(diff1)
+            errors2 = np.abs(diff2)
+            errors3 = np.abs(diff3)
+
+            errors1_l2 = diff1 ** 2
+            errors2_l2 = diff2 ** 2
+            errors3_l2 = diff3 ** 2
             
             # Get the valid exact solution
-            exact_sol = exact_sol.flatten()[valid_mask]
+            exact_sol = exact_sol_valid
             
             # Calculate the relative errors
             rel_error1 = np.linalg.norm(errors1) / np.linalg.norm(exact_sol)
@@ -151,6 +164,8 @@ class SimpleUniform(object):
         # compute |errors1|-|errors3|,|errrors2|-|errors3|
         errors_13 = errors1 - errors3
         errors_23 = errors2 - errors3
+        errors_l2_13 = errors1_l2 - errors3_l2
+        errors_l2_23 = errors2_l2 - errors3_l2
         
         # Calculate comparison metrics
         diff_gp = errors_13
@@ -417,6 +432,19 @@ class SimpleUniform(object):
         scasml_mean = np.mean(errors3)
         scasml_std = np.std(errors3)
         scasml_ci = 1.96 * scasml_std / np.sqrt(len(errors3))
+
+        # L2 (squared error) statistics
+        pinn_l2_mean = np.mean(errors1_l2)
+        pinn_l2_std = np.std(errors1_l2)
+        pinn_l2_ci = 1.96 * pinn_l2_std / np.sqrt(len(errors1_l2))
+
+        mlp_l2_mean = np.mean(errors2_l2)
+        mlp_l2_std = np.std(errors2_l2)
+        mlp_l2_ci = 1.96 * mlp_l2_std / np.sqrt(len(errors2_l2))
+
+        scasml_l2_mean = np.mean(errors3_l2)
+        scasml_l2_std = np.std(errors3_l2)
+        scasml_l2_ci = 1.96 * scasml_l2_std / np.sqrt(len(errors3_l2))
         
         # Perform paired t-tests to compare solvers
         # PINN vs ScaSML
@@ -425,6 +453,11 @@ class SimpleUniform(object):
         t_stat_mlp_scasml, p_value_mlp_scasml = stats.ttest_rel(errors2, errors3)
         # PINN vs MLP
         t_stat_pinn_mlp, p_value_pinn_mlp = stats.ttest_rel(errors1, errors2)
+
+        # Paired t-tests for squared errors
+        t_stat_pinn_scasml_l2, p_value_pinn_scasml_l2 = stats.ttest_rel(errors1_l2, errors3_l2)
+        t_stat_mlp_scasml_l2, p_value_mlp_scasml_l2 = stats.ttest_rel(errors2_l2, errors3_l2)
+        t_stat_pinn_mlp_l2, p_value_pinn_mlp_l2 = stats.ttest_rel(errors1_l2, errors2_l2)
         
         print(f"PINN L1, rho={rhomax}->","min:", np.min(errors1), "max:", np.max(errors1), 
               "mean:", pinn_mean, "std:", pinn_std, "95% CI:", f"±{pinn_ci:.6e}")
@@ -443,6 +476,23 @@ class SimpleUniform(object):
         print(f"PINN vs ScaSML: t-statistic={t_stat_pinn_scasml:.6f}, p-value={p_value_pinn_scasml:.6e}")
         print(f"MLP vs ScaSML: t-statistic={t_stat_mlp_scasml:.6f}, p-value={p_value_mlp_scasml:.6e}")
         print(f"PINN vs MLP: t-statistic={t_stat_pinn_mlp:.6f}, p-value={p_value_pinn_mlp:.6e}")
+
+        print(f"\nPINN L2, rho={rhomax}->","min:", np.min(errors1_l2), "max:", np.max(errors1_l2), 
+              "mean:", pinn_l2_mean, "std:", pinn_l2_std, "95% CI:", f"±{pinn_l2_ci:.6e}")
+        
+        
+        print(f"MLP L2, rho={rhomax}->","min:", np.min(errors2_l2), "max:", np.max(errors2_l2), 
+              "mean:", mlp_l2_mean, "std:", mlp_l2_std, "95% CI:", f"±{mlp_l2_ci:.6e}")
+        
+        
+        print(f"ScaSML L2, rho={rhomax}->","min:", np.min(errors3_l2), "max:", np.max(errors3_l2), 
+              "mean:", scasml_l2_mean, "std:", scasml_l2_std, "95% CI:", f"±{scasml_l2_ci:.6e}")
+        
+        
+        print(f"\nStatistical Significance Tests for L2 (Paired t-test):")
+        print(f"PINN vs ScaSML: t-statistic={t_stat_pinn_scasml_l2:.6f}, p-value={p_value_pinn_scasml_l2:.6e}")
+        print(f"MLP vs ScaSML: t-statistic={t_stat_mlp_scasml_l2:.6f}, p-value={p_value_mlp_scasml_l2:.6e}")
+        print(f"PINN vs MLP: t-statistic={t_stat_pinn_mlp_l2:.6f}, p-value={p_value_pinn_mlp_l2:.6e}")
         
         
         # Calculate the sums of positive and negative differences
@@ -450,9 +500,15 @@ class SimpleUniform(object):
         negative_sum_13 = np.sum(errors_13[errors_13 < 0])
         positive_sum_23 = np.sum(errors_23[errors_23 > 0])
         negative_sum_23 = np.sum(errors_23[errors_23 < 0])
+        positive_sum_l2_13 = np.sum(errors_l2_13[errors_l2_13 > 0])
+        negative_sum_l2_13 = np.sum(errors_l2_13[errors_l2_13 < 0])
+        positive_sum_l2_23 = np.sum(errors_l2_23[errors_l2_23 > 0])
+        negative_sum_l2_23 = np.sum(errors_l2_23[errors_l2_23 < 0])
         # Display the positive count, negative count, positive sum, and negative sum of the difference of the errors
         print(f'PINN L2 - ScaSML L2, rho={rhomax}->','positive count:', np.sum(errors_13 > 0), 'negative count:', np.sum(errors_13 < 0), 'positive sum:', positive_sum_13, 'negative sum:', negative_sum_13)
         print(f'MLP L2 - ScaSML L2, rho={rhomax}->','positive count:', np.sum(errors_23 > 0), 'negative count:', np.sum(errors_23 < 0), 'positive sum:', positive_sum_23, 'negative sum:', negative_sum_23)
+        print(f'PINN (L2) - ScaSML (L2), squared errors, rho={rhomax}->','positive count:', np.sum(errors_l2_13 > 0), 'negative count:', np.sum(errors_l2_13 < 0), 'positive sum:', positive_sum_l2_13, 'negative sum:', negative_sum_l2_13)
+        print(f'MLP (L2) - ScaSML (L2), squared errors, rho={rhomax}->','positive count:', np.sum(errors_l2_23 > 0), 'negative count:', np.sum(errors_l2_23 < 0), 'positive sum:', positive_sum_l2_23, 'negative sum:', negative_sum_l2_23)
         # Log the results to wandb
         wandb.log({f"mean of PINN L2, rho={rhomax}": np.mean(errors1), f"mean of MLP L2, rho={rhomax}": np.mean(errors2), f"mean of ScaSML L2, rho={rhomax}": np.mean(errors3)})
         wandb.log({f"std of PINN L2, rho={rhomax}": pinn_std, f"std of MLP L2, rho={rhomax}": mlp_std, f"std of ScaSML L2, rho={rhomax}": scasml_std})
@@ -461,6 +517,13 @@ class SimpleUniform(object):
         wandb.log({f"p-value PINN vs ScaSML, rho={rhomax}": p_value_pinn_scasml, f"p-value MLP vs ScaSML, rho={rhomax}": p_value_mlp_scasml, f"p-value PINN vs MLP, rho={rhomax}": p_value_pinn_mlp})
         wandb.log({f"positive count of PINN L2 - ScaSML L2, rho={rhomax}": np.sum(errors_13 > 0), f"negative count of PINN L2 - ScaSML L2, rho={rhomax}": np.sum(errors_13 < 0), f"positive sum of PINN L2 - ScaSML L2, rho={rhomax}": positive_sum_13, f"negative sum of PINN L2 - ScaSML L2, rho={rhomax}": negative_sum_13})
         wandb.log({f"positive count of MLP L2 - ScaSML L2, rho={rhomax}": np.sum(errors_23 > 0), f"negative count of MLP L2 - ScaSML L2, rho={rhomax}": np.sum(errors_23 < 0), f"positive sum of MLP L2 - ScaSML L2, rho={rhomax}": positive_sum_23, f"negative sum of MLP L2 - ScaSML L2, rho={rhomax}": negative_sum_23})
+        wandb.log({f"mean of PINN squared L2, rho={rhomax}": pinn_l2_mean, f"mean of MLP squared L2, rho={rhomax}": mlp_l2_mean, f"mean of ScaSML squared L2, rho={rhomax}": scasml_l2_mean})
+        wandb.log({f"std of PINN squared L2, rho={rhomax}": pinn_l2_std, f"std of MLP squared L2, rho={rhomax}": mlp_l2_std, f"std of ScaSML squared L2, rho={rhomax}": scasml_l2_std})
+        wandb.log({f"min of PINN squared L2, rho={rhomax}": np.min(errors1_l2), f"min of MLP squared L2, rho={rhomax}": np.min(errors2_l2), f"min of ScaSML squared L2, rho={rhomax}": np.min(errors3_l2)})
+        wandb.log({f"max of PINN squared L2, rho={rhomax}": np.max(errors1_l2), f"max of MLP squared L2, rho={rhomax}": np.max(errors2_l2), f"max of ScaSML squared L2, rho={rhomax}": np.max(errors3_l2)})
+        wandb.log({f"p-value PINN vs ScaSML (L2), rho={rhomax}": p_value_pinn_scasml_l2, f"p-value MLP vs ScaSML (L2), rho={rhomax}": p_value_mlp_scasml_l2, f"p-value PINN vs MLP (L2), rho={rhomax}": p_value_pinn_mlp_l2})
+        wandb.log({f"positive count of PINN squared L2 - ScaSML squared L2, rho={rhomax}": np.sum(errors_l2_13 > 0), f"negative count of PINN squared L2 - ScaSML squared L2, rho={rhomax}": np.sum(errors_l2_13 < 0), f"positive sum of PINN squared L2 - ScaSML squared L2, rho={rhomax}": positive_sum_l2_13, f"negative sum of PINN squared L2 - ScaSML squared L2, rho={rhomax}": negative_sum_l2_13})
+        wandb.log({f"positive count of MLP squared L2 - ScaSML squared L2, rho={rhomax}": np.sum(errors_l2_23 > 0), f"negative count of MLP squared L2 - ScaSML squared L2, rho={rhomax}": np.sum(errors_l2_23 < 0), f"positive sum of MLP squared L2 - ScaSML squared L2, rho={rhomax}": positive_sum_l2_23, f"negative sum of MLP squared L2 - ScaSML squared L2, rho={rhomax}": negative_sum_l2_23})
         # reset stdout and stderr
         sys.stdout = self.stdout
         sys.stderr = self.stderr
