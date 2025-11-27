@@ -15,6 +15,7 @@ from tests.InferenceScaling import InferenceScaling
 from tests.SimpleScaling import SimpleScaling
 from tests.ComputingBudget import ComputingBudget
 from tests.RepeatedExperiment import RepeatedExperiment
+from tests.ComputingBudgetModelScaling import ComputingBudgetModelScaling
 from solvers.MLP_full_history import MLP_full_history
 from solvers.ScaSML_full_history import ScaSML_full_history
 import numpy as np
@@ -100,6 +101,8 @@ solver3_3=ScaSML_full_history(equation=equation,PINN=solver1_3) #ScaSML object
 #run the test for RepeatedExperiment
 test6=RepeatedExperiment(equation,solver1_2,solver2,solver3_2,is_train)
 test6.test(r"results_full_history/Grad_Dependent_Nonlinear/40d", num_repetitions=10)
+test7=ComputingBudgetModelScaling(equation,solver1_2,solver2,solver3_2,is_train)
+test7.test(r"results_full_history/Grad_Dependent_Nonlinear/40d", budget_levels=[1.0,2.0,4.0])
 
 #finish wandb
 wandb.finish()
