@@ -10,7 +10,6 @@ import shutil
 import copy
 from optimizers.Adam import Adam
 import jax.numpy as jnp
-import re
 from scipy import stats
 import matplotlib.ticker as ticker
 
@@ -101,9 +100,6 @@ class ComputingBudget(object):
         pinn_flops = []
         mlp_flops = []
         scasml_flops = []
-        pinn_flops_source_list = []
-        mlp_flops_source_list = []
-        scasml_flops_source_list = []
         
         # Base iterations for budget=1.0
         base_iterations = 2000
@@ -162,130 +158,11 @@ class ComputingBudget(object):
 
         # Also print/log the estimated device compute capability for transparency
         print(f"Estimated device: {device_gflops:.3f} GFLOPs/s (approx.)")
-        print("Note: When JAX HLO is available, this script attempts to estimate FLOPs")
-        print("by parsing compiled XLA HLO for model & solver functions. If HLO parsing")
-        print("fails (e.g. function is not jax-jittable), we fall back to a device GFLOPs")
-        print("microbenchmark and the measured run time to estimate FLOPs. Both are")
-        print("hardware-dependent and intended for relative comparisons within a run.")
+        print("Note: This test uses GFLOPs (estimated via a short matmul benchmark)")
+        print("to express computational budget. This is hardware-dependent and intended")
+        print("only for relative comparison across solvers within the same run.")
 
         if is_train:
-            # Helper functions to estimate flops by parsing JAX/XLA HLO text
-            def estimate_flops_from_hlo_text(hlo_text):
-                """
-                Very small parser that approximates FLOPs from HLO text by counting
-                matrix multiply (dot/dot_general) ops and elementwise ops (add/mul).
-                The result is an estimate intended for relative comparisons only.
-                """
-                flops_est = 0.0
-                try:
-                    # DOTs (matrix multiplies) -> 2 * m * k * n flops
-                    for m in re.finditer(r"dot\([^)]*f32\[([0-9,]+)\][^,]*,\s*f32\[([0-9,]+)\]", hlo_text):
-                        a_s = m.group(1)
-                        b_s = m.group(2)
-                        try:
-                            a_dims = list(map(int, a_s.split(',')))
-                            b_dims = list(map(int, b_s.split(',')))
-                            # interpret last two dimensions as matrix dims
-                            if len(a_dims) >= 2 and len(b_dims) >= 2:
-                                m_dim = a_dims[-2]
-                                k_dim = a_dims[-1]
-                                n_dim = b_dims[-1]
-                                flops_est += 2.0 * m_dim * k_dim * n_dim
-                        except Exception:
-                            pass
-
-                    # Include dot_general if used (same rule as dot)
-                    for m in re.finditer(r"dot_general\([^)]*f32\[([0-9,]+)\][^,]*,\s*f32\[([0-9,]+)\]", hlo_text):
-                        a_s = m.group(1)
-                        b_s = m.group(2)
-                        try:
-                            a_dims = list(map(int, a_s.split(',')))
-                            b_dims = list(map(int, b_s.split(',')))
-                            if len(a_dims) >= 2 and len(b_dims) >= 2:
-                                m_dim = a_dims[-2]
-                                k_dim = a_dims[-1]
-                                n_dim = b_dims[-1]
-                                flops_est += 2.0 * m_dim * k_dim * n_dim
-                        except Exception:
-                            pass
-
-                    # Elementwise ops: multiply/add/sub/div
-                    # Use the maximum operand shape for the op to count per-element ops
-                    for op in ["add", "multiply", "sub", "div", "power", "real_pow"]:
-                        for m in re.finditer(rf"\b{op}\([^)]*f32\[([0-9,]+)\]", hlo_text):
-                            a_s = m.group(1)
-                            try:
-                                dims = list(map(int, a_s.split(',')))
-                                elems = 1
-                                for dd in dims:
-                                    elems *= dd
-                                flops_est += float(elems)
-                            except Exception:
-                                pass
-                except Exception:
-                    # If parsing fails, return 0 to indicate failure
-                    return 0.0
-                return flops_est
-
-            def estimate_jax_fn_flops(fn, example_args=(), example_kwargs=None):
-                """
-                Try to obtain an XLA HLO text for the given JAX-compatible function and
-                parse it to estimate FLOPs for a single call. Return None on failure.
-                """
-                if example_kwargs is None:
-                    example_kwargs = {}
-                try:
-                    import jax
-                    comp = None
-                    try:
-                        comp = jax.xla_computation(fn)(*example_args, **example_kwargs)
-                    except Exception:
-                        # fallback: try compiling a jitted version
-                        jitted = jax.jit(fn)
-                        comp = jax.xla_computation(jitted)(*example_args, **example_kwargs)
-                    hlo_text = comp.as_hlo_text()
-                    if not hlo_text:
-                        return None
-                    return estimate_flops_from_hlo_text(hlo_text)
-                except Exception:
-                    return None
-
-            def try_architecture_forward_flops(model, example_input=None):
-                """
-                Attempt to estimate forward flops by introspecting the network architecture
-                (common for dde.maps.jax.FNN). Return None if it fails.
-                """
-                try:
-                    net = getattr(model, 'net', None)
-                    if net is None:
-                        # Some models expose architecture on model.net if present
-                        net = model
-                    # Try some common attributes for FNN-like networks
-                    layers = None
-                    for attr in ['layers', 'units', 'hidden_units', 'units_list', 'unit_list', 'arch']:
-                        if hasattr(net, attr):
-                            layers = getattr(net, attr)
-                            break
-                    # For dde.maps.jax.FNN, it stores the width as the python list passed in
-                    if layers is None and hasattr(net, '__dict__'):
-                        # attempt to read the architecture list from the constructor args stored on the object
-                        for key in ['_units', 'n_units', 'hidden_sizes', 'sizes', 'units']:
-                            if key in net.__dict__:
-                                layers = net.__dict__[key]
-                                break
-                    if layers is None:
-                        return None
-                    # ensure it's a list of ints
-                    if isinstance(layers, (list, tuple)):
-                        arch = list(map(int, list(layers)))
-                        # compute forward flops per sample: 2 * sum(in* out)
-                        fwd = 0
-                        for i in range(len(arch) - 1):
-                            fwd += 2 * arch[i] * arch[i + 1]
-                        return float(fwd)
-                    return None
-                except Exception:
-                    return None
             for budget in budget_levels:
                 # Calculate iterations for this budget
                 train_iters = int(base_iterations * budget)
@@ -305,74 +182,7 @@ class ComputingBudget(object):
                 inference_time_pinn = time.time() - start_time
                 
                 total_time_pinn = train_time_pinn + inference_time_pinn
-                # Estimate forward flops per sample using JAX HLO if possible
-                pinn_fwd_flops = None
-                pinn_flops_source = 'Time'
-                try:
-                    import jax
-                    sample_in = jnp.asarray(xt_test[:1]).astype(jnp.float32)
-                    pinn_fwd_flops = estimate_jax_fn_flops(lambda x: trained_pinn.predict(x), (sample_in,))
-                    if pinn_fwd_flops and pinn_fwd_flops > 0:
-                        pinn_flops_source = 'HLO'
-                except Exception:
-                    pinn_fwd_flops = None
-
-                # Fallback: try architecture introspection on the underlying net
-                if not pinn_fwd_flops:
-                    try:
-                        pinn_fwd_flops = try_architecture_forward_flops(trained_pinn, xt_test[:1])
-                        if pinn_fwd_flops and pinn_fwd_flops > 0:
-                            pinn_flops_source = 'Arch'
-                    except Exception:
-                        pinn_fwd_flops = None
-
-                # If forward flops estimation fails, fallback to time-based approach
-                if pinn_fwd_flops and pinn_fwd_flops > 0:
-                    # Try to infer training batch size from model.data or eq.generate_data
-                    train_batch_size = None
-                    try:
-                        train_data = getattr(trained_pinn, 'data', None)
-                        if train_data is not None:
-                            # Try a few common attributes used by TimePDE
-                            dom = getattr(train_data, 'num_domain', None) or getattr(train_data, 'N_domain', None) or getattr(train_data, 'n_domain', None)
-                            bnd = getattr(train_data, 'num_boundary', None) or getattr(train_data, 'N_boundary', None) or getattr(train_data, 'n_boundary', None) or getattr(train_data, 'num_boundary_points', None)
-                            ini = getattr(train_data, 'num_initial', None) or getattr(train_data, 'N_initial', None) or getattr(train_data, 'n_initial', None)
-                            dom = dom or 0
-                            bnd = bnd or 0
-                            ini = ini or 0
-                            if dom + bnd + ini > 0:
-                                train_batch_size = dom + bnd + ini
-                    except Exception:
-                        train_batch_size = None
-
-                    if not train_batch_size:
-                        # fallback to query eq.generate_data
-                        try:
-                            data_guess = eq.generate_data()
-                            dom = getattr(data_guess, 'num_domain', None) or getattr(data_guess, 'N_domain', None) or getattr(data_guess, 'n_domain', None)
-                            bnd = getattr(data_guess, 'num_boundary', None) or getattr(data_guess, 'N_boundary', None) or getattr(data_guess, 'n_boundary', None)
-                            ini = getattr(data_guess, 'num_initial', None) or getattr(data_guess, 'N_initial', None) or getattr(data_guess, 'n_initial', None)
-                            dom = dom or 0
-                            bnd = bnd or 0
-                            ini = ini or 0
-                            if dom + bnd + ini > 0:
-                                train_batch_size = dom + bnd + ini
-                        except Exception:
-                            train_batch_size = None
-
-                    if not train_batch_size:
-                        # If everything fails, use a conservative default
-                        train_batch_size = 1024
-
-                    # Rough estimate: backward cost ~ 2x forward
-                    backward_factor = 2.0
-                    train_flops_iter = pinn_fwd_flops * train_batch_size * (1 + backward_factor)
-                    train_flops_total = train_iters * train_flops_iter
-                    inference_flops_total = pinn_fwd_flops * xt_test.shape[0]
-                    # convert to GFLOPs
-                    pinn_flops_used = (train_flops_total + inference_flops_total) / 1e9
-                else:
-                    pinn_flops_used = total_time_pinn * device_gflops
+                pinn_flops_used = total_time_pinn * device_gflops
                 
                 # ==========================================
                 # MLP: Adjust training to match budget
@@ -392,20 +202,7 @@ class ComputingBudget(object):
                 inference_time_mlp = time.time() - start_time
                 
                 total_time_mlp = train_time_mlp + inference_time_mlp
-                # Estimate mlp u_solve flops via JAX HLO parsing if possible
-                mlp_fwd_flops = None
-                mlp_flops_source = 'Time'
-                try:
-                    sample_in = jnp.asarray(xt_test[:1]).astype(jnp.float32)
-                    mlp_fwd_flops = estimate_jax_fn_flops(solver2_copy.u_solve, (rho_mlp, rho_mlp, sample_in))
-                except Exception:
-                    mlp_fwd_flops = None
-                # Fallback: use time based
-                if mlp_fwd_flops and mlp_fwd_flops > 0:
-                    mlp_flops_source = 'HLO'
-                    mlp_flops_used = (mlp_fwd_flops * xt_test.shape[0]) / 1e9
-                else:
-                    mlp_flops_used = total_time_mlp * device_gflops
+                mlp_flops_used = total_time_mlp * device_gflops
                 
                 # ==========================================
                 # ScaSML: Optimize training/inference split
@@ -430,79 +227,7 @@ class ComputingBudget(object):
                 inference_time_scasml = time.time() - start_time
                 
                 total_time_scasml = train_time_scasml + inference_time_scasml
-                # Estimate scasml backbone forward flops (PINN backbone) from jitted predict
-                scasml_backbone_fwd = None
-                scasml_backbone_flops_source = 'Time'
-                try:
-                    sample_in = jnp.asarray(xt_test[:1]).astype(jnp.float32)
-                    scasml_backbone_fwd = estimate_jax_fn_flops(lambda x: trained_pinn_backbone.predict(x), (sample_in,))
-                    if scasml_backbone_fwd and scasml_backbone_fwd > 0:
-                        scasml_backbone_flops_source = 'HLO'
-                except Exception:
-                    scasml_backbone_fwd = None
-                if not scasml_backbone_fwd:
-                    try:
-                        scasml_backbone_fwd = try_architecture_forward_flops(trained_pinn_backbone, xt_test[:1])
-                        if scasml_backbone_fwd and scasml_backbone_fwd > 0:
-                            scasml_backbone_flops_source = 'Arch'
-                    except Exception:
-                        scasml_backbone_fwd = None
-
-                # estimate u_solve flops for ScaSML via HLO compilation
-                scasml_usolve_per_sample = None
-                scasml_usolve_flops_source = 'Time'
-                try:
-                    sample_in = jnp.asarray(xt_test[:1]).astype(jnp.float32)
-                    scasml_usolve_per_sample = estimate_jax_fn_flops(solver3_copy.u_solve, (rho_scasml, rho_scasml, sample_in))
-                    if scasml_usolve_per_sample and scasml_usolve_per_sample > 0:
-                        scasml_usolve_flops_source = 'HLO'
-                except Exception:
-                    scasml_usolve_per_sample = None
-
-                # Compute training flops for backbone if we have a forward flops estimate
-                if scasml_backbone_fwd and scasml_backbone_fwd > 0:
-                    # Attempt to infer training batch size
-                    train_batch_size = None
-                    try:
-                        train_data = getattr(trained_pinn_backbone, 'data', None)
-                        if train_data is not None:
-                            dom = getattr(train_data, 'num_domain', None) or getattr(train_data, 'N_domain', None) or getattr(train_data, 'n_domain', None)
-                            bnd = getattr(train_data, 'num_boundary', None) or getattr(train_data, 'N_boundary', None) or getattr(train_data, 'n_boundary', None)
-                            ini = getattr(train_data, 'num_initial', None) or getattr(train_data, 'N_initial', None) or getattr(train_data, 'n_initial', None)
-                            dom = dom or 0
-                            bnd = bnd or 0
-                            ini = ini or 0
-                            if dom + bnd + ini > 0:
-                                train_batch_size = dom + bnd + ini
-                    except Exception:
-                        train_batch_size = None
-                    if not train_batch_size:
-                        try:
-                            data_guess = eq.generate_data()
-                            dom = getattr(data_guess, 'num_domain', None) or getattr(data_guess, 'N_domain', None) or getattr(data_guess, 'n_domain', None)
-                            bnd = getattr(data_guess, 'num_boundary', None) or getattr(data_guess, 'N_boundary', None) or getattr(data_guess, 'n_boundary', None)
-                            ini = getattr(data_guess, 'num_initial', None) or getattr(data_guess, 'N_initial', None) or getattr(data_guess, 'n_initial', None)
-                            dom = dom or 0
-                            bnd = bnd or 0
-                            ini = ini or 0
-                            if dom + bnd + ini > 0:
-                                train_batch_size = dom + bnd + ini
-                        except Exception:
-                            train_batch_size = None
-                    if not train_batch_size:
-                        train_batch_size = 1024
-                    backward_factor = 2.0
-                    scasml_train_flops_total = scasml_backbone_fwd * train_batch_size * (1 + backward_factor) * scasml_train_iters
-                else:
-                    scasml_train_flops_total = train_time_scasml * device_gflops if train_time_scasml else 0.0
-
-                # Compute inference flops for ScaSML: prefer per-sample HLO estimate
-                if scasml_usolve_per_sample and scasml_usolve_per_sample > 0:
-                    scasml_inference_flops_total = scasml_usolve_per_sample * xt_test.shape[0]
-                else:
-                    scasml_inference_flops_total = inference_time_scasml * device_gflops if inference_time_scasml else 0.0
-
-                scasml_flops_used = (scasml_train_flops_total + scasml_inference_flops_total) / 1e9
+                scasml_flops_used = total_time_scasml * device_gflops
                 
                 # ==========================================
                 # Compute Errors
@@ -533,9 +258,6 @@ class ComputingBudget(object):
                 pinn_flops.append(pinn_flops_used)
                 mlp_flops.append(mlp_flops_used)
                 scasml_flops.append(scasml_flops_used)
-                pinn_flops_source_list.append(pinn_flops_source)
-                mlp_flops_source_list.append(mlp_flops_source)
-                scasml_flops_source_list.append(scasml_backbone_flops_source if scasml_backbone_fwd else scasml_usolve_flops_source)
                 
                 # ==========================================
                 # Statistical Analysis
@@ -568,9 +290,6 @@ class ComputingBudget(object):
                     f"budget_{budget}_pinn_flops": pinn_flops_used,
                     f"budget_{budget}_mlp_flops": mlp_flops_used,
                     f"budget_{budget}_scasml_flops": scasml_flops_used,
-                    f"budget_{budget}_pinn_flops_source": pinn_flops_source,
-                    f"budget_{budget}_mlp_flops_source": mlp_flops_source,
-                    f"budget_{budget}_scasml_flops_source": scasml_backbone_flops_source if scasml_backbone_fwd else scasml_usolve_flops_source,
                     f"budget_{budget}_improvement_vs_pinn": improvement_pinn,
                     f"budget_{budget}_improvement_vs_mlp": improvement_mlp,
                     f"budget_{budget}_p_pinn_scasml": p_pinn_scasml,
@@ -715,11 +434,11 @@ class ComputingBudget(object):
             print("=" * 80)
             print()
             
-            print(f"{ 'Budget':<12} {'PINN Error':<15} {'PINN GFLOPs':<13} {'PINN Src':<8} {'MLP Error':<15} {'MLP GFLOPs':<13} {'MLP Src':<8} {'SCaSML Error':<15} {'SCaSML GFLOPs':<13} {'SCaSML Src':<8}")
+            print(f"{ 'Budget':<12} {'PINN Error':<15} {'PINN GFLOPs':<13} {'MLP Error':<15} {'MLP GFLOPs':<13} {'SCaSML Error':<15} {'SCaSML GFLOPs':<13}")
             print("-" * 60)
             for i, budget in enumerate(budget_array):
                 print(
-                    f"{budget:<12.1f} {pinn_errors[i]:<15.6e} {pinn_flops[i]:<13.2f} {pinn_flops_source_list[i]:<8} {mlp_errors[i]:<15.6e} {mlp_flops[i]:<13.2f} {mlp_flops_source_list[i]:<8} {scasml_errors[i]:<15.6e} {scasml_flops[i]:<13.2f} {scasml_flops_source_list[i]:<8}"
+                    f"{budget:<12.1f} {pinn_errors[i]:<15.6e} {pinn_flops[i]:<13.2f} {mlp_errors[i]:<15.6e} {mlp_flops[i]:<13.2f} {scasml_errors[i]:<15.6e} {scasml_flops[i]:<13.2f}"
                 )
             print()
             
@@ -732,9 +451,9 @@ class ComputingBudget(object):
             print(f"  PINN error: {pinn_errors[-1]:.6e}")
             print(f"  MLP error: {mlp_errors[-1]:.6e}")
             print(f"  SCaSML error: {scasml_errors[-1]:.6e}")
-            print(f"  PINN GFLOPs: {pinn_flops[-1]:.2f} (src: {pinn_flops_source_list[-1]})")
-            print(f"  MLP GFLOPs: {mlp_flops[-1]:.2f} (src: {mlp_flops_source_list[-1]})")
-            print(f"  SCaSML GFLOPs: {scasml_flops[-1]:.2f} (src: {scasml_flops_source_list[-1]})")
+            print(f"  PINN GFLOPs: {pinn_flops[-1]:.2f}")
+            print(f"  MLP GFLOPs: {mlp_flops[-1]:.2f}")
+            print(f"  SCaSML GFLOPs: {scasml_flops[-1]:.2f}")
             print(f"  Improvement vs PINN: {improvements_vs_pinn[-1]:+.2f}%")
             print(f"  Improvement vs MLP: {improvements_vs_mlp[-1]:+.2f}%")
             print("=" * 80)
