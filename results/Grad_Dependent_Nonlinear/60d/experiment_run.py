@@ -13,7 +13,6 @@ from tests.SimpleUniform import SimpleUniform
 from tests.ConvergenceRate import ConvergenceRate
 from tests.InferenceScaling import InferenceScaling
 from tests.ComputingBudget import ComputingBudget
-from tests.ComputingBudgetModelScaling import ComputingBudgetModelScaling
 from tests.RepeatedExperiment import RepeatedExperiment
 from solvers.MLP import MLP
 from solvers.ScaSML import ScaSML
@@ -78,7 +77,6 @@ solver3_2=ScaSML(equation=equation,PINN=solver1_2) #ScaSML object
 
 
 #run the test for SimpleUniform
-#run the test for SimpleUniform
 test2=SimpleUniform(equation,solver1_1,solver2,solver3_1,is_train)
 test2.test(r"results/Grad_Dependent_Nonlinear/60d")
 # #run the test for ConvergenceRate
@@ -89,12 +87,9 @@ test2.test(r"results/Grad_Dependent_Nonlinear/60d")
 # #run the test for ComputingBudget
 # test4=ComputingBudget(equation,solver1_1,solver2,solver3_1,is_train)
 # test4.test(r"results/Grad_Dependent_Nonlinear/60d")
-#run the test for ComputingBudgetModelScaling
-test5=ComputingBudgetModelScaling(equation,solver1_2,solver2,solver3_2,is_train)
-test5.test(r"results/Grad_Dependent_Nonlinear/60d", budget_levels=[1.0,2.0,4.0])
 #run the test for RepeatedExperiment
-test6=RepeatedExperiment(equation,solver1_2,solver2,solver3_2,is_train)
-test6.test(r"results/Grad_Dependent_Nonlinear/60d", num_repetitions=10)
+test5=RepeatedExperiment(equation,solver1_2,solver2,solver3_2,is_train)
+test5.test(r"results/Grad_Dependent_Nonlinear/60d", num_repetitions=10)
 
 #finish wandb
 wandb.finish()

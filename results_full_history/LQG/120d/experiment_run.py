@@ -13,7 +13,6 @@ from tests.SimpleUniform import SimpleUniform
 from tests.ConvergenceRate import ConvergenceRate
 from tests.SimpleScaling import SimpleScaling
 from tests.ComputingBudget import ComputingBudget
-from tests.ComputingBudgetModelScaling import ComputingBudgetModelScaling
 from tests.RepeatedExperiment import RepeatedExperiment
 from solvers.MLP_full_history import MLP_full_history
 from solvers.ScaSML_full_history import ScaSML_full_history
@@ -95,10 +94,6 @@ solver3_3=ScaSML_full_history(equation=equation,PINN=solver1_3) #ScaSML object
 #run the test for RepeatedExperiment
 test4=RepeatedExperiment(equation,solver1_2,solver2,solver3_2,is_train)
 test4.test(r"results_full_history/LQG/120d", num_repetitions=10)
-
-#run the test for ComputingBudgetModelScaling
-test5=ComputingBudgetModelScaling(equation,solver1_2,solver2,solver3_2,is_train)
-test5.test(r"results_full_history/LQG/120d", budget_levels=[1.0,2.0,4.0])
 
 #finish wandb
 wandb.finish()
