@@ -2,7 +2,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 import wandb
 import torch
-import gc
 import time
 import sys
 import os
@@ -41,13 +40,6 @@ class ComputingBudgetModelScaling(object):
         self.n_input = equation.n_input
         self.n_output = equation.n_output
 
-        # NOTE: This test can be memory-hungry due to large models and training
-        # datasets. To avoid GPU OOMs we provide a 'smoke' flag in `test()` and
-        # the function will also downscale settings automatically for
-        # high-dimensional problems (n_input >= 20). The defaults use conservative
-        # settings for typical GPUs but can be tuned by callers via the test
-        # parameters.
-
     def _train_until_converge(self, opt, save_path, max_iters, chunk_iters=200, patience=3, tol=1e-4):
         '''Train the model until convergence or max_iters is reached.
 
@@ -82,22 +74,15 @@ class ComputingBudgetModelScaling(object):
         total_time = time.time() - start_time
         return opt.model, total_time, total_iters
 
-    def test(self, save_path, budget_levels=None, num_domain=500, num_boundary=100,
-             base_iters=1000, base_width=24, base_layers=3, chunk_iters=100, patience=2,
-             base_rho=2, base_M=8, max_width_cap=200, batch_predict_size=64,
-             smoke=True, param_cap=2_000_000, train_domain=None):
+    def test(self, save_path, budget_levels=[1.0, 2.0, 4.0, 8.0], num_domain=1000, num_boundary=200,
+             base_iters=2000, base_width=50, base_layers=5, chunk_iters=200, patience=3,
+             base_rho=2, base_M=10, max_width_cap=700):
         '''
         Run experiments across budget levels; scale the PINN width and ScaSML backbone
         proportionally to budget while increasing MLP complexity (rho/M) to allocate compute.
         '''
         profiler = cProfile.Profile()
         profiler.enable()
-
-        # Prefer float32 precision to lower memory usage on JAX
-        try:
-            jax.config.update("jax_enable_x64", False)
-        except Exception:
-            pass
 
         eq = self.equation
         eq_name = eq.__class__.__name__
@@ -108,29 +93,6 @@ class ComputingBudgetModelScaling(object):
         if not os.path.exists(new_path):
             os.makedirs(new_path)
         save_path = new_path
-
-        # If budgets weren't provided by the caller, use a conservative default
-        if budget_levels is None:
-            budget_levels = [1.0, 2.0]
-
-        # If running on very high input dims or in smoke/debug mode, scale down
-        # the experiment to avoid excessive GPU memory usage
-        if smoke or getattr(self, 'n_input', 0) >= 20:
-            num_domain = min(num_domain, 300)
-            num_boundary = min(num_boundary, 50)
-            base_iters = min(base_iters, 500)
-            base_width = min(base_width, 16)
-            base_layers = min(base_layers, 3)
-            chunk_iters = min(chunk_iters, 50)
-            patience = min(patience, 2)
-            base_rho = min(base_rho, 1)
-            base_M = min(base_M, 2)
-            max_width_cap = min(max_width_cap, 200)
-
-        # Determine training set size separately to reduce memory during training
-        if train_domain is None:
-            # conservative default: keep training size smaller than test size
-            train_domain = max(100, min(500, num_domain))
 
         # Generate test data once
         data_domain_test, data_boundary_test = eq.generate_test_data(num_domain, num_boundary)
@@ -144,166 +106,27 @@ class ComputingBudgetModelScaling(object):
         mlp_times = []
         scasml_times = []
 
-        # Helpers for batched predictions to avoid storing very large activation
-        # graphs on GPU. The batch sizes default to batch_predict_size which can
-        # be tuned by callers.
-        def _batched_model_predict(model, xt, batch_size):
-            n = xt.shape[0]
-            out = []
-            for i in range(0, n, batch_size):
-                arr = np.asarray(model.predict(xt[i:i+batch_size]))
-                # Force shape to (batch, n_output)
-                if arr.ndim == 1:
-                    arr = arr.reshape(-1, 1)
-                elif arr.ndim == 2:
-                    try:
-                        arr = arr.reshape(arr.shape[0], self.n_output)
-                    except Exception:
-                        pass
-                out.append(arr)
-            return np.vstack(out)
-
-        def _batched_u_solve(u_solve_func, xt, batch_size, pos_args=None, kw_args=None):
-            # pos_args: list/tuple of positional args to pass before x_t
-            # kw_args: dict of keyword args to pass (excluding x_t)
-            n = xt.shape[0]
-            out = []
-            try:
-                sig = inspect.signature(u_solve_func)
-            except Exception:
-                sig = None
-            for i in range(0, n, batch_size):
-                x_b = xt[i:i+batch_size]
-                try:
-                    # prefer using a named x_t parameter if available
-                    if sig and ('x_t' in sig.parameters or 'xt' in sig.parameters or 'x' in sig.parameters):
-                        call_kwargs = dict()
-                        if kw_args:
-                            call_kwargs.update(kw_args)
-                        # x_t vs xt vs x: prefer x_t
-                        if 'x_t' in sig.parameters:
-                            call_kwargs['x_t'] = x_b
-                            arr = np.asarray(u_solve_func(*(pos_args or []), **call_kwargs))
-                            if arr.ndim == 1:
-                                arr = arr.reshape(-1, 1)
-                            elif arr.ndim == 2:
-                                try:
-                                    arr = arr.reshape(arr.shape[0], self.n_output)
-                                except Exception:
-                                    pass
-                            out.append(arr)
-                        elif 'xt' in sig.parameters:
-                            call_kwargs['xt'] = x_b
-                            out.append(np.asarray(u_solve_func(*(pos_args or []), **call_kwargs)))
-                        elif 'x' in sig.parameters:
-                            call_kwargs['x'] = x_b
-                            out.append(np.asarray(u_solve_func(*(pos_args or []), **call_kwargs)))
-                    else:
-                        # Fallback: positional-only signature with data as last positional argument
-                        if pos_args:
-                            arr = np.asarray(u_solve_func(*pos_args, x_b))
-                            if arr.ndim == 1:
-                                arr = arr.reshape(-1, 1)
-                            elif arr.ndim == 2:
-                                try:
-                                    arr = arr.reshape(arr.shape[0], self.n_output)
-                                except Exception:
-                                    pass
-                            out.append(arr)
-                        else:
-                            out.append(np.asarray(u_solve_func(x_b)))
-                except TypeError:
-                    try:
-                        # try to call with only x_b in case other patterns fail
-                        arr = np.asarray(u_solve_func(x_b))
-                        if arr.ndim == 1:
-                            arr = arr.reshape(-1, 1)
-                        elif arr.ndim == 2:
-                            try:
-                                arr = arr.reshape(arr.shape[0], self.n_output)
-                            except Exception:
-                                pass
-                        out.append(arr)
-                    except Exception:
-                        raise
-            return np.vstack(out)
-
         # iterate budgets
         for budget in budget_levels:
             print(f"\nRunning budget level: {budget}×")
-            print(f"Effective settings: train_domain={train_domain}, num_domain={num_domain}, base_iters={base_iters}, base_width={base_width}, base_layers={base_layers}, batch_predict_size={batch_predict_size}")
             # PINN: create a wider model scaled with sqrt(budget)
             width = max(8, int(base_width * (budget ** 0.5)))
             if width > max_width_cap:
                 width = max_width_cap
-            # Estimate parameters roughly and ensure we don't exceed the param cap
-            try:
-                approx_params = self.n_input * width + max(0, (base_layers - 1)) * (width ** 2) + width * self.n_output
-                if approx_params > param_cap:
-                    # Scale width down until approximate params fit under cap
-                    new_width = int(max(8, (param_cap // max(base_layers - 1, 1)) ** 0.5))
-                    width = min(width, new_width)
-                    if width > max_width_cap:
-                        width = max_width_cap
-            except Exception:
-                pass
             net_pinn = dde.maps.jax.FNN([self.n_input] + [width] * base_layers + [self.n_output], "tanh", "Glorot normal")
             # apply terminal transform if available
             if hasattr(eq, 'terminal_transform') and eq.terminal_transform is not None:
                 net_pinn.apply_output_transform(eq.terminal_transform)
-            # For training, request a smaller dataset to reduce memory
-            try:
-                data = eq.generate_data(num_domain=train_domain)
-            except TypeError:
-                # If the equation implementation doesn't accept a num_domain keyword,
-                # fall back to the argument-less call (less ideal but supported by some equations)
-                data = eq.generate_data()
+            data = eq.generate_data()
             model_pinn = dde.Model(data, net_pinn)
             opt_pinn = Adam(self.n_input, self.n_output, model_pinn, eq)
             max_iters = int(base_iters * budget)
-            # Train with OOM-aware retry: if we encounter a memory problem, retry
-            # with a smaller model size to continue the experiment without failing.
-            try:
-                trained_pinn, t_pinn, _ = self._train_until_converge(opt_pinn, f"{save_path}/pinn_budget_{budget}",
-                                                                     max_iters=max_iters, chunk_iters=chunk_iters, patience=patience)
-            except Exception as e:
-                msg = str(e).lower()
-                if 'out of memory' in msg or 'resourceexhausted' in msg or 'oom' in msg:
-                    # Reduce width and optionally reduce training set size, then retry
-                    new_width = max(8, int(width // 2))
-                    try:
-                        new_train_domain = max(50, int(train_domain // 2))
-                    except Exception:
-                        new_train_domain = max(50, int(num_domain // 2))
-                    net_pinn = dde.maps.jax.FNN([self.n_input] + [new_width] * base_layers + [self.n_output], "tanh", "Glorot normal")
-                    if hasattr(eq, 'terminal_transform') and eq.terminal_transform is not None:
-                        net_pinn.apply_output_transform(eq.terminal_transform)
-                    try:
-                        new_data = eq.generate_data(num_domain=new_train_domain)
-                    except TypeError:
-                        new_data = eq.generate_data()
-                    model_pinn = dde.Model(new_data, net_pinn)
-                    opt_pinn = Adam(self.n_input, self.n_output, model_pinn, eq)
-                    trained_pinn, t_pinn, _ = self._train_until_converge(opt_pinn, f"{save_path}/pinn_budget_{budget}_reduced",
-                                                                         max_iters=max_iters, chunk_iters=chunk_iters, patience=patience)
-                else:
-                    raise
+            trained_pinn, t_pinn, _ = self._train_until_converge(opt_pinn, f"{save_path}/pinn_budget_{budget}",
+                                                                 max_iters=max_iters, chunk_iters=chunk_iters, patience=patience)
 
             # Evaluate PINN
             start = time.time()
-            try:
-                sol_pinn = _batched_model_predict(trained_pinn, xt_test, batch_predict_size)
-            except Exception as e:
-                msg = str(e).lower()
-                if 'out of memory' in msg or 'resourceexhausted' in msg or 'oom' in msg:
-                    # try again with a smaller batch size
-                    try:
-                        new_batch = max(8, min(batch_predict_size // 4, 64))
-                        sol_pinn = _batched_model_predict(trained_pinn, xt_test, new_batch)
-                    except Exception:
-                        sol_pinn = np.asarray(trained_pinn.predict(xt_test))
-                else:
-                    sol_pinn = np.asarray(trained_pinn.predict(xt_test))
+            sol_pinn = trained_pinn.predict(xt_test)
             time_pinn_infer = time.time() - start
             # total time p
             total_time_pinn = t_pinn + time_pinn_infer
@@ -315,31 +138,10 @@ class ComputingBudgetModelScaling(object):
             # MLP has two variants (with or without M parameter) -> introspect signature
             try:
                 sig = inspect.signature(self.solver2.u_solve)
-                # If u_solve accepts named M argument, use a kwargs wrapper
                 if 'M' in sig.parameters:
-                    try:
-                        sol_mlp = _batched_u_solve(self.solver2.u_solve, xt_test, batch_predict_size, pos_args=None, kw_args=dict(n=rho_mlp, rho=rho_mlp, M=M_mlp))
-                    except Exception as e:
-                        msg = str(e).lower()
-                        if 'out of memory' in msg or 'resourceexhausted' in msg or 'oom' in msg:
-                            try:
-                                sol_mlp = _batched_u_solve(self.solver2.u_solve, xt_test, max(8, batch_predict_size // 8), pos_args=None, kw_args=dict(n=rho_mlp, rho=rho_mlp, M=M_mlp))
-                            except Exception:
-                                sol_mlp = self.solver2.u_solve(n=rho_mlp, rho=rho_mlp, x_t=xt_test, M=M_mlp)
-                        else:
-                            sol_mlp = self.solver2.u_solve(n=rho_mlp, rho=rho_mlp, x_t=xt_test, M=M_mlp)
+                    sol_mlp = self.solver2.u_solve(n=rho_mlp, rho=rho_mlp, x_t=xt_test, M=M_mlp)
                 else:
-                    try:
-                        sol_mlp = _batched_u_solve(self.solver2.u_solve, xt_test, batch_predict_size, pos_args=[rho_mlp, rho_mlp], kw_args=None)
-                    except Exception as e:
-                        msg = str(e).lower()
-                        if 'out of memory' in msg or 'resourceexhausted' in msg or 'oom' in msg:
-                            try:
-                                sol_mlp = _batched_u_solve(self.solver2.u_solve, xt_test, max(8, batch_predict_size // 8), pos_args=[rho_mlp, rho_mlp], kw_args=None)
-                            except Exception:
-                                sol_mlp = self.solver2.u_solve(rho_mlp, rho_mlp, xt_test)
-                        else:
-                            sol_mlp = self.solver2.u_solve(rho_mlp, rho_mlp, xt_test)
+                    sol_mlp = self.solver2.u_solve(rho_mlp, rho_mlp, xt_test)
             except (ValueError, TypeError):
                 # fallback in case signature introspection fails
                 try:
@@ -356,57 +158,18 @@ class ComputingBudgetModelScaling(object):
             net_backbone = dde.maps.jax.FNN([self.n_input] + [width_scasml] * base_layers + [self.n_output], "tanh", "Glorot normal")
             if hasattr(eq, 'terminal_transform') and eq.terminal_transform is not None:
                 net_backbone.apply_output_transform(eq.terminal_transform)
-            try:
-                data_b = eq.generate_data(num_domain=train_domain)
-            except TypeError:
-                data_b = eq.generate_data()
+            data_b = eq.generate_data()
             model_backbone = dde.Model(data_b, net_backbone)
             opt_backbone = Adam(self.n_input, self.n_output, model_backbone, eq)
             max_iters_backbone = int(base_iters * budget // (eq.n_input))
-            try:
-                trained_backbone, t_backbone, _ = self._train_until_converge(opt_backbone, f"{save_path}/scasml_backbone_budget_{budget}",
-                                                                              max_iters=max_iters_backbone, chunk_iters=chunk_iters, patience=patience)
-            except Exception as e:
-                msg = str(e).lower()
-                if 'out of memory' in msg or 'resourceexhausted' in msg or 'oom' in msg:
-                    # Retry with smaller backbone width; keeps training going albeit
-                    # with reduced compute.
-                    try:
-                        new_width_b = max(8, int(width_scasml // 2))
-                        # reduce train_domain as a last resort if the retry still OOMs
-                        new_train_domain = max(50, int(train_domain // 2))
-                        net_backbone = dde.maps.jax.FNN([self.n_input] + [new_width_b] * base_layers + [self.n_output], "tanh", "Glorot normal")
-                        if hasattr(eq, 'terminal_transform') and eq.terminal_transform is not None:
-                            net_backbone.apply_output_transform(eq.terminal_transform)
-                        try:
-                            data_b = eq.generate_data(num_domain=new_train_domain)
-                        except TypeError:
-                            data_b = eq.generate_data()
-                        model_backbone = dde.Model(data_b, net_backbone)
-                        opt_backbone = Adam(self.n_input, self.n_output, model_backbone, eq)
-                        trained_backbone, t_backbone, _ = self._train_until_converge(opt_backbone, f"{save_path}/scasml_backbone_budget_{budget}_reduced",
-                                                                                      max_iters=max_iters_backbone, chunk_iters=chunk_iters, patience=patience)
-                    except Exception:
-                        raise
-                else:
-                    raise
+            trained_backbone, t_backbone, _ = self._train_until_converge(opt_backbone, f"{save_path}/scasml_backbone_budget_{budget}",
+                                                                          max_iters=max_iters_backbone, chunk_iters=chunk_iters, patience=patience)
             # instantiate ScaSML with trained backbone
             scasml_copy = copy.deepcopy(self.solver3)
             scasml_copy.model = trained_backbone
             start = time.time()
-            # For scasml, we keep a reasonable rho similar to base_rho and use
-            # batched inference to avoid OOMs when xt_test is large
-            try:
-                sol_scasml = _batched_u_solve(scasml_copy.u_solve, xt_test, batch_predict_size, pos_args=None, kw_args=dict(n=base_rho, rho=base_rho))
-            except Exception as e:
-                msg = str(e).lower()
-                if 'out of memory' in msg or 'resourceexhausted' in msg or 'oom' in msg:
-                    try:
-                        sol_scasml = _batched_u_solve(scasml_copy.u_solve, xt_test, max(8, batch_predict_size // 8), pos_args=None, kw_args=dict(n=base_rho, rho=base_rho))
-                    except Exception:
-                        sol_scasml = scasml_copy.u_solve(n=base_rho, rho=base_rho, x_t=xt_test)
-                else:
-                    sol_scasml = scasml_copy.u_solve(n=base_rho, rho=base_rho, x_t=xt_test)
+            # For scasml, we keep a reasonable rho similar to base_rho
+            sol_scasml = scasml_copy.u_solve(n=base_rho, rho=base_rho, x_t=xt_test)
             time_scasml_infer = time.time() - start
             total_time_scasml = t_backbone + time_scasml_infer
 
@@ -451,40 +214,6 @@ class ComputingBudgetModelScaling(object):
                 f"budget_{budget}_improvement_vs_pinn": improvement_pinn,
                 f"budget_{budget}_improvement_vs_mlp": improvement_mlp
             })
-            # Log additional diagnostics for memory tracking and debug
-            wandb.log({
-                f"budget_{budget}_train_domain": train_domain,
-                f"budget_{budget}_pinn_width": width,
-                f"budget_{budget}_scasml_backbone_width": width_scasml,
-                f"budget_{budget}_batch_predict_size": batch_predict_size
-            })
-
-            # Clean up large objects and request GC to release memory for the
-            # next budget iteration. This helps avoid OOM on GPUs between runs.
-            try:
-                del trained_pinn
-                del model_pinn
-                del net_pinn
-                del opt_pinn
-            except Exception:
-                pass
-            try:
-                del trained_backbone
-                del model_backbone
-                del net_backbone
-                del opt_backbone
-            except Exception:
-                pass
-            try:
-                del sol_pinn, sol_mlp, sol_scasml
-            except Exception:
-                pass
-            gc.collect()
-            try:
-                if torch.cuda.is_available():
-                    torch.cuda.empty_cache()
-            except Exception:
-                pass
 
         # Stop profiler
         profiler.disable()
