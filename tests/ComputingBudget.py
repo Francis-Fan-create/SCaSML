@@ -97,71 +97,10 @@ class ComputingBudget(object):
         pinn_times = []
         mlp_times = []
         scasml_times = []
-        pinn_flops = []
-        mlp_flops = []
-        scasml_flops = []
         
         # Base iterations for budget=1.0
         base_iterations = 2000
         
-        def estimate_gflops(repeats=3, size=256):
-            """
-            Estimate the achievable compute on the current device by timing a
-            matrix multiplication and converting to GFLOPs/s. We first try a
-            JAX-backed matmul (captures GPU if available), otherwise fall back
-            to NumPy.
-            """
-            try:
-                # Use jax if available, best to warm-up and block_until_ready.
-                import jax
-                import jax.numpy as _jnp
-                from jax import random as _random
-                key1 = _random.PRNGKey(0)
-                key2 = _random.PRNGKey(1)
-                # Use float32 for speed and realistic load
-                a = _random.normal(key1, shape=(size, size), dtype=_jnp.float32)
-                b = _random.normal(key2, shape=(size, size), dtype=_jnp.float32)
-                # Warm-up to avoid one-time compilation overhead
-                _ = _jnp.dot(a, b).block_until_ready()
-                times = []
-                for _ in range(repeats):
-                    t0 = time.perf_counter()
-                    _ = _jnp.dot(a, b).block_until_ready()
-                    t1 = time.perf_counter()
-                    times.append(t1 - t0)
-                avg_time = sum(times) / max(1, len(times))
-                flops = 2 * (size ** 3)  # flops for a dense matmul
-                gflops = flops / max(avg_time, 1e-12) / 1e9
-                return float(gflops)
-            except Exception:
-                # Fallback: numpy dot (CPU-bound)
-                times = []
-                for _ in range(repeats):
-                    a = np.random.rand(size, size).astype(np.float32)
-                    b = np.random.rand(size, size).astype(np.float32)
-                    t0 = time.perf_counter()
-                    np.dot(a, b)
-                    t1 = time.perf_counter()
-                    times.append(t1 - t0)
-                avg_time = sum(times) / max(1, len(times))
-                flops = 2 * (size ** 3)
-                gflops = flops / max(avg_time, 1e-12) / 1e9
-                return float(gflops)
-
-        # Estimate device compute capability to convert measured time into
-        # an approximate FLOPS used metric. This is hardware-specific and
-        # intended for relative comparisons across solvers in the same run.
-        device_gflops = estimate_gflops()
-
-        if device_gflops <= 0:
-            device_gflops = 1.0
-
-        # Also print/log the estimated device compute capability for transparency
-        print(f"Estimated device: {device_gflops:.3f} GFLOPs/s (approx.)")
-        print("Note: This test uses GFLOPs (estimated via a short matmul benchmark)")
-        print("to express computational budget. This is hardware-dependent and intended")
-        print("only for relative comparison across solvers within the same run.")
-
         if is_train:
             for budget in budget_levels:
                 # Calculate iterations for this budget
@@ -182,7 +121,6 @@ class ComputingBudget(object):
                 inference_time_pinn = time.time() - start_time
                 
                 total_time_pinn = train_time_pinn + inference_time_pinn
-                pinn_flops_used = total_time_pinn * device_gflops
                 
                 # ==========================================
                 # MLP: Adjust training to match budget
@@ -202,7 +140,6 @@ class ComputingBudget(object):
                 inference_time_mlp = time.time() - start_time
                 
                 total_time_mlp = train_time_mlp + inference_time_mlp
-                mlp_flops_used = total_time_mlp * device_gflops
                 
                 # ==========================================
                 # ScaSML: Optimize training/inference split
@@ -227,7 +164,6 @@ class ComputingBudget(object):
                 inference_time_scasml = time.time() - start_time
                 
                 total_time_scasml = train_time_scasml + inference_time_scasml
-                scasml_flops_used = total_time_scasml * device_gflops
                 
                 # ==========================================
                 # Compute Errors
@@ -255,9 +191,6 @@ class ComputingBudget(object):
                 pinn_times.append(total_time_pinn)
                 mlp_times.append(total_time_mlp)
                 scasml_times.append(total_time_scasml)
-                pinn_flops.append(pinn_flops_used)
-                mlp_flops.append(mlp_flops_used)
-                scasml_flops.append(scasml_flops_used)
                 
                 # ==========================================
                 # Statistical Analysis
@@ -287,9 +220,6 @@ class ComputingBudget(object):
                     f"budget_{budget}_pinn_time": total_time_pinn,
                     f"budget_{budget}_mlp_time": total_time_mlp,
                     f"budget_{budget}_scasml_time": total_time_scasml,
-                    f"budget_{budget}_pinn_flops": pinn_flops_used,
-                    f"budget_{budget}_mlp_flops": mlp_flops_used,
-                    f"budget_{budget}_scasml_flops": scasml_flops_used,
                     f"budget_{budget}_improvement_vs_pinn": improvement_pinn,
                     f"budget_{budget}_improvement_vs_mlp": improvement_mlp,
                     f"budget_{budget}_p_pinn_scasml": p_pinn_scasml,
@@ -323,34 +253,25 @@ class ComputingBudget(object):
                 'figure.autolayout': False
             })
             
-            if len(pinn_errors) == 0:
-                print("No valid runs detected; skipping statistics and plotting.")
-                profiler.disable()
-                profiler.dump_stats(f"{save_path}/{eq_name}_computing_budget.prof")
-                artifact = wandb.Artifact(f"{eq_name}_computing_budget", type="profile")
-                artifact.add_file(f"{save_path}/{eq_name}_computing_budget.prof")
-                wandb.log_artifact(artifact)
-                return budget_levels[-1] if budget_levels else 1.0
-
             # ==========================================
-            # Figure 1: Error vs FLOPs used
+            # Figure 1: Error vs Budget
             # ==========================================
             fig, ax = plt.subplots(figsize=(3.5, 3))
-            pinn_flops_array = np.array(pinn_flops)
-            mlp_flops_array = np.array(mlp_flops)
-            scasml_flops_array = np.array(scasml_flops)
-
+            
+            budget_array = np.array(budget_levels[:len(pinn_errors)])
+            
             # Plot with markers
-            ax.plot(pinn_flops_array, pinn_errors, color=COLOR_SCHEME['PINN'], 
-            marker='o', linestyle='-', label='PINN', 
-            markerfacecolor='none', markeredgewidth=0.8)
-            ax.plot(mlp_flops_array, mlp_errors, color=COLOR_SCHEME['MLP'], 
-            marker='s', linestyle='-', label='MLP',
-            markerfacecolor='none', markeredgewidth=0.8)
-            ax.plot(scasml_flops_array, scasml_errors, color=COLOR_SCHEME['SCaSML'], 
-            marker='^', linestyle='-', label='SCaSML',
-            markerfacecolor='none', markeredgewidth=0.8)
-            ax.set_xlabel('Computational Cost (GFLOPs)', labelpad=3)
+            ax.plot(budget_array, pinn_errors, color=COLOR_SCHEME['PINN'], 
+                   marker='o', linestyle='-', label='PINN', 
+                   markerfacecolor='none', markeredgewidth=0.8)
+            ax.plot(budget_array, mlp_errors, color=COLOR_SCHEME['MLP'], 
+                   marker='s', linestyle='-', label='MLP',
+                   markerfacecolor='none', markeredgewidth=0.8)
+            ax.plot(budget_array, scasml_errors, color=COLOR_SCHEME['SCaSML'], 
+                   marker='^', linestyle='-', label='SCaSML',
+                   markerfacecolor='none', markeredgewidth=0.8)
+            
+            ax.set_xlabel('Computing Budget (×baseline)', labelpad=3)
             ax.set_ylabel('Relative L2 Error', labelpad=3)
             ax.set_yscale('log')
             ax.set_xscale('log')
@@ -361,7 +282,7 @@ class ComputingBudget(object):
             ax.spines['right'].set_visible(False)
             
             plt.tight_layout()
-            plt.savefig(f'{save_path}/Error_vs_FLOPs.pdf', 
+            plt.savefig(f'{save_path}/Error_vs_Budget.pdf', 
                        bbox_inches='tight', pad_inches=0.05)
             plt.close()
             
@@ -376,10 +297,7 @@ class ComputingBudget(object):
             improvements_vs_mlp = [(mlp - scasml) / mlp * 100 
                                   for mlp, scasml in zip(mlp_errors, scasml_errors)]
             
-            budget_array = np.array(budget_levels[:len(pinn_errors)])
             x = np.arange(len(budget_array))
-            # average flops per budget across solvers (for display only)
-            avg_flops = (pinn_flops_array + mlp_flops_array + scasml_flops_array) / 3.0
             width = 0.35
             
             bars1 = ax.bar(x - width/2, improvements_vs_pinn, width, 
@@ -391,9 +309,8 @@ class ComputingBudget(object):
             
             ax.set_xlabel('Computing Budget (×baseline)', labelpad=3)
             ax.set_ylabel('Improvement (%)', labelpad=3)
-            # Show budget multiplier and the approximate GFLOPs (avg across solvers)
             ax.set_xticks(x)
-            ax.set_xticklabels([f'{b}×\n{avg:.1f} GFLOPs' for b, avg in zip(budget_array, avg_flops)])
+            ax.set_xticklabels([f'{b}×' for b in budget_array])
             ax.axhline(y=0, color='black', linestyle='-', linewidth=0.8)
             ax.legend(frameon=False, loc='upper left')
             ax.grid(True, which='major', axis='y', linestyle='--', 
@@ -411,13 +328,10 @@ class ComputingBudget(object):
             # ==========================================
             avg_improvement_pinn = np.mean(improvements_vs_pinn)
             avg_improvement_mlp = np.mean(improvements_vs_mlp)
+            
             wandb.log({
                 "avg_improvement_vs_pinn": avg_improvement_pinn,
                 "avg_improvement_vs_mlp": avg_improvement_mlp,
-                "avg_flops_pinn": np.mean(pinn_flops) if len(pinn_flops) else 0.0,
-                "avg_flops_mlp": np.mean(mlp_flops) if len(mlp_flops) else 0.0,
-                "avg_flops_scasml": np.mean(scasml_flops) if len(scasml_flops) else 0.0,
-                "device_gflops_estimated": device_gflops,
             })
             
             # Write final results to log file
@@ -434,12 +348,10 @@ class ComputingBudget(object):
             print("=" * 80)
             print()
             
-            print(f"{ 'Budget':<12} {'PINN Error':<15} {'PINN GFLOPs':<13} {'MLP Error':<15} {'MLP GFLOPs':<13} {'SCaSML Error':<15} {'SCaSML GFLOPs':<13}")
+            print(f"{'Budget':<12} {'PINN Error':<15} {'MLP Error':<15} {'SCaSML Error':<15}")
             print("-" * 60)
             for i, budget in enumerate(budget_array):
-                print(
-                    f"{budget:<12.1f} {pinn_errors[i]:<15.6e} {pinn_flops[i]:<13.2f} {mlp_errors[i]:<15.6e} {mlp_flops[i]:<13.2f} {scasml_errors[i]:<15.6e} {scasml_flops[i]:<13.2f}"
-                )
+                print(f"{budget:<12.1f} {pinn_errors[i]:<15.6e} {mlp_errors[i]:<15.6e} {scasml_errors[i]:<15.6e}")
             print()
             
             print("Average Improvement:")
@@ -451,9 +363,6 @@ class ComputingBudget(object):
             print(f"  PINN error: {pinn_errors[-1]:.6e}")
             print(f"  MLP error: {mlp_errors[-1]:.6e}")
             print(f"  SCaSML error: {scasml_errors[-1]:.6e}")
-            print(f"  PINN GFLOPs: {pinn_flops[-1]:.2f}")
-            print(f"  MLP GFLOPs: {mlp_flops[-1]:.2f}")
-            print(f"  SCaSML GFLOPs: {scasml_flops[-1]:.2f}")
             print(f"  Improvement vs PINN: {improvements_vs_pinn[-1]:+.2f}%")
             print(f"  Improvement vs MLP: {improvements_vs_mlp[-1]:+.2f}%")
             print("=" * 80)
