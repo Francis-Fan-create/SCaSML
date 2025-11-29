@@ -12,6 +12,7 @@ from optimizers.Adam import Adam
 import jax.numpy as jnp
 from scipy import stats
 import matplotlib.ticker as ticker
+import deepxde as dde
 
 class ComputingBudget(object):
     '''
@@ -98,22 +99,63 @@ class ComputingBudget(object):
         mlp_times = []
         scasml_times = []
         
-        # Base iterations for budget=1.0
+        # Base network configuration for PINN (budget=1.0)
+        base_hidden_width = 50
+        base_hidden_depth = 5
         base_iterations = 2000
+        
+        def create_scaled_pinn(budget, eq):
+            '''
+            Create a PINN model with network size scaled by budget.
+            Scaling is done by increasing both width and depth of the network.
+            
+            Parameters:
+            budget (float): Budget multiplier.
+            eq (object): The equation object.
+            
+            Returns:
+            dde.Model: A new PINN model with scaled network architecture.
+            '''
+            n_input = eq.n_input
+            n_output = eq.n_output
+            
+            # Scale network size: increase both width and depth
+            # Width scales as sqrt(budget) to maintain balanced growth
+            # Depth increases logarithmically with budget
+            scaled_width = int(base_hidden_width * np.sqrt(budget))
+            scaled_depth = max(base_hidden_depth, int(base_hidden_depth + np.log2(budget)))
+            
+            # Construct layer sizes: [input] + [hidden]*depth + [output]
+            layer_sizes = [n_input] + [scaled_width] * scaled_depth + [n_output]
+            
+            # Create new network with scaled architecture
+            net = dde.maps.jax.FNN(layer_sizes, "tanh", "Glorot normal")
+            
+            # Apply terminal transform if available
+            if hasattr(eq, 'terminal_transform'):
+                net.apply_output_transform(eq.terminal_transform)
+            
+            # Generate data and create model
+            data = eq.generate_data()
+            model = dde.Model(data, net)
+            
+            return model, scaled_width, scaled_depth
         
         if is_train:
             for budget in budget_levels:
-                # Calculate iterations for this budget
+                # Calculate scaled iterations for MLP and ScaSML (PINN uses network size scaling)
                 train_iters = int(base_iterations * budget)
                 
                 # ==========================================
-                # PINN: Train and measure time
+                # PINN: Scale by network size (not iterations)
                 # ==========================================
-                solver1_copy = copy.deepcopy(self.solver1)
-                opt1 = Adam(eq.n_input, 1, solver1_copy, eq)
+                # Create a new PINN with scaled network architecture
+                scaled_pinn, scaled_width, scaled_depth = create_scaled_pinn(budget, eq)
+                opt1 = Adam(eq.n_input, 1, scaled_pinn, eq)
                 
                 start_time = time.time()
-                trained_pinn = opt1.train(f"{save_path}/model_weights_PINN_{budget}", iters=train_iters)
+                # Use fixed base iterations, scaling is done via network size
+                trained_pinn = opt1.train(f"{save_path}/model_weights_PINN_{budget}", iters=base_iterations)
                 train_time_pinn = time.time() - start_time
                 
                 start_time = time.time()
@@ -121,6 +163,12 @@ class ComputingBudget(object):
                 inference_time_pinn = time.time() - start_time
                 
                 total_time_pinn = train_time_pinn + inference_time_pinn
+                
+                # Log PINN network configuration
+                wandb.log({
+                    f"budget_{budget}_pinn_width": scaled_width,
+                    f"budget_{budget}_pinn_depth": scaled_depth,
+                })
                 
                 # ==========================================
                 # MLP: Adjust training to match budget
@@ -345,7 +393,17 @@ class ComputingBudget(object):
             print(f"Equation: {eq_name}")
             print(f"Dimension: {d+1}")
             print(f"Budget levels tested: {budget_array.tolist()}")
+            print(f"PINN scaling method: Network size (width/depth)")
+            print(f"PINN base config: width={base_hidden_width}, depth={base_hidden_depth}, iters={base_iterations}")
             print("=" * 80)
+            print()
+            
+            # Show PINN network configuration for each budget
+            print("PINN Network Scaling:")
+            for i, budget in enumerate(budget_array):
+                scaled_w = int(base_hidden_width * np.sqrt(budget))
+                scaled_d = max(base_hidden_depth, int(base_hidden_depth + np.log2(budget)))
+                print(f"  Budget {budget:.1f}×: width={scaled_w}, depth={scaled_d}")
             print()
             
             print(f"{'Budget':<12} {'PINN Error':<15} {'MLP Error':<15} {'SCaSML Error':<15}")
