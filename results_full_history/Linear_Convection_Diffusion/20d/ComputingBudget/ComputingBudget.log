@@ -3,25 +3,30 @@ COMPUTING BUDGET TEST - FINAL RESULTS
 ================================================================================
 Equation: Linear_Convection_Diffusion
 Dimension: 21
-Budget levels tested: [1.0, 2.0, 4.0, 8.0, 16.0]
+Budget levels tested: [1.0, 2.0, 4.0]
+PINN scaling method: Network size (width/depth)
+PINN base config: width=50, depth=5, iters=2000
 ================================================================================
+
+PINN Network Scaling:
+  Budget 1.0×: width=50, depth=5
+  Budget 2.0×: width=70, depth=6
+  Budget 4.0×: width=100, depth=7
 
 Budget       PINN Error      MLP Error       SCaSML Error   
 ------------------------------------------------------------
-1.0          8.710381e-02    8.074951e-02    5.337361e-02   
-2.0          8.039530e-02    8.074951e-02    5.252944e-02   
-4.0          7.287773e-02    8.074951e-02    1.731672e-02   
-8.0          6.739757e-02    3.207397e-02    1.727224e-02   
-16.0         6.993234e-02    3.207397e-02    1.691235e-02   
+1.0          3.956341e-01    7.647705e-02    7.730721e-02   
+2.0          5.305608e-01    7.647705e-02    8.663411e-02   
+4.0          4.738837e-01    7.647705e-02    5.879982e-02   
 
 Average Improvement:
-  SCaSML vs PINN: +59.96%
-  SCaSML vs MLP: +48.16%
+  SCaSML vs PINN: +83.91%
+  SCaSML vs MLP: +2.92%
 
-Final Budget Level (16.0×):
-  PINN error: 6.993234e-02
-  MLP error: 3.207397e-02
-  SCaSML error: 1.691235e-02
-  Improvement vs PINN: +75.82%
-  Improvement vs MLP: +47.27%
+Final Budget Level (4.0×):
+  PINN error: 4.738837e-01
+  MLP error: 7.647705e-02
+  SCaSML error: 5.879982e-02
+  Improvement vs PINN: +87.59%
+  Improvement vs MLP: +23.11%
 ================================================================================

@@ -91,15 +91,15 @@ solver3_3=ScaSML_full_history(equation=equation,PINN=solver1_3) #ScaSML object
 # #run the test for InferenceScaling
 # test3=InferenceScaling(equation,solver1_3,solver2,solver3_3)
 # test3.test(r"results_full_history/Grad_Dependent_Nonlinear/40d")
-# #run the test for ComputingBudget
-# test4=ComputingBudget(equation,solver1_1,solver2,solver3_1,is_train)
-# test4.test(r"results_full_history/Grad_Dependent_Nonlinear/40d")
+#run the test for ComputingBudget
+test4=ComputingBudget(equation,solver1_1,solver2,solver3_1,is_train)
+test4.test(r"results_full_history/Grad_Dependent_Nonlinear/40d")
 # #run the test for SimpleScaling
 # test5=SimpleScaling(equation,solver1_3,solver2,solver3_3)
 # test5.test(r"results_full_history/Grad_Dependent_Nonlinear/40d")
-#run the test for RepeatedExperiment
-test6=RepeatedExperiment(equation,solver1_2,solver2,solver3_2,is_train)
-test6.test(r"results_full_history/Grad_Dependent_Nonlinear/40d", num_repetitions=10)
+# #run the test for RepeatedExperiment
+# test6=RepeatedExperiment(equation,solver1_2,solver2,solver3_2,is_train)
+# test6.test(r"results_full_history/Grad_Dependent_Nonlinear/40d", num_repetitions=10)
 
 #finish wandb
 wandb.finish()

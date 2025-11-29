@@ -54,7 +54,7 @@ class ComputingBudget(object):
         self.T = equation.T
         self.is_train = is_train
 
-    def test(self, save_path, budget_levels=[1.0, 2.0, 4.0, 8.0, 16.0], num_domain=1000, num_boundary=200):
+    def test(self, save_path, budget_levels=[1.0, 2.0, 4.0], num_domain=1000, num_boundary=200):
         '''
         Compares solvers under different computing budget levels.
         
@@ -192,23 +192,27 @@ class ComputingBudget(object):
                 # ==========================================
                 # ScaSML: Optimize training/inference split
                 # ==========================================
-                solver3_copy = copy.deepcopy(self.solver3)
-                
-                # ScaSML uses less training for PINN backbone
-                scasml_train_iters = train_iters // (d + 1)
-                rho_scasml = max(2, int(np.log(scasml_train_iters) / np.log(np.log(scasml_train_iters) + 1)))
-                
-                opt3 = Adam(eq.n_input, 1, solver3_copy.PINN, eq)
-                
+                # Build a fresh backbone that matches the scaled PINN architecture
+                scasml_backbone, _, _ = create_scaled_pinn(budget, eq)
+                opt3 = Adam(eq.n_input, 1, scasml_backbone, eq)
+
+                # Keep ScaSML training comparable to the PINN budget
+                scasml_train_iters = train_iters
+                scasml_picard_level = 2  # Fixed Picard depth for fairness across budgets
+
                 start_time = time.time()
-                trained_pinn_backbone = opt3.train(f"{save_path}/model_weights_ScaSML_{budget}", 
-                                                   iters=scasml_train_iters)
+                trained_pinn_backbone = opt3.train(
+                    f"{save_path}/model_weights_ScaSML_{budget}",
+                    iters=scasml_train_iters,
+                )
                 train_time_scasml = time.time() - start_time
-                
-                solver3_copy.PINN = trained_pinn_backbone
-                
+
+                # Instantiate a fresh ScaSML solver with the trained backbone
+                scasml_solver_cls = self.solver3.__class__
+                scasml_solver = scasml_solver_cls(equation=eq, PINN=trained_pinn_backbone)
+
                 start_time = time.time()
-                sol_scasml = solver3_copy.u_solve(rho_scasml, rho_scasml, xt_test)
+                sol_scasml = scasml_solver.u_solve(scasml_picard_level, scasml_picard_level, xt_test)
                 inference_time_scasml = time.time() - start_time
                 
                 total_time_scasml = train_time_scasml + inference_time_scasml
@@ -323,11 +327,19 @@ class ComputingBudget(object):
             ax.set_ylabel('Relative L2 Error', labelpad=3)
             ax.set_yscale('log')
             ax.set_xscale('log')
+            # Use FixedLocator and FixedFormatter so only the selected budget ticks are shown
+            ax.xaxis.set_major_locator(ticker.FixedLocator(budget_array))
+            ax.xaxis.set_minor_locator(ticker.NullLocator())
+            ax.xaxis.set_major_formatter(ticker.FixedFormatter([f'{b}×' for b in budget_array]))
+            plt.setp(ax.get_xticklabels(), rotation=45, ha='right')
             ax.legend(frameon=False, loc='upper right')
             ax.grid(True, which='major', axis='both', linestyle='--', 
                    linewidth=0.5, alpha=0.4)
             ax.spines['top'].set_visible(False)
             ax.spines['right'].set_visible(False)
+
+            # Ensure rotation is applied to the final tick labels and major ticks
+            ax.tick_params(axis='x', which='major', rotation=45)
             
             plt.tight_layout()
             plt.savefig(f'{save_path}/Error_vs_Budget.pdf', 
@@ -357,14 +369,19 @@ class ComputingBudget(object):
             
             ax.set_xlabel('Computing Budget (×baseline)', labelpad=3)
             ax.set_ylabel('Improvement (%)', labelpad=3)
-            ax.set_xticks(x)
-            ax.set_xticklabels([f'{b}×' for b in budget_array])
+            # For bar charts, keep only the x positions of the bars and set labels
+            ax.xaxis.set_major_locator(ticker.FixedLocator(x))
+            ax.xaxis.set_minor_locator(ticker.NullLocator())
+            ax.xaxis.set_major_formatter(ticker.FixedFormatter([f'{b}×' for b in budget_array]))
+            plt.setp(ax.get_xticklabels(), rotation=45, ha='right')
             ax.axhline(y=0, color='black', linestyle='-', linewidth=0.8)
             ax.legend(frameon=False, loc='upper left')
             ax.grid(True, which='major', axis='y', linestyle='--', 
                    linewidth=0.5, alpha=0.4)
             ax.spines['top'].set_visible(False)
             ax.spines['right'].set_visible(False)
+
+            ax.tick_params(axis='x', which='major', rotation=45)
             
             plt.tight_layout()
             plt.savefig(f'{save_path}/Improvement_Bar_Chart.pdf', 

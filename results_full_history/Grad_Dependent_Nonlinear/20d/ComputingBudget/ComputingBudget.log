@@ -3,25 +3,30 @@ COMPUTING BUDGET TEST - FINAL RESULTS
 ================================================================================
 Equation: Grad_Dependent_Nonlinear
 Dimension: 21
-Budget levels tested: [1.0, 2.0, 4.0, 8.0, 16.0]
+Budget levels tested: [1.0, 2.0, 4.0]
+PINN scaling method: Network size (width/depth)
+PINN base config: width=50, depth=5, iters=2000
 ================================================================================
+
+PINN Network Scaling:
+  Budget 1.0×: width=50, depth=5
+  Budget 2.0×: width=70, depth=6
+  Budget 4.0×: width=100, depth=7
 
 Budget       PINN Error      MLP Error       SCaSML Error   
 ------------------------------------------------------------
-1.0          9.958070e-03    1.139526e-01    4.043743e-03   
-2.0          9.012815e-03    1.139526e-01    3.768757e-03   
-4.0          7.997303e-03    1.139526e-01    3.621849e-03   
-8.0          6.372769e-03    1.289062e-01    3.697722e-03   
-16.0         4.383613e-03    1.289062e-01    3.234946e-03   
+1.0          6.471674e-03    1.116333e-01    1.608835e-03   
+2.0          5.303703e-03    1.116333e-01    9.294658e-04   
+4.0          4.389913e-03    1.116333e-01    7.876153e-04   
 
 Average Improvement:
-  SCaSML vs PINN: +48.09%
-  SCaSML vs MLP: +96.92%
+  SCaSML vs PINN: +79.89%
+  SCaSML vs MLP: +99.01%
 
-Final Budget Level (16.0×):
-  PINN error: 4.383613e-03
-  MLP error: 1.289062e-01
-  SCaSML error: 3.234946e-03
-  Improvement vs PINN: +26.20%
-  Improvement vs MLP: +97.49%
+Final Budget Level (4.0×):
+  PINN error: 4.389913e-03
+  MLP error: 1.116333e-01
+  SCaSML error: 7.876153e-04
+  Improvement vs PINN: +82.06%
+  Improvement vs MLP: +99.29%
 ================================================================================
