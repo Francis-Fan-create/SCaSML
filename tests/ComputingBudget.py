@@ -5,31 +5,16 @@ import torch
 import time
 import sys
 import os
-import gc
 import cProfile
 import shutil
 import copy
 from optimizers.Adam import Adam
 import jax.numpy as jnp
-import jax
 from scipy import stats
 import matplotlib.ticker as ticker
 import deepxde as dde
 from solvers.MLP import MLP
 from solvers.ScaSML import ScaSML
-
-
-def clear_gpu_memory():
-    """Clear GPU memory for both PyTorch and JAX."""
-    gc.collect()
-    if torch.cuda.is_available():
-        torch.cuda.empty_cache()
-        torch.cuda.synchronize()
-    # Clear JAX caches
-    try:
-        jax.clear_caches()
-    except:
-        pass
 
 class ComputingBudget(object):
     '''
@@ -113,14 +98,17 @@ class ComputingBudget(object):
         
         # Define a range of network architectures with increasing complexity
         # Format: (num_layers, neurons_per_layer)
-        # REDUCED sizes for lower GPU memory usage
         architecture_options = [
-            (2, 16),   # Tiny
-            (2, 24),   # Small
-            (3, 32),   # Medium-Small
-            (3, 40),   # Medium (baseline)
-            (4, 48),   # Medium-Large
-            (4, 56),   # Large
+            (2, 20),   # Small
+            (3, 30),   # 
+            (4, 40),   # 
+            (5, 50),   # Medium (baseline)
+            (5, 75),   # 
+            (6, 80),   # 
+            (7, 100),  # Large
+            (8, 120),  # 
+            (9, 150),  # Very Large
+            (10, 200), # Extra Large
         ]
         
         # Compute GFlops for each architecture and select closest to targets
@@ -139,11 +127,11 @@ class ComputingBudget(object):
             
             # If no close match found, interpolate to create custom architecture
             if best_config is None or best_diff > target_gflops * 0.5:
-                # Estimate neurons needed for target GFlops with 3 layers (reduced from 5)
-                # Rough approximation: GFlops ≈ 2 * n_input * neurons + 2 * 2 * neurons^2
-                neurons = int(np.sqrt(target_gflops * 1e9 / (2 * 3)))
-                neurons = max(16, min(neurons, 64))  # Clamp to smaller range for memory
-                layer_sizes = [n_input] + [neurons] * 3 + [1]
+                # Estimate neurons needed for target GFlops with 5 layers
+                # Rough approximation: GFlops ≈ 2 * n_input * neurons + 2 * 4 * neurons^2
+                neurons = int(np.sqrt(target_gflops * 1e9 / (2 * 5)))
+                neurons = max(20, min(neurons, 500))  # Clamp to reasonable range
+                layer_sizes = [n_input] + [neurons] * 5 + [1]
                 gflops = self.compute_fnn_gflops(layer_sizes)
                 best_config = (layer_sizes, gflops)
             
@@ -169,7 +157,7 @@ class ComputingBudget(object):
         model = dde.Model(data, net)
         return model
 
-    def test(self, save_path, gflops_levels=None, num_domain=200, num_boundary=50, train_iters=500):
+    def test(self, save_path, gflops_levels=None, num_domain=1000, num_boundary=200, train_iters=2000):
         '''
         Compares solvers under different computing budget levels measured in GFlops.
         
@@ -180,9 +168,9 @@ class ComputingBudget(object):
         Parameters:
         save_path (str): The path to save the results.
         gflops_levels (list): List of target GFlops values. If None, uses default values.
-        num_domain (int): The number of points in the test domain (reduced default: 200).
-        num_boundary (int): The number of points on the test boundary (reduced default: 50).
-        train_iters (int): Number of training iterations for each network (reduced default: 500).
+        num_domain (int): The number of points in the test domain.
+        num_boundary (int): The number of points on the test boundary.
+        train_iters (int): Number of training iterations for each network.
         '''
         # Initialize the profiler
         profiler = cProfile.Profile()
@@ -205,10 +193,10 @@ class ComputingBudget(object):
         
         # Default GFlops levels if not specified
         if gflops_levels is None:
-            # Generate a smaller range of GFlops based on dimension
-            # Reduced number of levels (4 instead of 6) for faster testing
+            # Generate a range of GFlops based on dimension
+            # Smaller networks for higher dimensions to keep reasonable training time
             base_gflops = 1e-6 * n_input  # Scale with input dimension
-            gflops_levels = [base_gflops * mult for mult in [1, 4, 16, 64]]
+            gflops_levels = [base_gflops * mult for mult in [1, 2, 4, 8, 16, 32]]
         
         # Generate network configurations for each GFlops level
         network_configs = self.generate_network_configs(n_input, gflops_levels)
@@ -236,9 +224,6 @@ class ComputingBudget(object):
                 print(f"Target GFlops: {gflops_levels[config_idx]:.2e}, Actual GFlops: {actual_gflops:.2e}")
                 print(f"{'='*60}")
                 
-                # Clear GPU memory before each configuration
-                clear_gpu_memory()
-                
                 actual_gflops_list.append(actual_gflops)
                 layer_sizes_list.append(layer_sizes)
                 
@@ -262,13 +247,10 @@ class ComputingBudget(object):
                 # ==========================================
                 # MLP: Use standard MLP (no neural network, just Picard iteration)
                 # ==========================================
-                # Clear memory before MLP
-                clear_gpu_memory()
-                
                 solver2_copy = copy.deepcopy(self.solver2)
                 
-                # Adjust rho based on network complexity (reduced max from 6 to 4)
-                rho_mlp = max(2, min(4, int(np.log(actual_gflops * 1e9 + 1) / 2)))
+                # Adjust rho based on network complexity
+                rho_mlp = max(2, min(6, int(np.log(actual_gflops * 1e9 + 1) / 2)))
                 
                 start_time = time.time()
                 sol_mlp = solver2_copy.u_solve(rho_mlp, rho_mlp, xt_test)
@@ -278,15 +260,12 @@ class ComputingBudget(object):
                 # ==========================================
                 # ScaSML: Create PINN backbone with current architecture
                 # ==========================================
-                # Clear memory before ScaSML
-                clear_gpu_memory()
-                
                 scasml_pinn_model = self.create_pinn_model(layer_sizes, eq)
                 opt3 = Adam(eq.n_input, 1, scasml_pinn_model, eq)
                 
                 # ScaSML uses fewer training iterations for backbone
-                scasml_train_iters = max(50, train_iters // (d + 1))
-                rho_scasml = max(2, min(4, int(np.log(actual_gflops * 1e9 + 1) / 2)))
+                scasml_train_iters = max(100, train_iters // (d + 1))
+                rho_scasml = max(2, min(6, int(np.log(actual_gflops * 1e9 + 1) / 2)))
                 
                 start_time = time.time()
                 trained_scasml_backbone = opt3.train(f"{save_path}/model_weights_ScaSML_{config_idx}", 
@@ -301,11 +280,6 @@ class ComputingBudget(object):
                 inference_time_scasml = time.time() - start_time
                 
                 total_time_scasml = train_time_scasml + inference_time_scasml
-                
-                # Clear memory after each solver
-                clear_gpu_memory()
-                del scasml_solver, trained_scasml_backbone, opt3, scasml_pinn_model
-                clear_gpu_memory()
                 
                 # ==========================================
                 # Compute Errors
@@ -362,11 +336,6 @@ class ComputingBudget(object):
                 })
                 
                 print(f"PINN error: {rel_error_pinn:.6e}, MLP error: {rel_error_mlp:.6e}, ScaSML error: {rel_error_scasml:.6e}")
-                
-                # Clean up after each iteration
-                del trained_pinn, pinn_model, opt1, solver2_copy
-                del sol_pinn, sol_mlp, sol_scasml
-                clear_gpu_memory()
             
             # ==========================================
             # Visualization
