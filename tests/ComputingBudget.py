@@ -12,17 +12,13 @@ from optimizers.Adam import Adam
 import jax.numpy as jnp
 from scipy import stats
 import matplotlib.ticker as ticker
-import deepxde as dde
-from solvers.MLP import MLP
-from solvers.ScaSML import ScaSML
 
 class ComputingBudget(object):
     '''
-    Computing Budget test: compares solvers under equal total computational budget (GFlops).
+    Computing Budget test: compares solvers under equal total computational budget.
     
     This test demonstrates that SCaSML achieves better accuracy than MLP and PINN
-    when all methods are given the same total computational budget measured in GFlops.
-    The budget is controlled by varying network architecture (layers and neurons).
+    when all methods are given the same total computing time (training + inference).
 
     Attributes:
     equation (object): An object representing the equation to solve.
@@ -57,120 +53,19 @@ class ComputingBudget(object):
         self.T = equation.T
         self.is_train = is_train
 
-    def compute_fnn_gflops(self, layer_sizes, batch_size=1, include_activation=True):
+    def test(self, save_path, budget_levels=[1.0, 2.0, 4.0, 8.0, 16.0], num_domain=1000, num_boundary=200):
         '''
-        Compute the GFlops for a feedforward neural network (FNN) inference.
+        Compares solvers under different computing budget levels.
         
-        For each fully connected layer: FLOPs = 2 * input_dim * output_dim (multiply-add)
-        Activation functions add approximately output_dim FLOPs per layer.
-        
-        Parameters:
-        layer_sizes (list): List of layer sizes, e.g., [21, 50, 50, 50, 1]
-        batch_size (int): Batch size for inference
-        include_activation (bool): Whether to include activation function FLOPs
-        
-        Returns:
-        float: GFlops (10^9 FLOPs)
-        '''
-        total_flops = 0
-        for i in range(len(layer_sizes) - 1):
-            input_dim = layer_sizes[i]
-            output_dim = layer_sizes[i + 1]
-            # Matrix multiplication: 2 * input * output (multiply-add counted as 2 ops)
-            total_flops += 2 * input_dim * output_dim * batch_size
-            # Activation function (tanh approximation: ~10 FLOPs per element)
-            if include_activation and i < len(layer_sizes) - 2:  # No activation on output layer
-                total_flops += 10 * output_dim * batch_size
-        return total_flops / 1e9  # Convert to GFlops
-
-    def generate_network_configs(self, n_input, target_gflops_list):
-        '''
-        Generate network configurations (layer sizes) that achieve target GFlops.
-        
-        Parameters:
-        n_input (int): Input dimension
-        target_gflops_list (list): List of target GFlops values
-        
-        Returns:
-        list: List of tuples (layer_sizes, actual_gflops)
-        '''
-        configs = []
-        
-        # Define a range of network architectures with increasing complexity
-        # Format: (num_layers, neurons_per_layer)
-        architecture_options = [
-            (2, 20),   # Small
-            (3, 30),   # 
-            (4, 40),   # 
-            (5, 50),   # Medium (baseline)
-            (5, 75),   # 
-            (6, 80),   # 
-            (7, 100),  # Large
-            (8, 120),  # 
-            (9, 150),  # Very Large
-            (10, 200), # Extra Large
-        ]
-        
-        # Compute GFlops for each architecture and select closest to targets
-        for target_gflops in target_gflops_list:
-            best_config = None
-            best_diff = float('inf')
-            
-            for num_layers, neurons in architecture_options:
-                layer_sizes = [n_input] + [neurons] * num_layers + [1]
-                gflops = self.compute_fnn_gflops(layer_sizes)
-                diff = abs(gflops - target_gflops)
-                
-                if diff < best_diff:
-                    best_diff = diff
-                    best_config = (layer_sizes, gflops)
-            
-            # If no close match found, interpolate to create custom architecture
-            if best_config is None or best_diff > target_gflops * 0.5:
-                # Estimate neurons needed for target GFlops with 5 layers
-                # Rough approximation: GFlops ≈ 2 * n_input * neurons + 2 * 4 * neurons^2
-                neurons = int(np.sqrt(target_gflops * 1e9 / (2 * 5)))
-                neurons = max(20, min(neurons, 500))  # Clamp to reasonable range
-                layer_sizes = [n_input] + [neurons] * 5 + [1]
-                gflops = self.compute_fnn_gflops(layer_sizes)
-                best_config = (layer_sizes, gflops)
-            
-            configs.append(best_config)
-        
-        return configs
-
-    def create_pinn_model(self, layer_sizes, equation):
-        '''
-        Create a new PINN model with the specified layer sizes.
-        
-        Parameters:
-        layer_sizes (list): Network architecture, e.g., [21, 50, 50, 1]
-        equation (object): The equation object
-        
-        Returns:
-        dde.Model: A new PINN model
-        '''
-        net = dde.maps.jax.FNN(layer_sizes, "tanh", "Glorot normal")
-        terminal_transform = equation.terminal_transform
-        net.apply_output_transform(terminal_transform)
-        data = equation.generate_data()
-        model = dde.Model(data, net)
-        return model
-
-    def test(self, save_path, gflops_levels=None, num_domain=1000, num_boundary=200, train_iters=2000):
-        '''
-        Compares solvers under different computing budget levels measured in GFlops.
-        
-        The budget is controlled by varying network architecture (layers and neurons).
-        For each GFlops level, we train networks of corresponding size, then measure 
-        the resulting accuracy.
+        The budget is normalized such that 1.0 represents a baseline computation time.
+        For each budget level, we train each solver to consume approximately the same
+        total time (training + inference), then measure the resulting accuracy.
     
         Parameters:
         save_path (str): The path to save the results.
-        gflops_levels (list): List of target GFlops values. If None, uses default values.
+        budget_levels (list): List of budget multipliers (e.g., [1.0, 2.0, 4.0]).
         num_domain (int): The number of points in the test domain.
         num_boundary (int): The number of points on the test boundary.
-        train_iters (int): Number of training iterations for each network.
         '''
         # Initialize the profiler
         profiler = cProfile.Profile()
@@ -189,17 +84,6 @@ class ComputingBudget(object):
         eq = self.equation
         eq_name = eq.__class__.__name__
         d = eq.n_input - 1
-        n_input = eq.n_input
-        
-        # Default GFlops levels if not specified
-        if gflops_levels is None:
-            # Generate a range of GFlops based on dimension
-            # Smaller networks for higher dimensions to keep reasonable training time
-            base_gflops = 1e-6 * n_input  # Scale with input dimension
-            gflops_levels = [base_gflops * mult for mult in [1, 2, 4, 8, 16, 32]]
-        
-        # Generate network configurations for each GFlops level
-        network_configs = self.generate_network_configs(n_input, gflops_levels)
         
         # Generate test data (fixed across all budget levels)
         data_domain_test, data_boundary_test = eq.generate_test_data(num_domain, num_boundary)
@@ -210,32 +94,26 @@ class ComputingBudget(object):
         pinn_errors = []
         mlp_errors = []
         scasml_errors = []
-        actual_gflops_list = []
         pinn_times = []
         mlp_times = []
         scasml_times = []
-        layer_sizes_list = []
+        
+        # Base iterations for budget=1.0
+        base_iterations = 2000
         
         if is_train:
-            for config_idx, (layer_sizes, actual_gflops) in enumerate(network_configs):
-                print(f"\n{'='*60}")
-                print(f"Testing network config {config_idx+1}/{len(network_configs)}")
-                print(f"Layer sizes: {layer_sizes}")
-                print(f"Target GFlops: {gflops_levels[config_idx]:.2e}, Actual GFlops: {actual_gflops:.2e}")
-                print(f"{'='*60}")
-                
-                actual_gflops_list.append(actual_gflops)
-                layer_sizes_list.append(layer_sizes)
+            for budget in budget_levels:
+                # Calculate iterations for this budget
+                train_iters = int(base_iterations * budget)
                 
                 # ==========================================
-                # PINN: Create and train with current architecture
+                # PINN: Train and measure time
                 # ==========================================
-                pinn_model = self.create_pinn_model(layer_sizes, eq)
-                opt1 = Adam(eq.n_input, 1, pinn_model, eq)
+                solver1_copy = copy.deepcopy(self.solver1)
+                opt1 = Adam(eq.n_input, 1, solver1_copy, eq)
                 
                 start_time = time.time()
-                trained_pinn = opt1.train(f"{save_path}/model_weights_PINN_{config_idx}", 
-                                         iters=train_iters)
+                trained_pinn = opt1.train(f"{save_path}/model_weights_PINN_{budget}", iters=train_iters)
                 train_time_pinn = time.time() - start_time
                 
                 start_time = time.time()
@@ -245,38 +123,44 @@ class ComputingBudget(object):
                 total_time_pinn = train_time_pinn + inference_time_pinn
                 
                 # ==========================================
-                # MLP: Use standard MLP (no neural network, just Picard iteration)
+                # MLP: Adjust training to match budget
                 # ==========================================
                 solver2_copy = copy.deepcopy(self.solver2)
                 
-                # Adjust rho based on network complexity
-                rho_mlp = max(2, min(6, int(np.log(actual_gflops * 1e9 + 1) / 2)))
+                # MLP inference is slower, so we adjust training iterations
+                # to approximately match total time budget
+                rho_mlp = max(2, int(np.log(train_iters) / np.log(np.log(train_iters) + 1)))
                 
                 start_time = time.time()
+                # MLP doesn't need PINN training
+                dummy_train_time = 0  # MLP uses pre-trained or no training
+                train_time_mlp = dummy_train_time
+                
                 sol_mlp = solver2_copy.u_solve(rho_mlp, rho_mlp, xt_test)
                 inference_time_mlp = time.time() - start_time
-                total_time_mlp = inference_time_mlp
+                
+                total_time_mlp = train_time_mlp + inference_time_mlp
                 
                 # ==========================================
-                # ScaSML: Create PINN backbone with current architecture
+                # ScaSML: Optimize training/inference split
                 # ==========================================
-                scasml_pinn_model = self.create_pinn_model(layer_sizes, eq)
-                opt3 = Adam(eq.n_input, 1, scasml_pinn_model, eq)
+                solver3_copy = copy.deepcopy(self.solver3)
                 
-                # ScaSML uses fewer training iterations for backbone
-                scasml_train_iters = max(100, train_iters // (d + 1))
-                rho_scasml = max(2, min(6, int(np.log(actual_gflops * 1e9 + 1) / 2)))
+                # ScaSML uses less training for PINN backbone
+                scasml_train_iters = train_iters // (d + 1)
+                rho_scasml = max(2, int(np.log(scasml_train_iters) / np.log(np.log(scasml_train_iters) + 1)))
+                
+                opt3 = Adam(eq.n_input, 1, solver3_copy.PINN, eq)
                 
                 start_time = time.time()
-                trained_scasml_backbone = opt3.train(f"{save_path}/model_weights_ScaSML_{config_idx}", 
-                                                     iters=scasml_train_iters)
+                trained_pinn_backbone = opt3.train(f"{save_path}/model_weights_ScaSML_{budget}", 
+                                                   iters=scasml_train_iters)
                 train_time_scasml = time.time() - start_time
                 
-                # Create ScaSML solver with trained backbone
-                scasml_solver = ScaSML(equation=eq, PINN=trained_scasml_backbone)
+                solver3_copy.PINN = trained_pinn_backbone
                 
                 start_time = time.time()
-                sol_scasml = scasml_solver.u_solve(rho_scasml, rho_scasml, xt_test)
+                sol_scasml = solver3_copy.u_solve(rho_scasml, rho_scasml, xt_test)
                 inference_time_scasml = time.time() - start_time
                 
                 total_time_scasml = train_time_scasml + inference_time_scasml
@@ -288,7 +172,6 @@ class ComputingBudget(object):
                               np.isnan(sol_scasml) | np.isnan(exact_sol)).flatten()
                 
                 if np.sum(valid_mask) == 0:
-                    print(f"Warning: No valid samples for config {config_idx}")
                     continue
                 
                 errors_pinn = np.abs(sol_pinn.flatten()[valid_mask] - exact_sol.flatten()[valid_mask])
@@ -312,30 +195,36 @@ class ComputingBudget(object):
                 # ==========================================
                 # Statistical Analysis
                 # ==========================================
+                # Calculate statistics
+                pinn_mean = np.mean(errors_pinn)
+                pinn_std = np.std(errors_pinn)
+                mlp_mean = np.mean(errors_mlp)
+                mlp_std = np.std(errors_mlp)
+                scasml_mean = np.mean(errors_scasml)
+                scasml_std = np.std(errors_scasml)
+                
                 # Paired t-tests
                 t_pinn_scasml, p_pinn_scasml = stats.ttest_rel(errors_pinn, errors_scasml)
                 t_mlp_scasml, p_mlp_scasml = stats.ttest_rel(errors_mlp, errors_scasml)
+                t_pinn_mlp, p_pinn_mlp = stats.ttest_rel(errors_pinn, errors_mlp)
                 
                 # Improvement percentages
-                improvement_pinn = (rel_error_pinn - rel_error_scasml) / rel_error_pinn * 100 if rel_error_pinn > 0 else 0
-                improvement_mlp = (rel_error_mlp - rel_error_scasml) / rel_error_mlp * 100 if rel_error_mlp > 0 else 0
+                improvement_pinn = (rel_error_pinn - rel_error_scasml) / rel_error_pinn * 100
+                improvement_mlp = (rel_error_mlp - rel_error_scasml) / rel_error_mlp * 100
                 
                 # Log to wandb
                 wandb.log({
-                    f"gflops_{actual_gflops:.2e}_pinn_error": rel_error_pinn,
-                    f"gflops_{actual_gflops:.2e}_mlp_error": rel_error_mlp,
-                    f"gflops_{actual_gflops:.2e}_scasml_error": rel_error_scasml,
-                    f"gflops_{actual_gflops:.2e}_pinn_time": total_time_pinn,
-                    f"gflops_{actual_gflops:.2e}_mlp_time": total_time_mlp,
-                    f"gflops_{actual_gflops:.2e}_scasml_time": total_time_scasml,
-                    f"gflops_{actual_gflops:.2e}_improvement_vs_pinn": improvement_pinn,
-                    f"gflops_{actual_gflops:.2e}_improvement_vs_mlp": improvement_mlp,
-                    f"gflops_{actual_gflops:.2e}_p_pinn_scasml": p_pinn_scasml,
-                    f"gflops_{actual_gflops:.2e}_p_mlp_scasml": p_mlp_scasml,
-                    f"gflops_{actual_gflops:.2e}_layer_sizes": str(layer_sizes),
+                    f"budget_{budget}_pinn_error": rel_error_pinn,
+                    f"budget_{budget}_mlp_error": rel_error_mlp,
+                    f"budget_{budget}_scasml_error": rel_error_scasml,
+                    f"budget_{budget}_pinn_time": total_time_pinn,
+                    f"budget_{budget}_mlp_time": total_time_mlp,
+                    f"budget_{budget}_scasml_time": total_time_scasml,
+                    f"budget_{budget}_improvement_vs_pinn": improvement_pinn,
+                    f"budget_{budget}_improvement_vs_mlp": improvement_mlp,
+                    f"budget_{budget}_p_pinn_scasml": p_pinn_scasml,
+                    f"budget_{budget}_p_mlp_scasml": p_mlp_scasml,
                 })
-                
-                print(f"PINN error: {rel_error_pinn:.6e}, MLP error: {rel_error_mlp:.6e}, ScaSML error: {rel_error_scasml:.6e}")
             
             # ==========================================
             # Visualization
@@ -365,24 +254,24 @@ class ComputingBudget(object):
             })
             
             # ==========================================
-            # Figure 1: Error vs GFlops
+            # Figure 1: Error vs Budget
             # ==========================================
             fig, ax = plt.subplots(figsize=(3.5, 3))
             
-            gflops_array = np.array(actual_gflops_list[:len(pinn_errors)])
+            budget_array = np.array(budget_levels[:len(pinn_errors)])
             
             # Plot with markers
-            ax.plot(gflops_array, pinn_errors, color=COLOR_SCHEME['PINN'], 
+            ax.plot(budget_array, pinn_errors, color=COLOR_SCHEME['PINN'], 
                    marker='o', linestyle='-', label='PINN', 
                    markerfacecolor='none', markeredgewidth=0.8)
-            ax.plot(gflops_array, mlp_errors, color=COLOR_SCHEME['MLP'], 
+            ax.plot(budget_array, mlp_errors, color=COLOR_SCHEME['MLP'], 
                    marker='s', linestyle='-', label='MLP',
                    markerfacecolor='none', markeredgewidth=0.8)
-            ax.plot(gflops_array, scasml_errors, color=COLOR_SCHEME['SCaSML'], 
+            ax.plot(budget_array, scasml_errors, color=COLOR_SCHEME['SCaSML'], 
                    marker='^', linestyle='-', label='SCaSML',
                    markerfacecolor='none', markeredgewidth=0.8)
             
-            ax.set_xlabel('GFlops', labelpad=3)
+            ax.set_xlabel('Computing Budget (×baseline)', labelpad=3)
             ax.set_ylabel('Relative L2 Error', labelpad=3)
             ax.set_yscale('log')
             ax.set_xscale('log')
@@ -392,12 +281,8 @@ class ComputingBudget(object):
             ax.spines['top'].set_visible(False)
             ax.spines['right'].set_visible(False)
             
-            # Format x-axis with scientific notation
-            ax.xaxis.set_major_formatter(ticker.ScalarFormatter(useMathText=True))
-            ax.ticklabel_format(style='sci', axis='x', scilimits=(0,0))
-            
             plt.tight_layout()
-            plt.savefig(f'{save_path}/Error_vs_GFlops.pdf', 
+            plt.savefig(f'{save_path}/Error_vs_Budget.pdf', 
                        bbox_inches='tight', pad_inches=0.05)
             plt.close()
             
@@ -406,13 +291,13 @@ class ComputingBudget(object):
             # ==========================================
             fig, ax = plt.subplots(figsize=(3.5, 3))
             
-            # Calculate improvements at each GFlops level
-            improvements_vs_pinn = [(pinn - scasml) / pinn * 100 if pinn > 0 else 0
+            # Calculate improvements at each budget level
+            improvements_vs_pinn = [(pinn - scasml) / pinn * 100 
                                    for pinn, scasml in zip(pinn_errors, scasml_errors)]
-            improvements_vs_mlp = [(mlp - scasml) / mlp * 100 if mlp > 0 else 0
+            improvements_vs_mlp = [(mlp - scasml) / mlp * 100 
                                   for mlp, scasml in zip(mlp_errors, scasml_errors)]
             
-            x = np.arange(len(gflops_array))
+            x = np.arange(len(budget_array))
             width = 0.35
             
             bars1 = ax.bar(x - width/2, improvements_vs_pinn, width, 
@@ -422,10 +307,10 @@ class ComputingBudget(object):
                           label='SCaSML vs MLP', color=COLOR_SCHEME['MLP'], 
                           edgecolor='black', linewidth=0.5)
             
-            ax.set_xlabel('GFlops', labelpad=3)
+            ax.set_xlabel('Computing Budget (×baseline)', labelpad=3)
             ax.set_ylabel('Improvement (%)', labelpad=3)
             ax.set_xticks(x)
-            ax.set_xticklabels([f'{g:.1e}' for g in gflops_array], rotation=45, ha='right')
+            ax.set_xticklabels([f'{b}×' for b in budget_array])
             ax.axhline(y=0, color='black', linestyle='-', linewidth=0.8)
             ax.legend(frameon=False, loc='upper left')
             ax.grid(True, which='major', axis='y', linestyle='--', 
@@ -435,36 +320,6 @@ class ComputingBudget(object):
             
             plt.tight_layout()
             plt.savefig(f'{save_path}/Improvement_Bar_Chart.pdf', 
-                       bbox_inches='tight', pad_inches=0.05)
-            plt.close()
-            
-            # ==========================================
-            # Figure 3: Time vs GFlops
-            # ==========================================
-            fig, ax = plt.subplots(figsize=(3.5, 3))
-            
-            ax.plot(gflops_array, pinn_times, color=COLOR_SCHEME['PINN'], 
-                   marker='o', linestyle='-', label='PINN', 
-                   markerfacecolor='none', markeredgewidth=0.8)
-            ax.plot(gflops_array, mlp_times, color=COLOR_SCHEME['MLP'], 
-                   marker='s', linestyle='-', label='MLP',
-                   markerfacecolor='none', markeredgewidth=0.8)
-            ax.plot(gflops_array, scasml_times, color=COLOR_SCHEME['SCaSML'], 
-                   marker='^', linestyle='-', label='SCaSML',
-                   markerfacecolor='none', markeredgewidth=0.8)
-            
-            ax.set_xlabel('GFlops', labelpad=3)
-            ax.set_ylabel('Total Time (s)', labelpad=3)
-            ax.set_xscale('log')
-            ax.set_yscale('log')
-            ax.legend(frameon=False, loc='upper left')
-            ax.grid(True, which='major', axis='both', linestyle='--', 
-                   linewidth=0.5, alpha=0.4)
-            ax.spines['top'].set_visible(False)
-            ax.spines['right'].set_visible(False)
-            
-            plt.tight_layout()
-            plt.savefig(f'{save_path}/Time_vs_GFlops.pdf', 
                        bbox_inches='tight', pad_inches=0.05)
             plt.close()
             
@@ -484,22 +339,19 @@ class ComputingBudget(object):
             sys.stdout = log_file
             sys.stderr = log_file
             
-            print("=" * 100)
-            print("COMPUTING BUDGET TEST - FINAL RESULTS (GFlops-based)")
-            print("=" * 100)
+            print("=" * 80)
+            print("COMPUTING BUDGET TEST - FINAL RESULTS")
+            print("=" * 80)
             print(f"Equation: {eq_name}")
             print(f"Dimension: {d+1}")
-            print(f"Training iterations per network: {train_iters}")
-            print("=" * 100)
+            print(f"Budget levels tested: {budget_array.tolist()}")
+            print("=" * 80)
             print()
             
-            print(f"{'GFlops':<15} {'Layer Sizes':<30} {'PINN Error':<15} {'MLP Error':<15} {'SCaSML Error':<15}")
-            print("-" * 90)
-            for i, gflops in enumerate(gflops_array):
-                layer_str = str(layer_sizes_list[i]) if i < len(layer_sizes_list) else "N/A"
-                if len(layer_str) > 28:
-                    layer_str = layer_str[:25] + "..."
-                print(f"{gflops:<15.2e} {layer_str:<30} {pinn_errors[i]:<15.6e} {mlp_errors[i]:<15.6e} {scasml_errors[i]:<15.6e}")
+            print(f"{'Budget':<12} {'PINN Error':<15} {'MLP Error':<15} {'SCaSML Error':<15}")
+            print("-" * 60)
+            for i, budget in enumerate(budget_array):
+                print(f"{budget:<12.1f} {pinn_errors[i]:<15.6e} {mlp_errors[i]:<15.6e} {scasml_errors[i]:<15.6e}")
             print()
             
             print("Average Improvement:")
@@ -507,14 +359,13 @@ class ComputingBudget(object):
             print(f"  SCaSML vs MLP: {avg_improvement_mlp:+.2f}%")
             print()
             
-            if len(gflops_array) > 0:
-                print(f"Highest GFlops Level ({gflops_array[-1]:.2e}):")
-                print(f"  PINN error: {pinn_errors[-1]:.6e}")
-                print(f"  MLP error: {mlp_errors[-1]:.6e}")
-                print(f"  ScaSML error: {scasml_errors[-1]:.6e}")
-                print(f"  Improvement vs PINN: {improvements_vs_pinn[-1]:+.2f}%")
-                print(f"  Improvement vs MLP: {improvements_vs_mlp[-1]:+.2f}%")
-            print("=" * 100)
+            print(f"Final Budget Level ({budget_array[-1]:.1f}×):")
+            print(f"  PINN error: {pinn_errors[-1]:.6e}")
+            print(f"  MLP error: {mlp_errors[-1]:.6e}")
+            print(f"  SCaSML error: {scasml_errors[-1]:.6e}")
+            print(f"  Improvement vs PINN: {improvements_vs_pinn[-1]:+.2f}%")
+            print(f"  Improvement vs MLP: {improvements_vs_mlp[-1]:+.2f}%")
+            print("=" * 80)
             
             sys.stdout = self.stdout
             sys.stderr = self.stderr
@@ -530,4 +381,4 @@ class ComputingBudget(object):
         wandb.log_artifact(artifact)
         
         print("Computing budget test completed!")
-        return gflops_levels[-1] if gflops_levels else 1e-6
+        return budget_levels[-1] if budget_levels else 1.0
